@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scantling - 建筑型材套裁优化与综合单价工程量规方工作台</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --indigo: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 24px; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .logo-area h1 { font-size: 24px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+    .logo-area p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .badge { background: rgba(56, 189, 248, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.3); }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 24px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); margin-bottom: 20px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: #e2e8f0; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input, select { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th { text-align: left; padding: 8px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
+    td { padding: 8px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #0f172a; font-weight: 600; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; font-size: 13px; }
+    .btn:hover { background: var(--accent-hover); }
+    .btn-sm { padding: 4px 8px; font-size: 11px; }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-outline:hover { background: rgba(56, 189, 248, 0.1); }
+    .btn-danger { background: rgba(244, 63, 94, 0.2); color: var(--rose); border: 1px solid rgba(244, 63, 94, 0.4); }
+    .btn-danger:hover { background: var(--rose); color: #fff; }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .kpi-card { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+    .kpi-num { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    .kpi-label { font-size: 11px; color: var(--text-muted); }
+
+    .pattern-bar { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .pattern-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: var(--text-muted); }
+    .pattern-track { display: flex; height: 32px; border-radius: 6px; overflow: hidden; background: #334155; }
+    .track-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); overflow: hidden; white-space: nowrap; border-right: 1px solid rgba(0,0,0,0.3); }
+    .seg-cut { background: linear-gradient(135deg, #0284c7, #0369a1); }
+    .seg-reusable { background: linear-gradient(135deg, #15803d, #166534); }
+    .seg-scrap { background: linear-gradient(135deg, #b91c1c, #991b1b); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <h1>Scantling <span class="badge">MoonBit + Wasm</span></h1>
+        <p>建筑工程型材套裁智能优化与 GB 50500 全要素综合单价清单演算平台</p>
+      </div>
+      <div>
+        <button class="btn btn-outline" onclick="loadPreset()">载入框架柱梁定额案例</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- 左栏：工程参数与清单输入 -->
+      <div>
+        <div class="card">
+          <div class="card-title">1. 母材原材与造价定额参数</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>母材标准定尺 (mm)</label>
+              <input type="number" id="stockLength" value="9000">
+            </div>
+            <div class="form-group">
+              <label>理论线密度 (kg/m)</label>
+              <input type="number" id="unitWeight" step="0.01" value="3.85">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>原材单价 (元/吨)</label>
+              <input type="number" id="matPrice" value="3850">
+            </div>
+            <div class="form-group">
+              <label>废钢回收单价 (元/吨)</label>
+              <input type="number" id="scrapPrice" value="2300">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>锯口下料损耗 (mm)</label>
+              <input type="number" id="kerfWidth" value="3">
+            </div>
+            <div class="form-group">
+              <label>余料复用最小阈值 (mm)</label>
+              <input type="number" id="minReusable" value="800">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="justify-content: space-between;">
+            <span>2. 构件定尺需求清单</span>
+            <button class="btn btn-sm btn-outline" onclick="addDemandRow()">+ 添加清单项</button>
+          </div>
+          <table id="demandTable">
+            <thead>
+              <tr>
+                <th>构件编码</th>
+                <th>定尺 (mm)</th>
+                <th>根数</th>
+                <th>说明</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- 动态注入 -->
+            </tbody>
+          </table>
+          <div style="margin-top: 16px;">
+            <button class="btn" style="width: 100%;" onclick="runOptimization()">▶ 执行智能套裁与量价织算</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右栏：排料图谱与造价明细 -->
+      <div>
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-label">投入原材根数</div>
+            <div class="kpi-num" id="kpiBars">12 根</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">材料损耗率</div>
+            <div class="kpi-num" id="kpiWaste" style="color: var(--amber);">0.88%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">余料二次复用率</div>
+            <div class="kpi-num" id="kpiReusable" style="color: var(--green);">10.42%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">清单综合单价</div>
+            <div class="kpi-num" id="kpiPrice">5,658 元/t</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">3. 下料排料版样实时可视化 (Cutting Stock Diagram)</div>
+          <div id="patternsContainer" style="max-height: 380px; overflow-y: auto; padding-right: 6px;">
+            <!-- 动态生成排料图 -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">4. 全要素清单造价明细表 (GB 50500 现行规范)</div>
+          <table style="font-size: 12px;">
+            <tbody>
+              <tr><td style="color: var(--text-muted);">构件设计净重 (t)</td><td id="resNetWeight" style="font-weight: 600;">0.369</td><td style="color: var(--text-muted);">采购投入毛重 (t)</td><td id="resGrossWeight">0.416</td></tr>
+              <tr><td style="color: var(--text-muted);">原材采购金额</td><td id="resGrossMatCost">¥ 1,600.83</td><td style="color: var(--text-muted);">废料残值抵扣</td><td id="resScrapRecovery" style="color: var(--green);">- ¥ 8.37</td></tr>
+              <tr><td style="color: var(--text-muted);">余料结存冲减</td><td id="resReusableCredit" style="color: var(--green);">- ¥ 141.80</td><td style="color: var(--text-muted);">材料净成本</td><td id="resNetMatCost" style="font-weight: 600;">¥ 1,450.66</td></tr>
+              <tr><td style="color: var(--text-muted);">定额人工费 (安装)</td><td id="resLaborCost">¥ 270.27</td><td style="color: var(--text-muted);">施工机具使用费</td><td id="resMachCost">¥ 74.84</td></tr>
+              <tr><td style="color: var(--text-muted);">企业管理费 (8%)</td><td id="resMgtCost">¥ 27.61</td><td style="color: var(--text-muted);">企业利润 (5%)</td><td id="resProfit">¥ 91.17</td></tr>
+              <tr><td style="color: var(--text-muted);">建筑业增值税 (9%)</td><td id="resTax">¥ 172.31</td><td style="color: var(--text-muted); font-weight: 700;">含税综合总造价</td><td id="resTotalCost" style="color: var(--accent); font-weight: 700; font-size: 14px;">¥ 2,086.86</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
