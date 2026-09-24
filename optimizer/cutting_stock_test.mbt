@@ -93,3 +93,28 @@ test "checked optimizer rejects invalid input" {
     Ok(_) => fail("invalid input must be rejected before solving")
   }
 }
+
+///|
+test "illustrative CLI benchmark is reproducible" {
+  let stock = @core.StockMaterial::new(
+    "HRB400E-D25", "螺纹钢Φ25", 9000.0, 3.85, 3850.0,
+  )
+  let cfg = @core.OptimizationConfig::new(3.0, 800.0)
+  let demands = [
+    @core.DemandItem::new("KZ-01", 3800.0, 8, "框架柱基础插筋"),
+    @core.DemandItem::new("KZ-02", 2700.0, 12, "框架柱二层主筋"),
+    @core.DemandItem::new("KL-01", 2400.0, 10, "框架梁跨中下部通长筋"),
+    @core.DemandItem::new("KL-02", 1500.0, 6, "次梁支座负弯矩加强筋"),
+  ]
+
+  match try_optimize_cutting_stock(stock, demands, cfg) {
+    Err(_) => fail("illustrative benchmark input must be valid")
+    Ok(result) => {
+      assert_eq(result.total_stocks_used, 12)
+      assert_eq(result.total_demanded_length_mm, 95800.0)
+      assert_eq(result.total_kerf_loss_mm, 72.0)
+      assert_eq(result.total_reusable_length_mm, 11255.0)
+      assert_eq(result.total_scrap_length_mm, 873.0)
+    }
+  }
+}

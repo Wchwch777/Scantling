@@ -71,3 +71,31 @@ test "empty demand cost evaluation produces zero safe values" {
   assert_eq(cost.total_project_cost, 0.0)
   assert_eq(cost.comprehensive_unit_price, 0.0)
 }
+
+///|
+test "illustrative CLI cost benchmark is reproducible" {
+  let stock = @core.StockMaterial::new(
+    "HRB400E-D25", "螺纹钢Φ25", 9000.0, 3.85, 3850.0,
+  )
+  let cfg = @core.OptimizationConfig::new(3.0, 800.0)
+  let demands = [
+    @core.DemandItem::new("KZ-01", 3800.0, 8, "框架柱基础插筋"),
+    @core.DemandItem::new("KZ-02", 2700.0, 12, "框架柱二层主筋"),
+    @core.DemandItem::new("KL-01", 2400.0, 10, "框架梁跨中下部通长筋"),
+    @core.DemandItem::new("KL-02", 1500.0, 6, "次梁支座负弯矩加强筋"),
+  ]
+
+  let summary = @optimizer.optimize_cutting_stock(stock, demands, cfg)
+  let cost = evaluate_cost(
+    stock,
+    summary,
+    QuotaStandard::default_rebar(),
+    ScrapMarketParam::default(),
+  )
+  assert_eq((cost.net_material_cost - 1450.658873125).abs() < 1.0e-9, true)
+  assert_eq(
+    (cost.comprehensive_unit_price - 5658.0557197938415).abs() < 1.0e-9,
+    true,
+  )
+  assert_eq((cost.cost_saved_amount + 33.19268980046263).abs() < 1.0e-9, true)
+}
