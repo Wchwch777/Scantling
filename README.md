@@ -90,7 +90,14 @@ moon fmt --check
 moon run cmd
 ```
 
-### 5. WebAssembly 编译
+### 5. 运行最小公共 API Demo
+用一个小规模、可复现的输入，快速查看“校验 → 优化 → 造价”完整链路：
+```bash
+moon run examples/quickstart
+```
+该 Demo 输出母材根数、余料/废料、损耗率和参数化成本结果；它是演示程序，不宣称全局最优或替代工程审计。
+
+### 6. WebAssembly 编译
 ```bash
 # Linux / macOS
 bash scripts/build_wasm.sh
@@ -99,7 +106,7 @@ bash scripts/build_wasm.sh
 .\scripts\build_wasm.ps1
 ```
 
-### 6. 启动网页交互式工作台
+### 7. 启动网页交互式工作台
 直接在浏览器中双击打开 `web/index.html` 即可使用：
 * 支持动态修改母材定尺（9m / 12m）、理论米重、采购单价及锯口损耗；
 * 自由添加/删除构件定尺清单；
@@ -146,6 +153,7 @@ scantling/
 │   ├── quota_test.mbt      # 财务守恒、免税工况与边界测试
 │   └── moon.pkg
 ├── cmd/                    # 终端交互入口与 ASCII 排料图谱可视化看板
+├── examples/quickstart/    # 面向评审与新用户的最小公共 API Demo
 ├── web/                    # 纯前端交互工作台 (支持离线与本地浏览器直接运行)
 ├── docs/                   # 专业工程文档
 │   ├── specifications.md   # 1D-CSP 数学模型与造价计算标准公式推导

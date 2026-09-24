@@ -13,4 +13,7 @@ moon test
 echo "[Scantling CI] Verifying CLI terminal execution..."
 moon run cmd
 
+echo "[Scantling CI] Verifying public API quickstart demo..."
+moon run examples/quickstart
+
 echo "[Scantling CI] All verification checks passed successfully!"

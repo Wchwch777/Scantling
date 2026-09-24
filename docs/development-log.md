@@ -66,6 +66,30 @@ The CLI continued to produce the locked benchmark values, including 12 bars,
 0.875% material loss, and a `-33.19268980046263` cost difference against the
 parameterized baseline.
 
+## 2026-09-25 — public quickstart demo
+
+A separate `examples/quickstart` executable was added instead of expanding the
+existing verbose CLI. It exercises the public package boundaries in the same
+order a new user would use them: validated input, deterministic FFD/BFD
+optimization, and parameterized pricing. Its output is intentionally compact
+and explicitly says that the heuristic is not a proof of global optimality.
+
+The demo was first run independently, then included in the repository CI
+script. The actual verification sequence was:
+
+```text
+moon run examples/quickstart          PASS
+moon fmt --check                      PASS
+moon check                            PASS
+moon test                             15 passed, 0 failed
+.\scripts\ci.ps1                     PASS
+```
+
+The quickstart uses a small five-piece input and currently reports two stock
+bars, 0.05% waste, 3,491 mm reusable remnant, and a parameterized net material
+cost of `222.741759625` yuan. These numbers are demonstration outputs, not a
+claim about a real project or a globally optimal plan.
+
 ## Verification policy for future changes
 
 Each behavior change should follow this order:
