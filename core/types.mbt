@@ -166,9 +166,11 @@ pub fn OptimizationSummary::empty() -> OptimizationSummary {
 /// 下料工程参数边界校验异常
 pub(all) enum ValidationError {
   StockLengthNonPositive(Double)
+  DemandLengthNonPositive(String, Double)
   PieceExceedsStockLength(String, Double, Double)
   QuantityNonPositive(String, Int)
   InvalidKerfWidth(Double)
+  MinReusableLengthNegative(Double)
 } derive(Debug, Eq)
 
 ///|
@@ -185,9 +187,17 @@ pub fn validate_inputs(
   if config.kerf_width_mm < 0.0 {
     errors.push(ValidationError::InvalidKerfWidth(config.kerf_width_mm))
   }
+  if config.min_reusable_length_mm < 0.0 {
+    errors.push(
+      ValidationError::MinReusableLengthNegative(config.min_reusable_length_mm),
+    )
+  }
   for d in demands {
     if d.quantity <= 0 {
       errors.push(ValidationError::QuantityNonPositive(d.id, d.quantity))
+    }
+    if d.length_mm <= 0.0 {
+      errors.push(ValidationError::DemandLengthNonPositive(d.id, d.length_mm))
     }
     if stock.length_mm > 0.0 && d.length_mm > stock.length_mm {
       errors.push(

@@ -2,8 +2,8 @@
 // Licensed under Apache-2.0
 //
 // Scantling 交互式前端工作台
-// 架构设计：双模计算引擎。优先加载 MoonBit 编译的 WebAssembly 微内核；
-// 若处于离线 file:// 协议或 Wasm 未就绪环境，自动平滑启用同构验证引擎，确保零依赖开箱即用。
+// 当前页面使用独立 JavaScript 参考引擎，保证 file:// 离线打开即可运行。
+// scripts/build_wasm.* 只负责构建可选 Wasm 产物，尚未接入页面运行时。
 
 let defaultDemands = [
   { id: "KZ-01", length: 3800, qty: 8, tag: "柱基础插筋" },
@@ -83,7 +83,7 @@ function runOptimization() {
     }
   });
 
-  // 3. 降序排列 (FFD / BFD 启发式排布)
+  // 3. 降序排列 (FFD 参考实现)
   pieces.sort((a, b) => b.length - a.length);
 
   // 4. 套裁匹配

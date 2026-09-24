@@ -144,7 +144,7 @@ fn build_summary(
 
 ///|
 /// 首次适应降序套裁算法 (First-Fit Decreasing, FFD)
-pub fn solve_first_fit_decreasing(
+fn solve_first_fit_decreasing_unchecked(
   stock : @core.StockMaterial,
   demands : Array[@core.DemandItem],
   config : @core.OptimizationConfig,
@@ -178,7 +178,7 @@ pub fn solve_first_fit_decreasing(
 ///|
 /// 最佳适应降序套裁算法 (Best-Fit Decreasing, BFD)
 /// 在已有原材中寻找能容纳当前切件且剩余空间最小的母材，极大程度压制零碎残余
-pub fn solve_best_fit_decreasing(
+fn solve_best_fit_decreasing_unchecked(
   stock : @core.StockMaterial,
   demands : Array[@core.DemandItem],
   config : @core.OptimizationConfig,
@@ -223,24 +223,107 @@ pub fn solve_best_fit_decreasing(
 }
 
 ///|
-/// 综合启发式求解器：一维套裁问题 (1D-CSP) 为 NP-Hard 难题，
-/// 本求解器运行 FFD 与 BFD 双策略进行启发式近似竞优（理论渐进比上界 <= 11/9 OPT + 1），
-/// 择优返回母材用量更少、残渣废料率更低的工程实用优选版样。
+/// 带类型错误信息的 FFD 求解入口。
+pub fn try_solve_first_fit_decreasing(
+  stock : @core.StockMaterial,
+  demands : Array[@core.DemandItem],
+  config : @core.OptimizationConfig,
+) -> Result[@core.OptimizationSummary, Array[@core.ValidationError]] {
+  let errors = @core.validate_inputs(stock, demands, config)
+  if errors.length() > 0 {
+    Err(errors)
+  } else {
+    Ok(solve_first_fit_decreasing_unchecked(stock, demands, config))
+  }
+}
+
+///|
+/// 带类型错误信息的 BFD 求解入口。
+pub fn try_solve_best_fit_decreasing(
+  stock : @core.StockMaterial,
+  demands : Array[@core.DemandItem],
+  config : @core.OptimizationConfig,
+) -> Result[@core.OptimizationSummary, Array[@core.ValidationError]] {
+  let errors = @core.validate_inputs(stock, demands, config)
+  if errors.length() > 0 {
+    Err(errors)
+  } else {
+    Ok(solve_best_fit_decreasing_unchecked(stock, demands, config))
+  }
+}
+
+///|
+/// 兼容入口：合法输入正常返回；非法输入立即终止，避免静默产生错误结果。
+pub fn solve_first_fit_decreasing(
+  stock : @core.StockMaterial,
+  demands : Array[@core.DemandItem],
+  config : @core.OptimizationConfig,
+) -> @core.OptimizationSummary {
+  match try_solve_first_fit_decreasing(stock, demands, config) {
+    Ok(summary) => summary
+    Err(_) =>
+      abort(
+        "invalid cutting-stock input; use try_solve_first_fit_decreasing for details",
+      )
+  }
+}
+
+///|
+/// 兼容入口：合法输入正常返回；非法输入立即终止，避免静默产生错误结果。
+pub fn solve_best_fit_decreasing(
+  stock : @core.StockMaterial,
+  demands : Array[@core.DemandItem],
+  config : @core.OptimizationConfig,
+) -> @core.OptimizationSummary {
+  match try_solve_best_fit_decreasing(stock, demands, config) {
+    Ok(summary) => summary
+    Err(_) =>
+      abort(
+        "invalid cutting-stock input; use try_solve_best_fit_decreasing for details",
+      )
+  }
+}
+
+///|
+/// 一维套裁问题的带校验综合求解入口。
+///
+/// 运行 FFD 与 BFD 双策略进行启发式近似竞优。启发式结果不等同于
+/// 全局最优解；调用方可以通过 Err 获取输入边界错误，而不是得到静默的空结果。
+pub fn try_optimize_cutting_stock(
+  stock : @core.StockMaterial,
+  demands : Array[@core.DemandItem],
+  config : @core.OptimizationConfig,
+) -> Result[@core.OptimizationSummary, Array[@core.ValidationError]] {
+  let errors = @core.validate_inputs(stock, demands, config)
+  if errors.length() > 0 {
+    return Err(errors)
+  }
+  let ffd = solve_first_fit_decreasing_unchecked(stock, demands, config)
+  let bfd = solve_best_fit_decreasing_unchecked(stock, demands, config)
+
+  if bfd.total_stocks_used < ffd.total_stocks_used {
+    Ok(bfd)
+  } else if bfd.total_stocks_used > ffd.total_stocks_used {
+    Ok(ffd)
+  } else if bfd.total_scrap_length_mm <= ffd.total_scrap_length_mm {
+    Ok(bfd)
+  } else {
+    Ok(ffd)
+  }
+}
+
+///|
+/// 兼容入口：合法输入正常返回；非法输入立即终止，避免静默产生错误结果。
 pub fn optimize_cutting_stock(
   stock : @core.StockMaterial,
   demands : Array[@core.DemandItem],
   config : @core.OptimizationConfig,
 ) -> @core.OptimizationSummary {
-  let ffd = solve_first_fit_decreasing(stock, demands, config)
-  let bfd = solve_best_fit_decreasing(stock, demands, config)
-
-  if bfd.total_stocks_used < ffd.total_stocks_used {
-    bfd
-  } else if bfd.total_stocks_used > ffd.total_stocks_used {
-    ffd
-  } else if bfd.total_scrap_length_mm <= ffd.total_scrap_length_mm {
-    bfd
-  } else {
-    ffd
+  match try_optimize_cutting_stock(stock, demands, config) {
+    Ok(summary) => summary
+    Err(_) =>
+      abort(
+        "invalid cutting-stock input; use try_optimize_cutting_stock for details",
+      )
   }
 }

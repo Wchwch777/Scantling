@@ -79,3 +79,17 @@ test "empty demands yields empty summary" {
   assert_eq(result.total_stocks_used, 0)
   assert_eq(result.patterns.length(), 0)
 }
+
+///|
+test "checked optimizer rejects invalid input" {
+  let stock = @core.StockMaterial::new(
+    "S-Invalid", "定尺9m", 9000.0, 2.0, 4000.0,
+  )
+  let demands = [@core.DemandItem::new("D-Negative", -1.0, 1, "非法长度")]
+  let cfg = @core.OptimizationConfig::new(3.0, -1.0)
+
+  match try_optimize_cutting_stock(stock, demands, cfg) {
+    Err(errors) => assert_eq(errors.length(), 2)
+    Ok(_) => fail("invalid input must be rejected before solving")
+  }
+}

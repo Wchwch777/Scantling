@@ -6,7 +6,7 @@ moon fmt --check
 Write-Host "[Scantling CI] Typechecking project..."
 moon check
 
-Write-Host "[Scantling CI] Running all 12 test suites..."
+Write-Host "[Scantling CI] Running the test suite..."
 moon test
 
 Write-Host "[Scantling CI] Verifying CLI terminal execution..."

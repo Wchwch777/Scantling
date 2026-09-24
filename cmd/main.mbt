@@ -77,7 +77,14 @@ fn main {
   println(
     "[2/3] 执行启发式下料排料优化演算 (FFD & Best-Fit 竞优)...",
   )
-  let summary = @optimizer.optimize_cutting_stock(stock, demands, cfg)
+  let summary = match
+    @optimizer.try_optimize_cutting_stock(stock, demands, cfg) {
+    Ok(value) => value
+    Err(_) =>
+      abort(
+        "工程输入校验失败：请检查母材定尺、构件长度、需求数量和锯口参数",
+      )
+  }
 
   println("  优化完成! 演算结果概要:")
   println(
@@ -222,7 +229,7 @@ fn main {
     " 元",
   )
   println(
-    "  ★ 精细套裁优化直接降本: " +
+    "  ★ 与定额基线成本差额:     " +
     cost.cost_saved_amount.to_string() +
     " 元",
   )

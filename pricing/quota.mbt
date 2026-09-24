@@ -92,7 +92,7 @@ pub struct CostBreakdown {
   total_project_cost : Double // 综合工程总造价 (含税, 元)
   comprehensive_unit_price : Double // 清单综合单价 (元/t 净重)
   quota_baseline_cost : Double // 行业定额常规造价基线 (元)
-  cost_saved_amount : Double // 精准套裁优化产生的节约价值 (元)
+  cost_saved_amount : Double // 与当前参数化定额基线的成本差额，正值才表示节约 (元)
 } derive(Debug, Eq)
 
 ///|

@@ -7,7 +7,7 @@ moon fmt --check
 echo "[Scantling CI] Typechecking project..."
 moon check
 
-echo "[Scantling CI] Running all 12 test suites..."
+echo "[Scantling CI] Running the test suite..."
 moon test
 
 echo "[Scantling CI] Verifying CLI terminal execution..."

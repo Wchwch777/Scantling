@@ -5,10 +5,10 @@
 
 [![Language: MoonBit](https://img.shields.io/badge/Language-MoonBit%200.1-purple.svg)](https://www.moonbitlang.com/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![CI: Automated Verification](https://img.shields.io/badge/CI-Automated%20Verification-success.svg)]()
-[![Tests: 12 Passed](https://img.shields.io/badge/Tests-12%20Passed-brightgreen.svg)]()
-[![Standard: GB 50500](https://img.shields.io/badge/Standard-GB%2050500%20Compliant-orange.svg)]()
-[![Target: Wasm / Native](https://img.shields.io/badge/Target-Wasm%20%7C%20Native-teal.svg)]()
+[![CI: Automated Verification](https://img.shields.io/badge/CI-Automated%20Verification-success.svg)](.github/workflows/ci.yml)
+[![Tests: 13 Passed](https://img.shields.io/badge/Tests-13%20Passed-brightgreen.svg)]()
+[![Formula model: GB 50500](https://img.shields.io/badge/Formula%20model-GB%2050500-orange.svg)]()
+[![Target: Native + optional Wasm](https://img.shields.io/badge/Target-Native%20%2B%20optional%20Wasm-teal.svg)]()
 
 ---
 
@@ -34,11 +34,11 @@
    * 创新性将截留余料划分为**次级构件复用库（折价冲减）**与**废料残渣（变现回收）**，真实还原现场资金流与材料成本冲减。
 4. **GB 50500 现行全要素工料机组价体系**：
    * 严密推导清单综合单价、直接工程费（人工+材料+机械）、企业管理费、利润及建筑业增值税（9%）。
-   * 自动与行业常规工程定额基准损耗进行比对，量化“工艺降本”带来的纯利润增量。
+   * 自动与参数化定额基线进行比对，输出成本差额；差额可能为正也可能为负，不能替代项目审计。
 5. **全端交互与 WebAssembly 支持**：
    * 提供终端 **CLI ASCII 排料明细可视化**；
    * 提供基于 HTML5/Canvas/SVG 的纯前端 **Web 交互式排料工作台**；
-   * 支持通过 `moon build --target wasm` 编译为 WebAssembly 独立运行。
+   * 提供可选的 `moon build --target wasm` 构建脚本；当前网页使用独立 JavaScript 参考引擎，尚未在浏览器运行时加载 Wasm。
 
 ---
 
@@ -73,11 +73,11 @@ moon version
 ```
 
 ### 2. 运行完整自动化测试套件
-运行 12 项涵盖领域边界、精准排料、锯口累加与免税造价核算的单元测试：
+运行 13 项涵盖领域边界、精准排料、锯口累加与免税造价核算的单元测试：
 ```bash
 moon test
 ```
-*测试通过输出：`Total tests: 12, passed: 12, failed: 0.`*
+*测试通过输出：`Total tests: 13, passed: 13, failed: 0.`*
 
 ### 3. 代码格式化校验 (CI 规范)
 ```bash
@@ -103,24 +103,27 @@ bash scripts/build_wasm.sh
 直接在浏览器中双击打开 `web/index.html` 即可使用：
 * 支持动态修改母材定尺（9m / 12m）、理论米重、采购单价及锯口损耗；
 * 自由添加/删除构件定尺清单；
-* 实时查看彩色型材排料图谱、综合单价与定额降本收益。
+* 实时查看彩色型材排料图谱、综合单价与定额基线成本差额。
 
 ---
 
-## 📊 工程实测案例 (Benchmark & Case Study)
+## 📊 示例测算 (Illustrative Benchmark)
 
-> **数据来源背景**：本测算案例基于华南地区某商业综合体地下室工程施工配筋图纸（构件编号：KZ1~KZ4 框架柱 / KL1~KL2 框架梁）。定额基价标准参考现行《建设工程工程量清单计价规范》（GB 50500）与省建安工程消耗量综合定额。
+> **数据性质**：以下是用于演示算法和公式的参数假设，不是第三方审计或独立现场实测结果。实际工程应替换为项目图纸、采购合同和所在地定额数据。
 
 * **原材规格**：HRB400E Φ25（9,000 mm 定尺，3.85 kg/m，3,850 元/吨）
 * **工艺损耗参数**：锯口 3.0 mm，余料复用阈值 800.0 mm
 
-| 评价维度 | 传统定额常规估算 | Scantling 启发式优化 | 优化效益提升 |
-| :--- | :--- | :--- | :--- |
-| **母材耗用量** | 13 ~ 14 根（经验估料） | **12 根** (精准下料) | 节约 1~2 根高强钢筋 |
-| **净废料残渣率** | 2.50% (定额上限) | **0.88%** | 降低 **64.8%** 废料产生 |
-| **余料二次复用** | 0% (随意混杂截断) | **10.42%** (入库备用) | 形成可回用次构件资产 |
-| **清单材料净成本** | ¥ 1,640.85 | **¥ 1,450.66** | 直接冲减材料费 ¥ 190.19 |
-| **综合造价单价** | ¥ 5,910 /t | **¥ 5,658 /t** | 每吨直接节省 ¥ 252 |
+| 评价维度 | 当前模型输出 | 说明 |
+| :--- | :--- | :--- |
+| **母材耗用量** | **12 根** | 当前示例输入下的 FFD/BFD 竞优结果 |
+| **综合材料损耗率** | **0.875%** | 锯口损耗与不可复用残料占母材总长比例 |
+| **余料二次复用率** | **10.421%** | 达到复用阈值的余料占母材总长比例 |
+| **清单材料净成本** | **¥ 1,450.66** | 当前参数化价格与回收模型输出 |
+| **清单综合单价** | **¥ 5,658.06 /t** | 当前参数化模型输出 |
+| **与定额基线成本差额** | **-¥ 33.19** | 负值表示当前模型下未形成成本节约 |
+
+该示例的 CLI 输出以当前源码为准。由于人工费和机具费按采购毛重计提，较低废料率不必然自动转化为较低总造价；实际项目需要使用当地定额、合同价格和工艺数据重新校准。
 
 ---
 
@@ -149,7 +152,9 @@ scantling/
 │   └── retrospective.md    # 架构选型权衡与技术演进回顾
 ├── scripts/                # 自动化构建脚本 (Wasm 构建)
 │   ├── build_wasm.sh
-│   └── build_wasm.ps1
+│   ├── build_wasm.ps1
+│   ├── ci.sh
+│   └── ci.ps1
 ├── moon.mod                # MoonBit 模块配置定义
 ├── .gitignore              # 工程构建产物过滤
 ├── LICENSE                 # Apache-2.0 开源许可协议
