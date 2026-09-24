@@ -161,6 +161,10 @@ scantling/
 └── README.md               # 项目主文档
 ```
 
+## 🔍 开发透明度 (Development Transparency)
+
+项目采用人工主导、AI 辅助的开发方式。AI 可用于 API 查询、重复性代码草拟、边界用例枚举和编译诊断，但领域决策、公开声明和验收结果由项目维护者审核确认。详见 [AI_ASSISTED.md](AI_ASSISTED.md) 与 [docs/development-log.md](docs/development-log.md)。
+
 ---
 
 ## 📄 开源许可证
