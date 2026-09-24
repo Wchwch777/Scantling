@@ -6,7 +6,7 @@
 [![Language: MoonBit](https://img.shields.io/badge/Language-MoonBit%200.1-purple.svg)](https://www.moonbitlang.com/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![CI: Automated Verification](https://img.shields.io/badge/CI-Automated%20Verification-success.svg)](.github/workflows/ci.yml)
-[![Tests: 13 Passed](https://img.shields.io/badge/Tests-13%20Passed-brightgreen.svg)]()
+[![Tests: 15 Passed](https://img.shields.io/badge/Tests-15%20Passed-brightgreen.svg)]()
 [![Formula model: GB 50500](https://img.shields.io/badge/Formula%20model-GB%2050500-orange.svg)]()
 [![Target: Native + optional Wasm](https://img.shields.io/badge/Target-Native%20%2B%20optional%20Wasm-teal.svg)]()
 
@@ -73,11 +73,11 @@ moon version
 ```
 
 ### 2. 运行完整自动化测试套件
-运行 13 项涵盖领域边界、精准排料、锯口累加与免税造价核算的单元测试：
+运行 15 项涵盖领域边界、精准排料、锯口累加、示例复现与免税造价核算的单元测试：
 ```bash
 moon test
 ```
-*测试通过输出：`Total tests: 13, passed: 13, failed: 0.`*
+*测试通过输出：`Total tests: 15, passed: 15, failed: 0.`*
 
 ### 3. 代码格式化校验 (CI 规范)
 ```bash

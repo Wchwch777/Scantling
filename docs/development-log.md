@@ -38,6 +38,34 @@ moon run cmd --target wasm               PASS
 
 The shell script was not run on the Windows development host because Bash is unavailable there. The GitHub Actions workflow runs the shell equivalent on Ubuntu.
 
+## 2026-09-24 — benchmark regression tests
+
+Before changing the README count, two focused regression tests were added:
+
+- the optimizer test fixes the CLI example's 12 stock bars, 95,800 mm demand, 72 mm kerf, 11,255 mm reusable remnant, and 873 mm scrap values;
+- the pricing test fixes the corresponding net material cost, comprehensive unit price, and cost difference against the parameterized baseline.
+
+The focused verification after implementation was:
+
+```text
+moon fmt --check                         PASS
+moon check --target wasm                 PASS
+moon test --target wasm                  15 passed, 0 failed
+```
+
+This change was committed as `e5be1f0` (`test: lock down reproducible benchmark outputs`).
+
+The repository-level PowerShell CI and optional Wasm build were then rerun:
+
+```text
+.\scripts\ci.ps1                        PASS
+.\scripts\build_wasm.ps1                PASS
+```
+
+The CLI continued to produce the locked benchmark values, including 12 bars,
+0.875% material loss, and a `-33.19268980046263` cost difference against the
+parameterized baseline.
+
 ## Verification policy for future changes
 
 Each behavior change should follow this order:
