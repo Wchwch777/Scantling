@@ -11,12 +11,12 @@ jobs:
     steps:
       - name: Check out sources
         uses: actions/checkout@v4
-      # Linux CI run 36086484531 installed this release successfully on ubuntu-22.04.
-      # Pin the installer input so subsequent CI runs do not silently drift.
+      # A pinned 0.1.20260920 archive returned HTTP 403 on Linux CI run
+      # 36086851330. Keep latest until a versioned Linux/core pair is available.
       - name: Install MoonBit toolchain
         shell: bash
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s 0.1.20260920
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s latest
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - name: Show toolchain
         run: moon version --all

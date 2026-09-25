@@ -191,3 +191,7 @@ git diff --check                                     PASS (Git emitted CRLF conv
 ```
 
 Push preflight: `gh api user` returned `Wchwch777`, repository permissions reported `push: true`, the default and intended target branch is `main`, and `git ls-remote --heads origin main` still returned `0cc053e`.
+
+### Pinned Linux archive failure and follow-up
+
+Commit `db69613` was pushed to `origin/main`. GitHub Actions run `36086851330` failed during installation, before the repository tests: the versioned URL `https://cli.moonbitlang.com/binaries/0.1.20260920/moonbit-linux-x86_64.tar.gz` returned HTTP 403. The earlier successful `latest` run only established the installed tool version, not that its versioned archive was published or accessible. This run therefore restores `latest` for CI, records the limitation, and leaves the toolchain pin as unresolved. No test result is inferred from the failed remote run.
