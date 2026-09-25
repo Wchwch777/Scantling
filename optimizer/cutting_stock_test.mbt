@@ -52,6 +52,35 @@ test "exact zero-remnant packing scenario" {
 }
 
 ///|
+test "kerf exact-fit and one-millimetre-over boundary for both heuristics" {
+  let stock = @core.StockMaterial::new("S10", "10 mm", 10.0, 1.0, 1.0)
+  let cfg = @core.OptimizationConfig::new(1.0, 1.0)
+  let exact = [
+    @core.DemandItem::new("A", 5.0, 1, ""),
+    @core.DemandItem::new("B", 4.0, 1, ""),
+  ]
+  let over = [@core.DemandItem::new("A", 5.0, 2, "")]
+  for
+    exact_result in [
+      solve_first_fit_decreasing(stock, exact, cfg),
+      solve_best_fit_decreasing(stock, exact, cfg),
+    ] {
+    assert_eq(exact_result.total_stocks_used, 1)
+    assert_eq(exact_result.patterns[0].remnant_length_mm, 0.0)
+    assert_eq(exact_result.patterns[0].kerf_loss_mm, 1.0)
+  }
+  for
+    over_result in [
+      solve_first_fit_decreasing(stock, over, cfg),
+      solve_best_fit_decreasing(stock, over, cfg),
+    ] {
+    assert_eq(over_result.total_stocks_used, 2)
+    assert_eq(over_result.total_demanded_length_mm, 10.0)
+    assert_eq(over_result.total_kerf_loss_mm, 0.0)
+  }
+}
+
+///|
 test "kerf loss accumulation with multiple cuts" {
   // 1 根 9000mm 原材切出 10 段 800mm 构件
   // 锯口损失 = (10 - 1) * 3 = 27mm

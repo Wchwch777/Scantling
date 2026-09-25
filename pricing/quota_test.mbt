@@ -133,3 +133,38 @@ test "independent hand-worked cost example checks formula assumptions" {
   assert_eq(cost.quota_baseline_cost, 11.1)
   assert_eq((cost.cost_saved_amount - 0.2).abs() < 1.0e-9, true)
 }
+
+///|
+test "independent cost example includes reusable credit profit and tax" {
+  // Hand calculation: 10 mm stock, 7 mm demand, 1 mm kerf, 2 mm
+  // reusable remnant. Each millimetre weighs 0.001 t. This summary is
+  // independent of the cutting-stock solver.
+  let stock = @core.StockMaterial::new("S", "synthetic", 10.0, 1000.0, 1000.0)
+  let summary = @core.OptimizationSummary::new(
+    1,
+    10.0,
+    7.0,
+    1.0,
+    2.0,
+    0.0,
+    0.1,
+    0.2,
+    [],
+  )
+  let quota = QuotaStandard::new(
+    "example", "hand worked", 100.0, 0.0, 0.0, 0.1, 0.1, 0.1,
+  )
+  let market = ScrapMarketParam::new(100.0, 0.5)
+  let cost = evaluate_cost(stock, summary, quota, market)
+
+  assert_eq(cost.scrap_recovery_income, 0.1)
+  assert_eq(cost.reusable_inventory_credit, 1.0)
+  assert_eq(cost.net_material_cost, 8.9)
+  assert_eq(cost.subtotal_direct_cost, 9.9)
+  assert_eq(cost.management_fee, 0.1)
+  assert_eq(cost.profit, 1.0)
+  assert_eq(cost.tax_amount, 1.1)
+  assert_eq(cost.total_project_cost, 12.1)
+  assert_eq((cost.comprehensive_unit_price - 12.1 / 0.007).abs() < 1.0e-9, true)
+  assert_eq((cost.quota_baseline_cost - 9.4017).abs() < 1.0e-9, true)
+}

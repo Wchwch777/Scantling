@@ -165,3 +165,29 @@ Each behavior change should follow this order:
 3. implement the change;
 4. run formatting, type checking, the full test suite, and the CLI when affected;
 5. update this log only with commands that actually ran.
+
+## 2026-09-25 10:34 — second-stage boundary and reproducibility pass
+
+This AI-assisted run began with a clean `main` at `0cc053e`. `git ls-remote --heads origin main` returned the same commit and `git rev-list --left-right --count HEAD...origin/main` returned `0 0`. The previous commits `e2fad90`, `04cba42`, and `0cc053e` and their stated verification history were inspected; no earlier change or author attribution was rewritten. The Web page remains a standalone JavaScript reference implementation and the Wasm scripts still only build MoonBit output. Neither the cost model nor the CLI regression numbers are presented as local quota, audit, site measurement, or independent proof of business correctness.
+
+The first new test showed that `validate_inputs` let a NaN stock length through: `moon test core -f 'validation rejects non-finite length and configuration values'` failed before the fix (`0 != 1`). `core/types.mbt` now returns typed errors for NaN or infinity in stock length, demand length, kerf width, and reusable threshold. That focused test then passed. This is an input boundary check; it does not prove that arbitrary finite `Double` aggregates cannot overflow or lose precision.
+
+Two further independent tests passed before any implementation change was needed: the FFD/BFD kerf test checks exact fit versus a one-millimetre excess, and a synthetic hand-calculated cost test checks reusable credit, profit, tax, and baseline without using optimizer output. The earlier small counterexample proving the heuristics need not find the global optimum and the CLI-number regression tests remain in place. The README and cost-code comments were narrowed to reflect model assumptions and current behavior.
+
+For the toolchain, GitHub Actions run `36086484531` on `ubuntu-22.04` completed successfully and reported `moon 0.1.20260920`, `moonc v0.10.14+7d59c7ec9`, and `moonrun 0.1.20260920`. The official installer accepts a version argument, so CI now requests `0.1.20260920` instead of `latest`. Direct GET requests from this Windows environment to the versioned Linux binary and core archive still returned HTTP 403; a new pinned GitHub run must establish that the versioned URLs work on the runner. The installer script URL itself is still mutable.
+
+Local verification after the edits:
+
+```text
+moon fmt                                             PASS
+moon test core -f 'validation rejects non-finite length and configuration values'  PASS 1/1
+moon test optimizer -f 'kerf exact-fit and one-millimetre-over boundary for both heuristics' PASS 1/1
+moon test pricing -f 'independent cost example includes reusable credit profit and tax' PASS 1/1
+.\scripts\ci.ps1                                    PASS; moon test 24/24, CLI and quickstart passed
+moon check --target wasm                             PASS
+moon test --target wasm                              PASS 24/24
+.\scripts\build_wasm.ps1                            PASS
+git diff --check                                     PASS (Git emitted CRLF conversion warnings)
+```
+
+Push preflight: `gh api user` returned `Wchwch777`, repository permissions reported `push: true`, the default and intended target branch is `main`, and `git ls-remote --heads origin main` still returned `0cc053e`.

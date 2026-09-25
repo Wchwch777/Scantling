@@ -78,7 +78,7 @@ pub fn ScrapMarketParam::new(
 pub struct CostBreakdown {
   net_demanded_weight_ton : Double // 清单设计净用量 (t)
   gross_procured_weight_ton : Double // 采购下料总毛重 (t)
-  actual_waste_ratio : Double // 实际切削与废料损耗率
+  actual_waste_ratio : Double // 输入排料摘要中的模型损耗率；字段名保留兼容
   material_gross_cost : Double // 原材采购金额 (元)
   scrap_recovery_income : Double // 废料残值回收冲减金额 (元)
   reusable_inventory_credit : Double // 可用余料估值折价，非实际入库 (元)
@@ -96,7 +96,7 @@ pub struct CostBreakdown {
 } derive(Debug, Eq)
 
 ///|
-/// 核心测算逻辑：将型材套裁方案映射为严格的工程造价工料机清单明细
+/// 将排料摘要映射为参数化成本明细；调用方须核验输入与项目适用性
 pub fn evaluate_cost(
   stock : @core.StockMaterial,
   summary : @core.OptimizationSummary,

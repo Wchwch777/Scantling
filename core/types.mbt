@@ -165,11 +165,15 @@ pub fn OptimizationSummary::empty() -> OptimizationSummary {
 ///|
 /// 下料工程参数边界校验异常
 pub(all) enum ValidationError {
+  StockLengthNonFinite(Double)
   StockLengthNonPositive(Double)
+  DemandLengthNonFinite(String, Double)
   DemandLengthNonPositive(String, Double)
   PieceExceedsStockLength(String, Double, Double)
   QuantityNonPositive(String, Int)
+  KerfWidthNonFinite(Double)
   InvalidKerfWidth(Double)
+  MinReusableLengthNonFinite(Double)
   MinReusableLengthNegative(Double)
 } derive(Debug, Eq)
 
@@ -181,13 +185,22 @@ pub fn validate_inputs(
   config : OptimizationConfig,
 ) -> Array[ValidationError] {
   let errors : Array[ValidationError] = []
-  if stock.length_mm <= 0.0 {
+  if stock.length_mm.is_nan() || stock.length_mm.is_inf() {
+    errors.push(ValidationError::StockLengthNonFinite(stock.length_mm))
+  } else if stock.length_mm <= 0.0 {
     errors.push(ValidationError::StockLengthNonPositive(stock.length_mm))
   }
-  if config.kerf_width_mm < 0.0 {
+  if config.kerf_width_mm.is_nan() || config.kerf_width_mm.is_inf() {
+    errors.push(ValidationError::KerfWidthNonFinite(config.kerf_width_mm))
+  } else if config.kerf_width_mm < 0.0 {
     errors.push(ValidationError::InvalidKerfWidth(config.kerf_width_mm))
   }
-  if config.min_reusable_length_mm < 0.0 {
+  if config.min_reusable_length_mm.is_nan() ||
+    config.min_reusable_length_mm.is_inf() {
+    errors.push(
+      ValidationError::MinReusableLengthNonFinite(config.min_reusable_length_mm),
+    )
+  } else if config.min_reusable_length_mm < 0.0 {
     errors.push(
       ValidationError::MinReusableLengthNegative(config.min_reusable_length_mm),
     )
@@ -196,10 +209,17 @@ pub fn validate_inputs(
     if d.quantity <= 0 {
       errors.push(ValidationError::QuantityNonPositive(d.id, d.quantity))
     }
-    if d.length_mm <= 0.0 {
+    if d.length_mm.is_nan() || d.length_mm.is_inf() {
+      errors.push(ValidationError::DemandLengthNonFinite(d.id, d.length_mm))
+    } else if d.length_mm <= 0.0 {
       errors.push(ValidationError::DemandLengthNonPositive(d.id, d.length_mm))
     }
-    if stock.length_mm > 0.0 && d.length_mm > stock.length_mm {
+    if !stock.length_mm.is_nan() &&
+      !stock.length_mm.is_inf() &&
+      stock.length_mm > 0.0 &&
+      !d.length_mm.is_nan() &&
+      !d.length_mm.is_inf() &&
+      d.length_mm > stock.length_mm {
       errors.push(
         ValidationError::PieceExceedsStockLength(
           d.id,

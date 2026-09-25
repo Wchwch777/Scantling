@@ -53,3 +53,53 @@ test "empty summary constructor defaults" {
   assert_eq(empty.total_demanded_length_mm, 0.0)
   assert_eq(empty.patterns.length(), 0)
 }
+
+///|
+test "validation rejects non-finite length and configuration values" {
+  let valid_stock = StockMaterial::new("S", "stock", 10.0, 1.0, 1.0)
+  let valid_demand = [DemandItem::new("D", 2.0, 1, "")]
+  let valid_config = OptimizationConfig::new(0.0, 1.0)
+  let nan = 0.0 / 0.0
+  let infinity = 1.0 / 0.0
+
+  assert_eq(
+    validate_inputs(
+      StockMaterial::new("S", "stock", nan, 1.0, 1.0),
+      valid_demand,
+      valid_config,
+    ).length(),
+    1,
+  )
+  assert_eq(
+    validate_inputs(
+      StockMaterial::new("S", "stock", infinity, 1.0, 1.0),
+      valid_demand,
+      valid_config,
+    ).length(),
+    1,
+  )
+  assert_eq(
+    validate_inputs(
+      valid_stock,
+      [DemandItem::new("D", nan, 1, "")],
+      valid_config,
+    ).length(),
+    1,
+  )
+  assert_eq(
+    validate_inputs(
+      valid_stock,
+      valid_demand,
+      OptimizationConfig::new(infinity, 1.0),
+    ).length(),
+    1,
+  )
+  assert_eq(
+    validate_inputs(
+      valid_stock,
+      valid_demand,
+      OptimizationConfig::new(0.0, nan),
+    ).length(),
+    1,
+  )
+}
