@@ -130,7 +130,7 @@ function runOptimization() {
   const wasteRatio = totalStockLength > 0 ? (totalKerf + totalScrap) / totalStockLength : 0;
   const reusableRatio = totalStockLength > 0 ? totalReusable / totalStockLength : 0;
 
-  // 造价核算 (遵循 GB 50500 规则)
+  // 参数化造价演示；费率和价格为输入假设，并非地方定额核验。
   const factor = (unitWeight / 1000) / 1000;
   const netWeight = totalDemanded * factor;
   const grossWeight = totalStockLength * factor;
@@ -191,7 +191,7 @@ function runOptimization() {
     div.innerHTML = `
       <div class="pattern-header">
         <span><strong>母材 #${i + 1}</strong> (${stockLen} mm)</span>
-        <span>${b.cuts.length} 个切段 | 剩余: ${Math.round(b.remnant)} mm (${b.isReusable ? '<span style="color:var(--green)">可复用入库</span>' : '<span style="color:var(--rose)">废料残渣</span>'})</span>
+        <span>${b.cuts.length} 个切段 | 剩余: ${Math.round(b.remnant)} mm (${b.isReusable ? '<span style="color:var(--green)">可复用（模型分类）</span>' : '<span style="color:var(--rose)">废料残渣</span>'})</span>
       </div>
       ${trackHtml}
     `;

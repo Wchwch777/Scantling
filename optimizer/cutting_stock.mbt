@@ -192,7 +192,7 @@ fn solve_best_fit_decreasing_unchecked(
   let bars : Array[BarState] = []
   for piece in pieces {
     let mut best_index = -1
-    let mut min_remaining_after = 1.0e12
+    let mut min_remaining_after = 0.0
 
     for i = 0; i < bars.length(); i = i + 1 {
       let bar = bars[i]
@@ -203,7 +203,7 @@ fn solve_best_fit_decreasing_unchecked(
           0.0
         }
         let space_after = bar.remaining_space() - piece.length_mm - extra_kerf
-        if space_after < min_remaining_after {
+        if best_index < 0 || space_after < min_remaining_after {
           min_remaining_after = space_after
           best_index = i
         }

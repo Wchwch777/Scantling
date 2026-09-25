@@ -90,6 +90,50 @@ bars, 0.05% waste, 3,491 mm reusable remnant, and a parameterized net material
 cost of `222.741759625` yuan. These numbers are demonstration outputs, not a
 claim about a real project or a globally optimal plan.
 
+## 2026-09-25 — initial review remediation, AI-assisted run
+
+At the start of this run, `main` and `origin/main` both pointed to `c4485f0`; `git status --short --branch` showed a clean working tree. `git fetch origin --prune` succeeded and `git rev-list --left-right --count HEAD...origin/main` returned `0 0`. No history was rewritten. This entry records an AI-assisted review and edits; it does not assert that a human has reviewed or approved this run.
+
+Issue and evidence baseline:
+
+1. **Public claims:** README and specifications asserted high precision/performance, GB 50500 compliance, unsupported field loss percentages, and a theoretical approximation bound. The retrospective asserted millisecond feedback and zero floating-point overflow. Those claims lacked an independent benchmark, compliance review, or numerical proof. They were removed or narrowed; the implementation uses `Double`.
+2. **Heuristic boundary:** `optimizer/cutting_stock.mbt` runs FFD/BFD and selects by bar count, then scrap length. A small exact example in the tests has a feasible two-bar packing while both heuristics use three; the algorithm makes no global-optimum claim. The BFD `1.0e12` sentinel caused a valid synthetic large-scale case to use two bars instead of one; selecting the first feasible bar without a fixed sentinel corrected it. Tests also check piece count and length conservation with kerf.
+3. **Pricing scope:** `pricing/quota.mbt` applies configurable prices, rates, loss assumptions, and remnant credits. It has no local quota database, audit evidence, or actual inventory/transaction records. README, specifications, CLI labels, Web labels, and code comments now describe assumptions and model estimates. A hand-worked synthetic cost test is independent of the optimizer but does not validate local rules.
+4. **Web/Wasm:** `web/app.js` contains a standalone JavaScript calculation; `scripts/build_wasm.*` only build MoonBit Wasm. The page badge and architecture diagram now state that split. No cross-language parity test or browser Wasm integration is claimed.
+5. **Toolchain:** `.github/workflows/ci.yml` installs `latest`, so CI can drift. The upstream installer inspected during this run accepts a version argument. HEAD requests for the local `0.1.20260827` Linux binary and core returned HTTP 403 in this environment; availability of that pinned pair was not established. CI remains on `latest` pending a verified version and Linux run.
+6. **Benchmark tests:** the existing CLI-number tests lock current deterministic outputs only. README now says they do not independently establish domain correctness, optimality, or field results.
+7. **Provenance:** `AI_ASSISTED.md` and earlier log entries were kept. This run did not fabricate authorship, dates, results, or a human review. The repository owner should review the domain assumptions before relying on the model.
+
+Targeted verification during the edit:
+
+```text
+moon test optimizer -f 'best fit considers a valid bar above one trillion mm'  FAIL before fix: 2 != 1
+moon test optimizer -f 'best fit considers a valid bar above one trillion mm'  PASS after fix: 1/1
+moon test optimizer -f 'heuristic winner preserves pieces and physical length' PASS: 1/1
+moon test optimizer -f 'FFD and BFD are not globally optimal on a small exact instance' PASS: 1/1
+moon test pricing -f 'independent hand-worked cost example checks formula assumptions' PASS: 1/1
+moon fmt --check  FAIL on formatting of newly added tests
+moon fmt          PASS
+```
+
+The first full pass then returned `moon fmt --check` PASS, `moon check` PASS, `moon test` 21/21 PASS, `moon run cmd` PASS, `moon run examples/quickstart` PASS, `moon check --target wasm` PASS, and `moon test --target wasm` 21/21 PASS. That CLI run revealed the remaining GB 50500 compliance claim in its output, which was corrected afterward. Other tests appeared in this shared working tree during the run; they were retained and verified, without assigning human authorship to them.
+
+Final local verification after CLI and quickstart label correction:
+
+```text
+moon fmt                                  PASS
+moon fmt --check                          PASS
+moon check                                PASS
+moon test                                 21 passed, 0 failed
+moon run cmd                              PASS; output labels identify model assumptions
+moon run examples/quickstart              PASS
+moon check --target wasm                  PASS
+moon test --target wasm                   21 passed, 0 failed
+git diff --check                          PASS (Git printed CRLF conversion warnings)
+```
+
+Push preflight: `gh api user` reported authenticated login `2515050242`; the configured Git author was `Wchwch <1341376491@qq.com>`, which this AI run must not impersonate. The target remote was `https://github.com/Wchwch777/Scantling.git`, its default branch was `main`, and `git ls-remote --heads origin main` still returned `c4485f0`. The GitHub repository permissions response reported `push: false` for the authenticated account. A new commit for this run therefore uses an explicit AI-assisted author identity. The push attempt and result are reported in the automation response.
+
 ## Verification policy for future changes
 
 Each behavior change should follow this order:

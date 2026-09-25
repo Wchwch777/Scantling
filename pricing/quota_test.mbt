@@ -99,3 +99,37 @@ test "illustrative CLI cost benchmark is reproducible" {
   )
   assert_eq((cost.cost_saved_amount + 33.19268980046263).abs() < 1.0e-9, true)
 }
+
+///|
+test "independent hand-worked cost example checks formula assumptions" {
+  // 10 mm stock, 8 mm demand, 1 mm kerf and 1 mm scrap. At 1000 kg/m,
+  // each mm is 0.001 t. This summary is deliberately not from optimizer.
+  let stock = @core.StockMaterial::new("S", "synthetic", 10.0, 1000.0, 1000.0)
+  let summary = @core.OptimizationSummary::new(
+    1,
+    10.0,
+    8.0,
+    1.0,
+    0.0,
+    1.0,
+    0.2,
+    0.0,
+    [],
+  )
+  let quota = QuotaStandard::new(
+    "example", "hand worked", 100.0, 0.0, 0.25, 0.1, 0.0, 0.0,
+  )
+  let market = ScrapMarketParam::new(100.0, 0.0)
+  let cost = evaluate_cost(stock, summary, quota, market)
+  assert_eq(cost.net_demanded_weight_ton, 0.008)
+  assert_eq(cost.gross_procured_weight_ton, 0.01)
+  assert_eq(cost.material_gross_cost, 10.0)
+  assert_eq(cost.scrap_recovery_income, 0.2)
+  assert_eq(cost.net_material_cost, 9.8)
+  assert_eq(cost.labor_cost, 1.0)
+  assert_eq(cost.management_fee, 0.1)
+  assert_eq(cost.total_project_cost, 10.9)
+  assert_eq(cost.comprehensive_unit_price, 1362.5)
+  assert_eq(cost.quota_baseline_cost, 11.1)
+  assert_eq((cost.cost_saved_amount - 0.2).abs() < 1.0e-9, true)
+}

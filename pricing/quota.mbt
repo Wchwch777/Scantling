@@ -1,16 +1,16 @@
 // Copyright 2026 Scantling Authors
 // Licensed under Apache-2.0
 //
-// 建筑工程全要素清单计价与工料机定额演算引擎
+// 参数化材料、人工、机具与费率成本演算
 
 ///|
-/// 清单定额基价与取费费率标准 (符合现行建设工程工程量清单计价规范)
+/// 演示用价格、损耗率与费率参数；调用方须按项目规则核验
 pub struct QuotaStandard {
   item_code : String // 清单项目编码 (如 "010515001001")
   item_name : String // 项目名称 (如 "现浇构件螺纹钢筋制作与绑扎")
   labor_unit_cost : Double // 人工费综合基价 (元/t)
   machinery_unit_cost : Double // 施工机具使用费综合基价 (元/t)
-  standard_loss_rate : Double // 国家定额标准允许损耗率 (如 0.025 代表 2.5%)
+  standard_loss_rate : Double // 假设基线损耗率 (如 0.025 代表 2.5%)
   management_rate : Double // 企业管理费费率 (如 0.08 代表 8%)
   profit_rate : Double // 利润率 (如 0.05 代表 5%)
   tax_rate : Double // 建筑业增值税率 (如 0.09 代表 9%)
@@ -74,25 +74,25 @@ pub fn ScrapMarketParam::new(
 }
 
 ///|
-/// 工程造价全要素明细核算单
+/// 参数化成本明细
 pub struct CostBreakdown {
   net_demanded_weight_ton : Double // 清单设计净用量 (t)
   gross_procured_weight_ton : Double // 采购下料总毛重 (t)
   actual_waste_ratio : Double // 实际切削与废料损耗率
   material_gross_cost : Double // 原材采购金额 (元)
   scrap_recovery_income : Double // 废料残值回收冲减金额 (元)
-  reusable_inventory_credit : Double // 可用余料结存入库折价 (元)
+  reusable_inventory_credit : Double // 可用余料估值折价，非实际入库 (元)
   net_material_cost : Double // 冲减后材料净成本 (元)
-  labor_cost : Double // 定额人工费 (元)
-  machinery_cost : Double // 定额机械台班费 (元)
+  labor_cost : Double // 按输入单价计算的人工费 (元)
+  machinery_cost : Double // 按输入单价计算的机具费 (元)
   subtotal_direct_cost : Double // 直接工程费小计 (元)
   management_fee : Double // 企业管理费 (元)
   profit : Double // 企业利润 (元)
   tax_amount : Double // 建筑业增值税金 (元)
   total_project_cost : Double // 综合工程总造价 (含税, 元)
   comprehensive_unit_price : Double // 清单综合单价 (元/t 净重)
-  quota_baseline_cost : Double // 行业定额常规造价基线 (元)
-  cost_saved_amount : Double // 与当前参数化定额基线的成本差额，正值才表示节约 (元)
+  quota_baseline_cost : Double // 按输入损耗率计算的假设基线 (元)
+  cost_saved_amount : Double // 假设基线减模型成本，正值不证明现场节约 (元)
 } derive(Debug, Eq)
 
 ///|
@@ -148,7 +148,7 @@ pub fn evaluate_cost(
     0.0
   }
 
-  // 7. 定额常规基线造价对比 (按行业定额允许损耗率进行采购测算)
+  // 7. 按输入损耗率构造假设基线，用于模型内部对比
   let baseline_weight_ton = net_demanded_weight_ton *
     (1.0 + quota.standard_loss_rate)
   let baseline_mat_cost = baseline_weight_ton * stock.cost_per_ton

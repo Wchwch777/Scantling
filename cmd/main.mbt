@@ -26,21 +26,19 @@ fn main {
   println("  ___) | (_| (_| | | | | |_| | | | | | (_| |")
   println(" |____/ \\___\\__,_|_| |_|\\__|_|_|_| |_|\\__, |")
   println("                                      |___/ ")
-  println("  Scantling: Construction Cutting-Stock & Cost Quota Engine")
-  println(
-    "  建筑工程型材套裁优化与综合单价清单测算控制台",
-  )
+  println("  Scantling: Cutting-Stock Heuristics & Cost Model")
+  println("  一维型材套裁与参数化成本演示控制台")
   print_separator()
 
   // 1. 工程基础输入数据设定
-  // 模拟工程：某商业综合体地下室基础底板与框架柱 (KZ1~KZ4) 螺纹钢下料
+  // 演示假设：框架柱梁切件，并非真实工程记录
   let stock = @core.StockMaterial::new(
     "HRB400E-D25", "三级抗震热轧带肋螺纹钢 Φ25", 9000.0, // 9米标准定尺
      3.85, // 理论重量 3.85 kg/m
      3850.0, // 原材市场采购单价 3850 元/t
   )
 
-  let cfg = @core.OptimizationConfig::new(3.0, 800.0) // 3mm 锯口，800mm 以上余料计为入库复用
+  let cfg = @core.OptimizationConfig::new(3.0, 800.0) // 3mm 锯口，800mm 以上余料计为可复用
 
   let demands = [
     @core.DemandItem::new("KZ-01", 3800.0, 8, "框架柱基础插筋"),
@@ -130,7 +128,11 @@ fn main {
   println("  排料版样明细 (Cutting Patterns Visualizer):")
   for i = 0; i < summary.patterns.length(); i = i + 1 {
     let p = summary.patterns[i]
-    let rem_status = if p.is_reusable { "可复用入库" } else { "废料" }
+    let rem_status = if p.is_reusable {
+      "可复用（模型分类）"
+    } else {
+      "废料"
+    }
     println("  母材 #" + (i + 1).to_string() + ":")
     let mut pattern_str = "    ["
     for j = 0; j < p.cuts.length(); j = j + 1 {
@@ -154,15 +156,13 @@ fn main {
   }
   print_subseparator()
 
-  // 4. 清单综合单价与工程全要素造价核算
-  println(
-    "[3/3] 正在挂接定额基价标准，测算工程全要素造价清单...",
-  )
+  // 4. 参数化综合单价与成本演算
+  println("[3/3] 按演示费率与价格假设计算参数化成本...")
   let quota = @pricing.QuotaStandard::default_rebar()
   let scrap_mkt = @pricing.ScrapMarketParam::default()
   let cost = @pricing.evaluate_cost(stock, summary, quota, scrap_mkt)
 
-  println("  全要素造价明细表 (依据 GB 50500 现行计价标准):")
+  println("  参数化成本明细表（非当地定额或合规审查）:")
   println(
     "    - 清单设计净用量:       " +
     cost.net_demanded_weight_ton.to_string() +
@@ -179,12 +179,12 @@ fn main {
     " 元",
   )
   println(
-    "    - 冲减: 废料残渣回收款: -" +
+    "    - 冲减: 废料回收估值: -" +
     cost.scrap_recovery_income.to_string() +
     " 元",
   )
   println(
-    "    - 冲减: 余料结存折价:   -" +
+    "    - 冲减: 余料复用估值:   -" +
     cost.reusable_inventory_credit.to_string() +
     " 元",
   )
@@ -194,7 +194,7 @@ fn main {
     " 元",
   )
   println(
-    "    - 人工费 (定额安装):    " + cost.labor_cost.to_string() + " 元",
+    "    - 人工费 (输入假设):    " + cost.labor_cost.to_string() + " 元",
   )
   println(
     "    - 施工机具使用费:       " +
@@ -224,12 +224,12 @@ fn main {
     " 元/吨",
   )
   println(
-    "  ★ 定额常规基准造价:     " +
+    "  ★ 假设基线造价:         " +
     cost.quota_baseline_cost.to_string() +
     " 元",
   )
   println(
-    "  ★ 与定额基线成本差额:     " +
+    "  ★ 与假设基线成本差额:     " +
     cost.cost_saved_amount.to_string() +
     " 元",
   )

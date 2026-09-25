@@ -64,7 +64,7 @@ fn main {
     cost.comprehensive_unit_price.to_string() + " yuan/t",
   )
   print_metric(
-    "quota baseline difference",
+    "assumed baseline difference",
     cost.cost_saved_amount.to_string() + " yuan",
   )
   println("Demo completed successfully.")

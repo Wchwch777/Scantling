@@ -14,4 +14,4 @@ keywords = [
   "wasm",
 ]
 
-description = "High-performance profile cutting stock optimizer and construction cost estimation engine"
+description = "FFD/BFD profile cutting stock heuristics and a parameterized cost model"

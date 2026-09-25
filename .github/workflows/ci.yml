@@ -11,7 +11,9 @@ jobs:
     steps:
       - name: Check out sources
         uses: actions/checkout@v4
-      - name: Install stable MoonBit
+      # The installer accepts a version argument. Keep this on latest until a
+      # Linux toolchain/core pair is verified and recorded in the development log.
+      - name: Install MoonBit toolchain
         shell: bash
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s latest

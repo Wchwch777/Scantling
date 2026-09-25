@@ -95,6 +95,52 @@ test "checked optimizer rejects invalid input" {
 }
 
 ///|
+test "best fit considers a valid bar above one trillion mm" {
+  // Synthetic scale boundary: remaining space after placement exceeds 1e12.
+  let stock = @core.StockMaterial::new(
+    "S-Large", "synthetic stock", 5000000000000.0, 1.0, 1.0,
+  )
+  let cfg = @core.OptimizationConfig::new(0.0, 0.0)
+  let demands = [
+    @core.DemandItem::new("D-Large", 1500000000000.0, 2, "synthetic cuts"),
+  ]
+
+  let result = solve_best_fit_decreasing(stock, demands, cfg)
+  assert_eq(result.total_stocks_used, 1)
+  assert_eq(result.patterns[0].cuts.length(), 2)
+  assert_eq(result.patterns[0].remnant_length_mm, 2000000000000.0)
+}
+
+///|
+test "heuristic winner preserves pieces and physical length" {
+  let stock = @core.StockMaterial::new("S-Rule", "stock", 10.0, 1.0, 1.0)
+  let cfg = @core.OptimizationConfig::new(1.0, 3.0)
+  let demands = [
+    @core.DemandItem::new("A", 6.0, 1, "long"),
+    @core.DemandItem::new("B", 3.0, 2, "short"),
+    @core.DemandItem::new("C", 2.0, 1, "shorter"),
+  ]
+  let result = optimize_cutting_stock(stock, demands, cfg)
+  let ffd = solve_first_fit_decreasing(stock, demands, cfg)
+  let bfd = solve_best_fit_decreasing(stock, demands, cfg)
+  assert_eq(result.total_stocks_used <= ffd.total_stocks_used, true)
+  assert_eq(result.total_stocks_used <= bfd.total_stocks_used, true)
+  let mut placed = 0
+  let mut consumed = 0.0
+  for pattern in result.patterns {
+    placed = placed + pattern.cuts.length()
+    assert_eq(
+      pattern.used_length_mm + pattern.kerf_loss_mm + pattern.remnant_length_mm,
+      pattern.stock_length_mm,
+    )
+    assert_eq(pattern.remnant_length_mm >= 0.0, true)
+    consumed = consumed + pattern.used_length_mm
+  }
+  assert_eq(placed, 4)
+  assert_eq(consumed, 14.0)
+}
+
+///|
 test "illustrative CLI benchmark is reproducible" {
   let stock = @core.StockMaterial::new(
     "HRB400E-D25", "螺纹钢Φ25", 9000.0, 3.85, 3850.0,
@@ -116,5 +162,76 @@ test "illustrative CLI benchmark is reproducible" {
       assert_eq(result.total_reusable_length_mm, 11255.0)
       assert_eq(result.total_scrap_length_mm, 873.0)
     }
+  }
+}
+
+///|
+test "FFD and BFD are not globally optimal on a small exact instance" {
+  // Total demand is 20, so two 10 mm bars are a lower bound and feasible:
+  // (6 + 2 + 2) and (5 + 3 + 2). Both decreasing heuristics use three.
+  let stock = @core.StockMaterial::new("S10", "10 mm", 10.0, 1.0, 1.0)
+  let cfg = @core.OptimizationConfig::new(0.0, 1.0)
+  let demands = [
+    @core.DemandItem::new("6", 6.0, 1, ""),
+    @core.DemandItem::new("5", 5.0, 1, ""),
+    @core.DemandItem::new("3", 3.0, 1, ""),
+    @core.DemandItem::new("2", 2.0, 3, ""),
+  ]
+  assert_eq(
+    solve_first_fit_decreasing(stock, demands, cfg).total_stocks_used,
+    3,
+  )
+  assert_eq(solve_best_fit_decreasing(stock, demands, cfg).total_stocks_used, 3)
+  assert_eq(optimize_cutting_stock(stock, demands, cfg).total_stocks_used, 3)
+}
+
+///|
+test "BFD considers feasible remaining space above one trillion mm" {
+  let stock = @core.StockMaterial::new(
+    "Huge", "synthetic boundary", 4.0e12, 1.0, 1.0,
+  )
+  let cfg = @core.OptimizationConfig::new(0.0, 1.0)
+  let demands = [@core.DemandItem::new("D", 1.0, 2, "")]
+  let result = solve_best_fit_decreasing(stock, demands, cfg)
+  assert_eq(result.total_stocks_used, 1)
+  assert_eq(result.patterns[0].cuts.length(), 2)
+}
+
+///|
+test "heuristic patterns conserve stock length with kerf" {
+  let stock = @core.StockMaterial::new("S", "9m", 9000.0, 1.0, 1.0)
+  let cfg = @core.OptimizationConfig::new(3.0, 800.0)
+  let demands = [
+    @core.DemandItem::new("A", 4000.0, 2, ""),
+    @core.DemandItem::new("B", 1000.0, 2, ""),
+  ]
+  let summaries = [
+    solve_first_fit_decreasing(stock, demands, cfg),
+    solve_best_fit_decreasing(stock, demands, cfg),
+  ]
+  for summary in summaries {
+    let mut cuts = 0
+    for pattern in summary.patterns {
+      cuts = cuts + pattern.cuts.length()
+      assert_eq(
+        pattern.used_length_mm +
+        pattern.kerf_loss_mm +
+        pattern.remnant_length_mm,
+        9000.0,
+      )
+      assert_eq(pattern.remnant_length_mm >= 0.0, true)
+      assert_eq(
+        pattern.kerf_loss_mm,
+        (pattern.cuts.length() - 1).to_double() * 3.0,
+      )
+    }
+    assert_eq(cuts, 4)
+    assert_eq(
+      summary.total_demanded_length_mm +
+      summary.total_kerf_loss_mm +
+      summary.total_reusable_length_mm +
+      summary.total_scrap_length_mm,
+      summary.total_stock_length_mm,
+    )
   }
 }
