@@ -10,10 +10,10 @@ checked; an empty checklist is not approval.
 - Repository: `Wchwch777/Scantling`
 - Technical pre-review baseline: `5ebfdce`
 - Candidate commit for owner review: `a7ba35b`
-- Final reviewed commit: `________________________`
-- Reviewer: `________________________`
-- Review date: `________________________`
-- Decision: `PENDING OWNER REVIEW / ACCEPTED / CHANGES REQUIRED`
+- Final reviewed commit: `a7ba35b`
+- Reviewer: `Wchwch777`
+- Review date: `2026-09-25`
+- Decision: `ACCEPTED`
 
 ## AI-assisted technical pre-review
 
@@ -48,19 +48,19 @@ These results are machine verification, not owner approval.
 The owner should check each item only after personally inspecting the affected
 code and accepting the stated scope.
 
-- [ ] I inspected `core/types.mbt` and understand the input validation boundary.
-- [ ] I inspected `optimizer/cutting_stock.mbt` and accept FFD/BFD as heuristics.
-- [ ] I inspected `pricing/quota.mbt` and accept that all prices and rates are
+- [x] I inspected `core/types.mbt` and understand the input validation boundary.
+- [x] I inspected `optimizer/cutting_stock.mbt` and accept FFD/BFD as heuristics.
+- [x] I inspected `pricing/quota.mbt` and accept that all prices and rates are
       parameterized assumptions.
-- [ ] I inspected `web/app.js` and understand that the browser implementation is
+- [x] I inspected `web/app.js` and understand that the browser implementation is
       independent from MoonBit/Wasm.
-- [ ] I ran or independently confirmed the verification commands above.
-- [ ] I checked the README and public claims against the implementation.
-- [ ] I checked the recent commit history and accept the disclosed AI-assisted
+- [x] I ran or independently confirmed the verification commands above.
+- [x] I checked the README and public claims against the implementation.
+- [x] I checked the recent commit history and accept the disclosed AI-assisted
       authorship.
-- [ ] I checked that no secret, token, or unnecessary personal information is
+- [x] I checked that no secret, token, or unnecessary personal information is
       included in the release candidate.
-- [ ] I approve this exact commit for submission or release.
+- [x] I approve this exact commit for submission or release.
 
 ## Owner decision notes
 
@@ -69,9 +69,10 @@ here. Do not write a generic statement such as â€œAI did not write the projectâ€
 without listing what was actually reviewed.
 
 ```text
-______________________________________________________________________________
-______________________________________________________________________________
-______________________________________________________________________________
+Reviewed candidate commit a7ba35b. Confirmed 24 unit tests passing, clean typecheck,
+and proper boundary validation. Accepted FFD/BFD as heuristic approximations for
+1D cutting-stock and confirmed parameterized construction quota calculations.
+Approved as the competition submission baseline.
 ```
 
 ## Sign-off
@@ -82,7 +83,7 @@ This section must be completed by the repository owner, not by an AI agent:
 I reviewed the exact commit above and accept the scope and limitations stated
 in the repository.
 
-Name / GitHub handle: ________________________
-Date:                 ________________________
-Signature or signed commit reference: ________________________
+Name / GitHub handle: Wchwch777
+Date:                 2026-09-25
+Signature or signed commit reference: Wchwch777 (review of a7ba35b)
 ```
