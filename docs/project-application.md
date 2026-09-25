@@ -6,8 +6,8 @@
 
 - **项目名称**：Scantling：一维型材套裁启发式与参数化造价模型
 - **英文名称**：Scantling: MoonBit Cutting-Stock Heuristics & Parameterized Cost Model
-- **参赛者 / 团队**：Wchwch777（请按报名系统填写真实姓名或团队名称）
-- **联系方式**：请填写报名使用的有效联系方式
+- **参赛者 / 团队**：韦昌豪（GitHub: Wchwch777）
+- **联系方式**：手机：18260898003 ｜ 邮箱：1341376491@qq.com
 - **GitHub 仓库链接**：<https://github.com/Wchwch777/Scantling>
 - **项目方向**：MoonBit 工程优化、型材下料算法与可解释成本模型
 - **实现语言**：MoonBit；浏览器演示使用独立 JavaScript 参考实现
