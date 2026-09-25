@@ -134,6 +134,7 @@ bash scripts/build_wasm.sh
 scantling/
 ├── .github/workflows/      # GitHub Actions CI 自动化流水线
 │   └── ci.yml              # 持续集成检测 (Format + Typecheck + Test)
+├── .github/PULL_REQUEST_TEMPLATE.md # 人工审查与发布门禁清单
 ├── core/                   # 领域实体模型与强类型参数校验器
 │   ├── types.mbt           # Stock, Demand, Pattern, ValidationError
 │   ├── types_test.mbt      # 实体构建与异常边界防御测试
@@ -151,7 +152,8 @@ scantling/
 ├── web/                    # 纯前端交互工作台 (支持离线与本地浏览器直接运行)
 ├── docs/                   # 专业工程文档
 │   ├── specifications.md   # 1D-CSP 数学模型与造价计算标准公式推导
-│   └── retrospective.md    # 架构选型权衡与技术演进回顾
+│   ├── retrospective.md    # 架构选型权衡与技术演进回顾
+│   └── human-review-record.md # 当前提交的人工审查记录
 ├── scripts/                # 自动化构建脚本 (Wasm 构建)
 │   ├── build_wasm.sh
 │   ├── build_wasm.ps1
@@ -165,7 +167,7 @@ scantling/
 
 ## 🔍 开发透明度 (Development Transparency)
 
-项目采用人工主导、AI 辅助的开发方式。AI 可用于 API 查询、重复性代码草拟、边界用例枚举和编译诊断，但领域决策、公开声明和验收结果由项目维护者审核确认。详见 [AI_ASSISTED.md](AI_ASSISTED.md) 与 [docs/development-log.md](docs/development-log.md)。
+项目采用人工主导、AI 辅助的开发方式。仓库保留真实的 AI 辅助提交归属，不通过改写历史制造人工作者。发布或提交前，项目维护者需要按 [docs/human-review-record.md](docs/human-review-record.md) 逐项检查并确认当前提交；[AI_ASSISTED.md](AI_ASSISTED.md) 与 [docs/development-log.md](docs/development-log.md) 记录辅助边界和实际验证过程。
 
 ---
 
