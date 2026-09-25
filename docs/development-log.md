@@ -197,3 +197,19 @@ Push preflight: `gh api user` returned `Wchwch777`, repository permissions repor
 Commit `db69613` was pushed to `origin/main`. GitHub Actions run `36086851330` failed during installation, before the repository tests: the versioned URL `https://cli.moonbitlang.com/binaries/0.1.20260920/moonbit-linux-x86_64.tar.gz` returned HTTP 403. The earlier successful `latest` run only established the installed tool version, not that its versioned archive was published or accessible. This run therefore restores `latest` for CI, records the limitation, and leaves the toolchain pin as unresolved. No test result is inferred from the failed remote run.
 
 Commit `b3fc382` with that restoration was pushed to `origin/main`. GitHub Actions run `36086911746` completed successfully: the runner installed `moon 0.1.20260920` and `moonc v0.10.14+7d59c7ec9`, ran the repository verification with 24/24 tests passing, and completed the Wasm build. The same tool version reported by `latest` is still not a reproducible pin; a future archive or other verified distribution method is required for that.
+
+## 2026-09-25 16:01 — follow-up wrapper failure propagation
+
+The scheduled follow-up began from the clean `main` checkout at `cd71171`, which was already aligned with `origin/main`. The prior acceptance identified that `scripts/ci.ps1` and `scripts/build_wasm.ps1` could print success after a native `moon` command returned a non-zero exit code. This was a real verification risk, so the wrappers now check `$LASTEXITCODE` after every MoonBit invocation and throw with the failed command and exit code. No application behavior or public capability claim changed.
+
+Focused verification used a temporary fake `moon.cmd` returning exit code 17. Both wrappers stopped at the first command, reported exit code 17, and returned exit code 1; neither printed a success banner. Both scripts also passed PowerShell parsing. The fake command was removed after the check.
+
+Full verification after the edit:
+
+```text
+.\scripts\ci.ps1        PASS; moon fmt/check, 24/24 tests, CLI, quickstart
+.\scripts\build_wasm.ps1 PASS; Wasm build complete
+node --check web/app.js PASS
+```
+
+The repository remains on the intentionally documented `latest` MoonBit installer because the previous verified versioned Linux archive attempt returned HTTP 403. This run did not claim a fixed toolchain. The local Git identity remains `Codex AI-assisted <codex-ai-assisted@localhost>`; no authorship or history was fabricated.

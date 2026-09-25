@@ -1,18 +1,30 @@
 $ErrorActionPreference = "Stop"
 
+function Invoke-MoonChecked {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    & moon @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "moon $($Arguments -join ' ') failed with exit code $LASTEXITCODE"
+    }
+}
+
 Write-Host "[Scantling CI] Checking code formatting..."
-moon fmt --check
+Invoke-MoonChecked @("fmt", "--check")
 
 Write-Host "[Scantling CI] Typechecking project..."
-moon check
+Invoke-MoonChecked @("check")
 
 Write-Host "[Scantling CI] Running the test suite..."
-moon test
+Invoke-MoonChecked @("test")
 
 Write-Host "[Scantling CI] Verifying CLI terminal execution..."
-moon run cmd
+Invoke-MoonChecked @("run", "cmd")
 
 Write-Host "[Scantling CI] Verifying public API quickstart demo..."
-moon run examples/quickstart
+Invoke-MoonChecked @("run", "examples/quickstart")
 
 Write-Host "[Scantling CI] All verification checks passed successfully!"
