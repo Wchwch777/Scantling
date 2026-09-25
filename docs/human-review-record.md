@@ -9,6 +9,7 @@ checked; an empty checklist is not approval.
 
 - Repository: `Wchwch777/Scantling`
 - Technical pre-review baseline: `5ebfdce`
+- Candidate commit for owner review: `a7ba35b`
 - Final reviewed commit: `________________________`
 - Reviewer: `________________________`
 - Review date: `________________________`
