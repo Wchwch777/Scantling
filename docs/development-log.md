@@ -134,6 +134,28 @@ git diff --check                          PASS (Git printed CRLF conversion warn
 
 Push preflight: `gh api user` reported authenticated login `2515050242`; the configured Git author was `Wchwch <1341376491@qq.com>`, which this AI run must not impersonate. The target remote was `https://github.com/Wchwch777/Scantling.git`, its default branch was `main`, and `git ls-remote --heads origin main` still returned `c4485f0`. The GitHub repository permissions response reported `push: false` for the authenticated account. Commit `e2fad90` used the explicit author `Codex AI-assisted <codex-ai-assisted@localhost>` and did not rewrite history. `git push origin main` was attempted and failed with HTTP 403: `Permission to Wchwch777/Scantling.git denied to 2515050242`. This log update records that outcome as a second commit rather than changing the first commit.
 
+## 2026-09-25 10:29 — scheduled second-stage recheck
+
+This scheduled run started from a clean worktree at `04cba42`, and `git fetch origin --prune` confirmed that `main` and `origin/main` were identical. Existing remediation commits were not repeated and no history was rewritten.
+
+The local toolchain was recorded as `moon 0.1.20260827`, `moonc v0.10.11+6ff76a5f9`, and `moonrun 0.1.20260827`. Requests for the matching Linux binary and core archives returned HTTP 403 from `cli.moonbitlang.com`, so the workflow remains on `latest`; pinning an unverified Linux pair would reduce rather than improve reproducibility. This limitation remains explicit in the CI comment and this log.
+
+Verification actually run in this scheduled pass:
+
+```text
+.\scripts\ci.ps1                     PASS
+  moon fmt --check                    PASS
+  moon check                          PASS
+  moon test                           21 passed, 0 failed
+  moon run cmd                        PASS
+  moon run examples/quickstart        PASS
+moon test --target wasm               21 passed, 0 failed
+.\scripts\build_wasm.ps1             PASS
+git diff --check                      PASS
+```
+
+The CLI output continues to label the cost result as a parameterized model and the quickstart continues to call FFD/BFD a heuristic. No new code change was justified by this recheck; the only change from this scheduled run is this factual log entry.
+
 ## Verification policy for future changes
 
 Each behavior change should follow this order:
