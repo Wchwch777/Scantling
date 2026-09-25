@@ -132,7 +132,7 @@ moon test --target wasm                   21 passed, 0 failed
 git diff --check                          PASS (Git printed CRLF conversion warnings)
 ```
 
-Push preflight: `gh api user` reported authenticated login `2515050242`; the configured Git author was `Wchwch <1341376491@qq.com>`, which this AI run must not impersonate. The target remote was `https://github.com/Wchwch777/Scantling.git`, its default branch was `main`, and `git ls-remote --heads origin main` still returned `c4485f0`. The GitHub repository permissions response reported `push: false` for the authenticated account. A new commit for this run therefore uses an explicit AI-assisted author identity. The push attempt and result are reported in the automation response.
+Push preflight: `gh api user` reported authenticated login `2515050242`; the configured Git author was `Wchwch <1341376491@qq.com>`, which this AI run must not impersonate. The target remote was `https://github.com/Wchwch777/Scantling.git`, its default branch was `main`, and `git ls-remote --heads origin main` still returned `c4485f0`. The GitHub repository permissions response reported `push: false` for the authenticated account. Commit `e2fad90` used the explicit author `Codex AI-assisted <codex-ai-assisted@localhost>` and did not rewrite history. `git push origin main` was attempted and failed with HTTP 403: `Permission to Wchwch777/Scantling.git denied to 2515050242`. This log update records that outcome as a second commit rather than changing the first commit.
 
 ## Verification policy for future changes
 
