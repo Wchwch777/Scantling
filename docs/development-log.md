@@ -195,3 +195,5 @@ Push preflight: `gh api user` returned `Wchwch777`, repository permissions repor
 ### Pinned Linux archive failure and follow-up
 
 Commit `db69613` was pushed to `origin/main`. GitHub Actions run `36086851330` failed during installation, before the repository tests: the versioned URL `https://cli.moonbitlang.com/binaries/0.1.20260920/moonbit-linux-x86_64.tar.gz` returned HTTP 403. The earlier successful `latest` run only established the installed tool version, not that its versioned archive was published or accessible. This run therefore restores `latest` for CI, records the limitation, and leaves the toolchain pin as unresolved. No test result is inferred from the failed remote run.
+
+Commit `b3fc382` with that restoration was pushed to `origin/main`. GitHub Actions run `36086911746` completed successfully: the runner installed `moon 0.1.20260920` and `moonc v0.10.14+7d59c7ec9`, ran the repository verification with 24/24 tests passing, and completed the Wasm build. The same tool version reported by `latest` is still not a reproducible pin; a future archive or other verified distribution method is required for that.
