@@ -153,7 +153,8 @@ scantling/
 ├── docs/                   # 专业工程文档
 │   ├── specifications.md   # 1D-CSP 数学模型与造价计算标准公式推导
 │   ├── retrospective.md    # 架构选型权衡与技术演进回顾
-│   └── human-review-record.md # 当前提交的人工审查记录
+│   ├── human-review-record.md # 当前提交的人工审查记录
+│   └── project-application.md # 项目申报书
 ├── scripts/                # 自动化构建脚本 (Wasm 构建)
 │   ├── build_wasm.sh
 │   ├── build_wasm.ps1
