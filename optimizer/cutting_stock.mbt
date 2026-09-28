@@ -1,7 +1,7 @@
 // Copyright 2026 Scantling Authors
 // Licensed under Apache-2.0
 //
-// 建筑工程型材套裁启发式优化求解引擎 (FFD & Best-Fit 启发式套裁)
+// 一维定长材料套裁启发式优化求解引擎 (FFD & BFD)
 
 ///|
 priv struct BarState {

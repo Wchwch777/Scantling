@@ -1,10 +1,10 @@
 // Copyright 2026 Scantling Authors
 // Licensed under Apache-2.0
 //
-// 建筑工程造价与型材套裁领域核心数据模型
+// 一维定长材料套裁与按质量计价的通用数据模型
 
 ///|
-/// 原材型材定义（如标准定尺 9m/12m 螺纹钢、型钢）
+/// 定长母材。计价质量系数为 kg/m，采购单价为元/t。
 pub struct StockMaterial {
   id : String
   name : String
@@ -25,7 +25,7 @@ pub fn StockMaterial::new(
 }
 
 ///|
-/// 工程量下料需求项（清单定尺切断需求）
+/// 定尺切件需求项
 pub struct DemandItem {
   id : String
   length_mm : Double
@@ -56,7 +56,7 @@ pub fn CutPiece::new(demand_id : String, length_mm : Double) -> CutPiece {
 }
 
 ///|
-/// 单根原材的切割方案（版样）
+/// 单根母材的切割方案（版样）
 pub struct CutPattern {
   stock_id : String
   stock_length_mm : Double
@@ -91,8 +91,8 @@ pub fn CutPattern::new(
 ///|
 /// 套裁优化算法配置参数
 pub struct OptimizationConfig {
-  kerf_width_mm : Double // 锯口切割损耗宽度（通常为 3.0 ~ 5.0 mm）
-  min_reusable_length_mm : Double // 最小可复用短料阈值（长于此阈值计为二次利用余料库，短于此计为废钢残渣）
+  kerf_width_mm : Double // 相邻切件间计入的切割损耗宽度
+  min_reusable_length_mm : Double // 剩余长度达到此阈值才计为可复用余料
 } derive(Debug, Eq)
 
 ///|

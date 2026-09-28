@@ -213,3 +213,27 @@ node --check web/app.js PASS
 ```
 
 The repository remains on the intentionally documented `latest` MoonBit installer because the previous verified versioned Linux archive attempt returned HTTP 403. This run did not claim a fixed toolchain. The local Git identity remains `Codex AI-assisted <codex-ai-assisted@localhost>`; no authorship or history was fabricated.
+
+## 2026-09-29 07:42 Asia/Shanghai — first-review breadth remediation, AI-assisted
+
+The automation started from a clean `main` at `37f923d`, with `origin` set to `https://github.com/Wchwch777/Scantling.git`; `gh api user --jq .login` returned `Wchwch777`. The review objection was that the application was too specialized and its demand coverage too narrow. The scope of this pass was set by that objection and the repository creator's task instructions; the AI chose small synthetic timber and pipe examples to exercise the existing one-dimensional MoonBit packages. No field, industry, manual-review, or cost-saving evidence was inferred from the examples.
+
+The existing `core`, `optimizer`, and `pricing` functions already accepted lengths, kg/m, and yuan/t parameters. This pass added `examples/scenarios` with rebar, timber, and pipe inputs through the same checked optimization and pricing calls. The quickstart executable invokes that package. Two new tests check piece quantity, kerf, per-stock and aggregate length conservation, and cost arithmetic across all three materials; the second test fixes independently hand-calculable timber and pipe results. Source comments, README, and the application now describe the generic material scope and explicitly limit the pricing model to supplied mass-based assumptions. The browser remains a separate JavaScript reference implementation and was not extended by this pass.
+
+One failed verification shaped the implementation: `moon test examples/quickstart` could not resolve private demo functions from a black-box test in the executable package. The shared example code and tests were moved to the non-executable `examples/scenarios` package; `moon test examples/scenarios` then passed 2/2. `moon fmt` was run after that move.
+
+Local verification after the edits:
+
+```text
+moon test examples/scenarios       PASS 2/2
+moon run examples/quickstart       PASS; three scenarios printed
+moon fmt                           PASS
+.\scripts\ci.ps1                  PASS; fmt/check, 26/26 tests, cmd and quickstart
+moon check --target wasm           PASS
+moon test --target wasm            PASS 26/26
+.\scripts\build_wasm.ps1          PASS
+```
+
+This run was AI-assisted. No human line-by-line review of the new material scenarios occurred in this run; their business assumptions remain pending review by Wchwch777. These checks establish that the demonstration code runs and its specified arithmetic is reproducible, not that the synthetic parameters match real procurement or that the heuristic is globally optimal.
+
+Before commit, `git diff --check` passed (with Git's CRLF conversion notices), `git fetch origin` succeeded, and `git rev-list --left-right --count HEAD...origin/main` returned `0 0`. The current branch was `main`, both remote URLs targeted `Wchwch777/Scantling`, `gh api user` returned `Wchwch777`, and the repository permission response reported `push: true`. The configured commit identity was `Codex AI-assisted <codex-ai-assisted@localhost>`, reflecting the actual AI-assisted edits rather than impersonating the repository owner.

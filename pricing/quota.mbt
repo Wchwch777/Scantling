@@ -1,19 +1,19 @@
 // Copyright 2026 Scantling Authors
 // Licensed under Apache-2.0
 //
-// 参数化材料、人工、机具与费率成本演算
+// 按材料质量折算的参数化成本演算
 
 ///|
 /// 演示用价格、损耗率与费率参数；调用方须按项目规则核验
 pub struct QuotaStandard {
-  item_code : String // 清单项目编码 (如 "010515001001")
-  item_name : String // 项目名称 (如 "现浇构件螺纹钢筋制作与绑扎")
-  labor_unit_cost : Double // 人工费综合基价 (元/t)
-  machinery_unit_cost : Double // 施工机具使用费综合基价 (元/t)
+  item_code : String // 调用方项目编码
+  item_name : String // 调用方项目名称
+  labor_unit_cost : Double // 人工费输入单价 (元/t 材料质量)
+  machinery_unit_cost : Double // 设备费输入单价 (元/t 材料质量)
   standard_loss_rate : Double // 假设基线损耗率 (如 0.025 代表 2.5%)
   management_rate : Double // 企业管理费费率 (如 0.08 代表 8%)
   profit_rate : Double // 利润率 (如 0.05 代表 5%)
-  tax_rate : Double // 建筑业增值税率 (如 0.09 代表 9%)
+  tax_rate : Double // 演示税率输入；不代替税务规则
 } derive(Debug, Eq)
 
 ///|
@@ -56,8 +56,8 @@ pub fn QuotaStandard::new(
 ///|
 /// 残值回收与下料余料结存评估参数
 pub struct ScrapMarketParam {
-  scrap_price_per_ton : Double // 废钢残渣回收变现单价 (元/t)
-  reusable_credit_ratio : Double // 可回用短料折旧冲抵率 (进入次级构件库)
+  scrap_price_per_ton : Double // 切割损耗与不可复用余料的假设回收价 (元/t)
+  reusable_credit_ratio : Double // 可复用余料的假设估值比例，不代表实际入库
 } derive(Debug, Eq)
 
 ///|
@@ -88,9 +88,9 @@ pub struct CostBreakdown {
   subtotal_direct_cost : Double // 直接工程费小计 (元)
   management_fee : Double // 企业管理费 (元)
   profit : Double // 企业利润 (元)
-  tax_amount : Double // 建筑业增值税金 (元)
-  total_project_cost : Double // 综合工程总造价 (含税, 元)
-  comprehensive_unit_price : Double // 清单综合单价 (元/t 净重)
+  tax_amount : Double // 按输入费率计算的税额 (元)
+  total_project_cost : Double // 模型总成本 (元)；保留兼容字段名
+  comprehensive_unit_price : Double // 单位净材料质量的模型成本 (元/t)
   quota_baseline_cost : Double // 按输入损耗率计算的假设基线 (元)
   cost_saved_amount : Double // 假设基线减模型成本，正值不证明现场节约 (元)
 } derive(Debug, Eq)
@@ -103,7 +103,7 @@ pub fn evaluate_cost(
   quota : QuotaStandard,
   scrap_market : ScrapMarketParam,
 ) -> CostBreakdown {
-  // 1. 工程量折算为吨位 (长度 mm -> m, unit_weight kg/m -> ton)
+  // 1. 切件长度折算为吨位 (长度 mm -> m, 质量 kg/m -> ton)
   let mm_to_ton_factor = stock.unit_weight_kg_m / 1000.0 / 1000.0
   let net_demanded_weight_ton = summary.total_demanded_length_mm *
     mm_to_ton_factor
@@ -136,7 +136,7 @@ pub fn evaluate_cost(
   let management_fee = (labor_cost + machinery_cost) * quota.management_rate
   let profit = (subtotal_direct_cost + management_fee) * quota.profit_rate
 
-  // 5. 建筑业增值税
+  // 5. 按输入税率计提模型税额
   let pre_tax_amount = subtotal_direct_cost + management_fee + profit
   let tax_amount = pre_tax_amount * quota.tax_rate
   let total_project_cost = pre_tax_amount + tax_amount
