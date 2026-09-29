@@ -1,15 +1,18 @@
-# Published industrial instance: paper-tube case F2
+# Published industrial demand replays
 
-Scantling includes one source-backed historical industrial demand instance in
-addition to its four synthetic material demonstrations. The input is F2 from
-the one-dimensional cutting-stock dataset maintained by Shunji Umetani. The
-dataset page identifies F1–F6 as cases from a paper-tube factory in Japan; the
-cited paper describes that factory planning problem.
+Scantling includes source-backed historical demand examples from two Japanese
+manufacturing application datasets, alongside four synthetic material/cost
+demonstrations. Both executable examples below are explicitly **relaxed
+aggregate-demand replays**, not reproductions of the source papers' complete
+optimization problems or factory schedules.
 
-- Dataset and instance source: [Umetani's 1D cutting-stock data page](https://sites.google.com/view/umepon/benchmark)
-- Source archive: [`tube.zip`](https://drive.google.com/uc?export=download&id=1FEOIz0NYS4CYE9CmFEqYqMQF6h7np4m6); SHA-256 of the archive inspected for this transcription: `37ee375cffdb65593bdd9880af509dbe34c05ee6e39fcc0d64434d948171937d`.
+- Dataset index: [Shunji Umetani's 1D cutting-stock data page](https://sites.google.com/view/umepon/benchmark).
+
+## Paper-tube factory F2
+
+- Source archive: [`tube.zip`](https://drive.google.com/uc?export=download&id=1FEOIz0NYS4CYE9CmFEqYqMQF6h7np4m6); SHA-256 of the inspected archive: `37ee375cffdb65593bdd9880af509dbe34c05ee6e39fcc0d64434d948171937d`.
 - Paper: K. Matsumoto, S. Umetani, and H. Nagamochi, “On the one-dimensional stock cutting problem in the paper tube industry,” *Journal of Scheduling*, 14, 281–290 (2011), [doi:10.1007/s10951-010-0164-2](https://doi.org/10.1007/s10951-010-0164-2).
-- Selected record: `f2` in the dataset's `tube.zip` archive.
+- Selected record: `f2` in `tube.zip`. The source lists six paper-tube application instances; F2 has one stock length and maps most directly to the current single-stock API.
 
 ## Recorded inputs
 
@@ -59,10 +62,46 @@ license. This repository attributes the source and includes only the small F2
 input transcription needed to reproduce the demonstration; it does not claim
 that the third-party data is relicensed under Apache-2.0.
 
-## Verification boundary
+## Chemical-fiber company instance 06
 
-The test confirms the transcribed inputs and model accounting. It does not
-compare Scantling's heuristic against the factory's deployed plan, the paper's
-multi-constraint algorithm, or an optimal solution. The F2 record does not
-contain enough information to calculate purchase costs or validate kerf and
-remnant assumptions.
+- Source archive: [`fiber.zip`](https://drive.google.com/uc?export=download&id=1qW7RB46CFtq09_1kofyoSfbpHhALh5F9); SHA-256 of the inspected archive: `b033fdf9977bc886c067b07584b36780e68fdac7ffe1f15682c682fb44267b98`.
+- Selected records: `fiber/fiber06_9080.txt` and `fiber/fiber06_5180.txt`; both contain the same six product demands with alternative stock lengths of 9,080 mm and 5,180 mm.
+- Paper: S. Umetani, M. Yagiura, and T. Ibaraki, “One dimensional cutting stock problem to minimize the number of different patterns,” *European Journal of Operational Research*, 146 (2003), 388–402, [doi:10.1016/S0377-2217(02)00239-4](https://doi.org/10.1016/S0377-2217(02)00239-4).
+
+The six source rows are transcribed as `(length_mm, demand)`:
+
+| Length (mm) | Demand |
+| ---: | ---: |
+| 520 | 91 |
+| 1,000 | 11 |
+| 1,066 | 18 |
+| 1,120 | 9 |
+| 1,150 | 64 |
+| 1,250 | 5 |
+
+These sum to 198 pieces and 167,438 mm. Scantling uses 19 rolls for the
+9,080 mm variant (length-only lower bound 19; 5,082 mm unused) and 34 rolls
+for the 5,180 mm variant (lower bound 33; 8,682 mm unused). Tests check the
+transcribed totals, both source stock lengths, solver outputs, and length
+conservation. The source paper's objective is to minimize the number of
+different cutting patterns and it permits its own surplus/shortage treatment,
+whereas this replay minimizes stock-roll count while exactly meeting aggregate
+demand. The published pattern objective, demand-deviation treatment, and other
+application constraints are not modeled. This is a cross-industry input
+exercise, not a direct reproduction or comparative-performance claim.
+
+## Shared data and verification limits
+
+Neither source provides the kerf, material mass per metre, or purchase prices
+needed for Scantling's cost model. The replays use zero kerf and calculate no
+cost. The chemical-fiber remnant threshold is a structural placeholder and is
+not used to value stock. The paper-tube F2 source's lot/setup and open-stack
+constraints are not modeled. Neither replay compares against a factory's
+deployed plan, proves optimality, or establishes field performance. The four
+cross-material cost examples remain synthetic.
+
+The source page makes both archives publicly accessible but does not state a
+data license. This repository provides attribution and only small input
+transcriptions needed to reproduce these examples; it does not claim that
+third-party data is relicensed under Apache-2.0. Source archive checksums are
+recorded above to make the inspected files identifiable.

@@ -136,7 +136,7 @@ fn print_case(scenario : DemoScenario) -> Unit {
 pub fn run_all() -> Unit {
   println("Scantling: one-dimensional cutting and parameterized cost")
   println("First four cases use synthetic input assumptions.")
-  println("The final F2 case is a sourced historical-demand relaxation.")
+  println("The final cases are sourced historical-demand relaxations.")
   println("Units: length mm; synthetic cost cases use kg/m and yuan/ton.")
   println(
     "FFD/BFD are heuristics; outputs do not prove a global optimum or actual savings.",
@@ -146,4 +146,5 @@ pub fn run_all() -> Unit {
   print_case(pipe_case())
   print_case(cable_case())
   run_paper_tube_f2()
+  run_chemical_fiber_06()
 }

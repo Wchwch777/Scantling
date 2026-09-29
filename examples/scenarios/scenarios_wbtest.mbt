@@ -93,6 +93,54 @@ test "published paper-tube F2 case preserves sourced demand and length" {
 }
 
 ///|
+test "published chemical-fiber instance 06 preserves demand in both stock variants" {
+  for stock_length in [9080.0, 5180.0] {
+    let (stock, demands, config) = chemical_fiber_06_inputs(stock_length)
+    assert_eq(stock.length_mm, stock_length)
+    assert_eq(demands.length(), 6)
+    let mut expected_pieces = 0
+    let mut expected_length = 0.0
+    for demand in demands {
+      expected_pieces = expected_pieces + demand.quantity
+      expected_length = expected_length +
+        demand.length_mm * demand.quantity.to_double()
+    }
+    assert_eq(expected_pieces, 198)
+    assert_eq(expected_length, 167438.0)
+
+    let summary = match
+      @optimizer.try_optimize_cutting_stock(stock, demands, config) {
+      Ok(value) => value
+      Err(_) => abort("Published chemical-fiber instance validation failed")
+    }
+    assert_eq(summary.total_demanded_length_mm, 167438.0)
+    assert_eq(summary.total_kerf_loss_mm, 0.0)
+    if stock_length == 9080.0 {
+      assert_eq(summary.total_stocks_used, 19)
+      assert_eq(
+        summary.total_stock_length_mm - summary.total_demanded_length_mm,
+        5082.0,
+      )
+    } else {
+      assert_eq(summary.total_stocks_used, 34)
+      assert_eq(
+        summary.total_stock_length_mm - summary.total_demanded_length_mm,
+        8682.0,
+      )
+    }
+    assert_eq(
+      (summary.total_stock_length_mm -
+      summary.total_demanded_length_mm -
+      summary.total_kerf_loss_mm -
+      summary.total_scrap_length_mm -
+      summary.total_reusable_length_mm).abs() <
+      1.0e-9,
+      true,
+    )
+  }
+}
+
+///|
 test "synthetic cable zero-kerf exact fit has no remnant or recovery" {
   let (summary, cost) = run_case(cable_case())
   assert_eq(summary.total_stocks_used, 1)

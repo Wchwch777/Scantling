@@ -194,6 +194,31 @@ Decision:                     ACCEPTED
 Signature:                    韦昌豪 (Wchwch777)
 ```
 
+## Pending owner review: chemical-fiber instance 06 replay
+
+The AI-assisted follow-up adds a six-item demand transcription from the
+public Japanese chemical-fiber application dataset, evaluated with the two
+published stock lengths. It is deliberately presented as an aggregate-demand
+relaxation. It does not implement the cited paper's pattern-minimization
+objective or claim to reproduce its production plan. This addition is not
+covered by the previous ACCEPTED sign-offs.
+
+- [ ] Personally compare the six `(length, demand)` rows and both stock lengths
+      in `examples/scenarios/real_chemical_fiber_06.mbt` with the cited
+      `fiber06_9080.txt` and `fiber06_5180.txt` source records.
+- [ ] Confirm the 198-piece / 167,438 mm totals and understand the distinction
+      between the paper's pattern-count objective and Scantling's stock-count
+      objective.
+- [ ] Inspect `docs/real-data-case.md`, README, and the application for accurate
+      source attribution, data-license caveat, and no overclaiming.
+- [ ] Inspect the exact candidate's CI and decide whether the additional
+      cross-industry relaxation materially helps the competition response.
+- [ ] Approve or reject the exact candidate commit below; do not treat passing
+      tests as human approval.
+
+Candidate commit: pending AI-assisted implementation commit.
+Owner decision and date: pending Wchwch777 review.
+
 ## Owner review: public paper-tube F2 replay (Commit ac37f82 — 2026-09-29)
 
 This review was conducted personally by the repository owner (`Wchwch777` / 韦昌豪)

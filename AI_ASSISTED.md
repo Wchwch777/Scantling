@@ -12,7 +12,7 @@ separately in [`docs/human-review-record.md`](docs/human-review-record.md).
 
 The project owner must make and record the final decisions about:
 
-- the construction-cost and cutting-stock problem covered by the repository;
+- the reusable one-dimensional cutting-stock scope and optional parameterized construction-cost extension;
 - the FFD/BFD heuristic choice and the meaning of reusable remnants, scrap, and cost differences;
 - public APIs, compatibility behavior, documentation claims, and release scope;
 - which tests are required and whether a result is strong enough to publish.
@@ -44,3 +44,4 @@ No AI-suggested change is considered complete until it has a focused test or an 
 - The browser workbench currently uses a standalone JavaScript reference engine; the Wasm scripts verify an optional build, not browser Wasm loading.
 - GB 50500 is represented as a parameterized formula model. Project data, local quota rules, contracts, and tax treatment must be supplied separately.
 - The README benchmark is an illustrative deterministic example, not an independent construction-site measurement.
+- The paper-tube F2 and chemical-fiber 06 inputs are small transcriptions from published historical application datasets. Their simplified replays do not reproduce the source studies' full objectives or production constraints; the chemical-fiber addition remains subject to owner review until signed.

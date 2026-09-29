@@ -306,3 +306,39 @@ The F2 source is publicly listed at
 https://sites.google.com/view/umepon/benchmark and the associated paper is
 Matsumoto, Umetani, and Nagamochi (2011), doi:10.1007/s10951-010-0164-2.
 These are research-instance inputs, not Scantling customer records.
+
+## 2026-09-29 — chemical-fiber public instance 06, AI-assisted
+
+To respond to the preliminary-review concern about narrow application evidence,
+I inspected the same dataset maintainer's separate chemical-fiber-company
+archive. The index page describes 40 historical application instances; the
+selected instance 06 files provide the same six demands with 9,080 mm and
+5,180 mm stock lengths. The inspected `fiber.zip` SHA-256 is
+`b033fdf9977bc886c067b07584b36780e68fdac7ffe1f15682c682fb44267b98`. Only
+the six-row instance is transcribed; the archive is not copied into the repo.
+The source page does not state a data license.
+
+The cited 2003 paper studies minimizing the number of distinct patterns, not
+the stock-roll-count objective implemented by Scantling. To avoid implying a
+like-for-like reproduction, the demo labels both lengths as zero-kerf,
+aggregate-demand relaxations and states that the paper's objective and
+production constraints are not modeled. This extends input evidence to a
+second industry; it does not establish field deployment, broad statistical
+coverage, or performance superiority. The choice/transcription/code/tests and
+documentation in this pass were AI-assisted. The new case remains pending
+repository-owner review in `docs/human-review-record.md`.
+
+The published demands sum to 198 pieces and 167,438 mm. The current optimizer
+uses 19 rolls for 9,080 mm stock (volume lower bound 19) and 34 for 5,180 mm
+stock (lower bound 33), with unused lengths of 5,082 mm and 8,682 mm.
+Automated verification on the candidate working tree:
+
+```text
+moon fmt                              PASS
+scripts/ci.ps1                       PASS; 31/31 tests, CLI, quickstart, Node DOM checks
+scripts/build_wasm.ps1               PASS
+git diff --check                     PASS (line-ending notices only)
+```
+
+These are machine results, not owner acceptance. No human review of this
+chemical-fiber addition is claimed until the owner checks the pending items.
