@@ -2,6 +2,45 @@
 // Licensed under Apache-2.0
 
 ///|
+test "cost inputs reject non-finite negative and over-one credit ratio" {
+  let stock = @core.StockMaterial::new("S", "synthetic", 1000.0, 1.0, -1.0)
+  let quota = QuotaStandard::new("Q", "synthetic", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+  let market = ScrapMarketParam::new(0.0, 1.1)
+  let errors = validate_cost_inputs(stock, quota, market)
+  assert_eq(errors.length(), 2)
+  assert_eq(errors[0], CostInputError::Negative("cost_per_ton"))
+  assert_eq(errors[1], CostInputError::RatioAboveOne("reusable_credit_ratio"))
+  let invalid_weight = @core.StockMaterial::new(
+    "S",
+    "synthetic",
+    1000.0,
+    0.0 / 0.0,
+    1.0,
+  )
+  let checked = try_evaluate_cost(
+    invalid_weight,
+    @core.OptimizationSummary::empty(),
+    quota,
+    market,
+  )
+  assert_eq(checked is Err(_), true)
+  assert_eq(
+    validate_cost_inputs(invalid_weight, quota, ScrapMarketParam::new(0.0, 0.0))[0],
+    CostInputError::NonFinite("unit_weight_kg_m"),
+  )
+}
+
+///|
+test "zero cost parameters are accepted for synthetic boundary" {
+  let stock = @core.StockMaterial::new("S", "synthetic", 1000.0, 0.0, 0.0)
+  let quota = QuotaStandard::new("Q", "synthetic", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+  assert_eq(
+    validate_cost_inputs(stock, quota, ScrapMarketParam::new(0.0, 0.0)).length(),
+    0,
+  )
+}
+
+///|
 test "cost quota evaluation with scrap recovery" {
   let stock = @core.StockMaterial::new(
     "HRB400E-D25", "三级螺纹钢Φ25", 9000.0, 3.85, 3850.0,

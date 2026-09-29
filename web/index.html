@@ -94,7 +94,7 @@
               <input type="number" id="matPrice" value="3850">
             </div>
             <div class="form-group">
-              <label>废钢回收单价 (元/吨)</label>
+                <label>废料假设回收单价 (元/吨)</label>
               <input type="number" id="scrapPrice" value="2300">
             </div>
           </div>
@@ -130,7 +130,8 @@
             </tbody>
           </table>
           <div style="margin-top: 16px;">
-            <button class="btn" style="width: 100%;" onclick="runOptimization()">▶ 执行智能套裁与量价织算</button>
+            <button class="btn" style="width: 100%;" onclick="runOptimization()">▶ 计算套裁与参数化成本</button>
+            <p id="inputError" role="alert" hidden style="color: var(--rose);"></p>
           </div>
         </div>
       </div>
@@ -164,7 +165,7 @@
         </div>
 
         <div class="card">
-            <div class="card-title">4. 全要素清单造价明细表 (参数化公式模型)</div>
+            <div class="card-title">4. 参数化成本明细（人工、机具和费率固定为钢筋示例假设）</div>
           <table style="font-size: 12px;">
             <tbody>
               <tr><td style="color: var(--text-muted);">构件设计净重 (t)</td><td id="resNetWeight" style="font-weight: 600;">0.369</td><td style="color: var(--text-muted);">采购投入毛重 (t)</td><td id="resGrossWeight">0.416</td></tr>
@@ -172,7 +173,7 @@
               <tr><td style="color: var(--text-muted);">余料结存冲减</td><td id="resReusableCredit" style="color: var(--green);">- ¥ 141.80</td><td style="color: var(--text-muted);">材料净成本</td><td id="resNetMatCost" style="font-weight: 600;">¥ 1,450.66</td></tr>
               <tr><td style="color: var(--text-muted);">人工费（模型）</td><td id="resLaborCost">¥ 270.27</td><td style="color: var(--text-muted);">机具费（模型）</td><td id="resMachCost">¥ 74.84</td></tr>
               <tr><td style="color: var(--text-muted);">企业管理费 (8%)</td><td id="resMgtCost">¥ 27.61</td><td style="color: var(--text-muted);">企业利润 (5%)</td><td id="resProfit">¥ 91.17</td></tr>
-              <tr><td style="color: var(--text-muted);">建筑业增值税 (9%)</td><td id="resTax">¥ 172.31</td><td style="color: var(--text-muted); font-weight: 700;">含税综合总造价</td><td id="resTotalCost" style="color: var(--accent); font-weight: 700; font-size: 14px;">¥ 2,086.86</td></tr>
+              <tr><td style="color: var(--text-muted);">假设税率 (9%)</td><td id="resTax">¥ 172.31</td><td style="color: var(--text-muted); font-weight: 700;">模型总成本</td><td id="resTotalCost" style="color: var(--accent); font-weight: 700; font-size: 14px;">¥ 2,086.86</td></tr>
             </tbody>
           </table>
         </div>

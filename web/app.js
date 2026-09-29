@@ -12,19 +12,49 @@ let defaultDemands = [
   { id: "KL-02", length: 1500, qty: 6, tag: "次梁负筋" }
 ];
 
+const MAX_PIECES = 2000;
+const MAX_DEMAND_ROWS = 200;
+
+function showError(message) {
+  const box = document.getElementById("inputError");
+  box.textContent = message;
+  box.hidden = !message;
+}
+
+function readNumber(id, label, { positive = false, integer = false } = {}) {
+  const raw = document.getElementById(id).value.trim();
+  const value = Number(raw);
+  if (raw === "" || !Number.isFinite(value) || (positive ? value <= 0 : value < 0) || (integer && !Number.isSafeInteger(value))) {
+    throw new Error(`${label}必须是${positive ? "大于 0" : "非负"}的${integer ? "整数" : "有限数字"}`);
+  }
+  return value;
+}
+
 function renderDemandRows(demands) {
   const tbody = document.querySelector("#demandTable tbody");
   if (!tbody) return;
-  tbody.innerHTML = "";
+  tbody.replaceChildren();
   demands.forEach((d, idx) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><input type="text" value="${d.id}" style="width: 80px;" onchange="updateDemand(${idx}, 'id', this.value)"></td>
-      <td><input type="number" value="${d.length}" style="width: 90px;" onchange="updateDemand(${idx}, 'length', parseFloat(this.value))"></td>
-      <td><input type="number" value="${d.qty}" style="width: 60px;" onchange="updateDemand(${idx}, 'qty', parseInt(this.value))"></td>
-      <td><input type="text" value="${d.tag}" style="width: 100px;" onchange="updateDemand(${idx}, 'tag', this.value)"></td>
-      <td><button class="btn btn-sm btn-danger" onclick="removeDemandRow(${idx})">×</button></td>
-    `;
+    for (const [field, type, width] of [["id", "text", 80], ["length", "number", 90], ["qty", "number", 60], ["tag", "text", 100]]) {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = type;
+      input.value = d[field];
+      input.style.width = `${width}px`;
+      if (type === "number") input.step = field === "qty" ? "1" : "any";
+      input.addEventListener("input", () => updateDemand(idx, field, input.value));
+      td.appendChild(input);
+      tr.appendChild(td);
+    }
+    const action = document.createElement("td");
+    const remove = document.createElement("button");
+    remove.className = "btn btn-sm btn-danger";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.addEventListener("click", () => removeDemandRow(idx));
+    action.appendChild(remove);
+    tr.appendChild(action);
     tbody.appendChild(tr);
   });
 }
@@ -34,6 +64,10 @@ function updateDemand(idx, field, val) {
 }
 
 function addDemandRow() {
+  if (defaultDemands.length >= MAX_DEMAND_ROWS) {
+    showError(`最多添加 ${MAX_DEMAND_ROWS} 行需求`);
+    return;
+  }
   defaultDemands.push({ id: `REQ-${defaultDemands.length + 1}`, length: 2000, qty: 5, tag: "自定构件" });
   renderDemandRows(defaultDemands);
 }
@@ -56,28 +90,41 @@ function loadPreset() {
 
 // 启发式套裁计算与工程量清单组价
 function runOptimization() {
-  const stockLen = parseFloat(document.getElementById("stockLength").value) || 9000;
-  const unitWeight = parseFloat(document.getElementById("unitWeight").value) || 3.85;
-  const matPrice = parseFloat(document.getElementById("matPrice").value) || 3850;
-  const scrapPrice = parseFloat(document.getElementById("scrapPrice").value) || 2300;
-  const kerf = parseFloat(document.getElementById("kerfWidth").value) || 3;
-  const minReusable = parseFloat(document.getElementById("minReusable").value) || 800;
-
-  // 1. 业务边界校验
-  if (stockLen <= 0) {
-    alert("错误：母材定尺长度必须大于 0！");
-    return;
-  }
-  for (let d of defaultDemands) {
-    if (d.length > stockLen) {
-      alert(`校验警告：构件 [${d.id}] 定尺 (${d.length}mm) 超过母材定尺 (${stockLen}mm)，无法单根截断！`);
-      return;
+  let stockLen, unitWeight, matPrice, scrapPrice, kerf, minReusable, demands;
+  try {
+    stockLen = readNumber("stockLength", "母材定尺", { positive: true });
+    unitWeight = readNumber("unitWeight", "线密度", { positive: true });
+    matPrice = readNumber("matPrice", "原材单价");
+    scrapPrice = readNumber("scrapPrice", "回收单价");
+    kerf = readNumber("kerfWidth", "锯口");
+    minReusable = readNumber("minReusable", "余料阈值");
+    if (defaultDemands.length === 0) throw new Error("请至少添加一行需求");
+    demands = defaultDemands.map((d, i) => {
+      const length = Number(d.length);
+      const qty = Number(d.qty);
+      if (String(d.length).trim() === "" || !Number.isFinite(length) || length <= 0 || length > stockLen) {
+        throw new Error(`第 ${i + 1} 行切件长度须大于 0 且不超过母材定尺`);
+      }
+      if (String(d.qty).trim() === "" || !Number.isSafeInteger(qty) || qty <= 0) {
+        throw new Error(`第 ${i + 1} 行根数须为正整数`);
+      }
+      return { id: String(d.id), tag: String(d.tag), length, qty };
+    });
+    if (demands.reduce((sum, d) => sum + d.qty, 0) > MAX_PIECES) {
+      throw new Error(`切件总数不得超过 ${MAX_PIECES}`);
     }
+    if (!Number.isFinite(stockLen * unitWeight * matPrice * MAX_PIECES)) {
+      throw new Error("输入量级过大，计算可能溢出");
+    }
+    showError("");
+  } catch (error) {
+    showError(error.message);
+    return;
   }
 
   // 2. 展平需求件
   let pieces = [];
-  defaultDemands.forEach(d => {
+  demands.forEach(d => {
     for (let i = 0; i < d.qty; i++) {
       pieces.push({ id: d.id, length: d.length, tag: d.tag });
     }
@@ -149,6 +196,10 @@ function runOptimization() {
   const tax = (directCost + mgtCost + profit) * 0.09;
   const totalCost = directCost + mgtCost + profit + tax;
   const unitPrice = netWeight > 0 ? totalCost / netWeight : 0;
+  if (![totalCost, unitPrice, netMatCost, wasteRatio, reusableRatio].every(Number.isFinite)) {
+    showError("计算结果超出有限数值范围，请缩小输入");
+    return;
+  }
 
   // 更新指标
   document.getElementById("kpiBars").innerText = `${bars.length} 根`;
@@ -172,29 +223,34 @@ function runOptimization() {
 
   // 渲染排料图
   const container = document.getElementById("patternsContainer");
-  container.innerHTML = "";
+  container.replaceChildren();
   bars.forEach((b, i) => {
     const div = document.createElement("div");
     div.className = "pattern-bar";
-
-    let trackHtml = `<div class="pattern-track">`;
+    const header = document.createElement("div");
+    header.className = "pattern-header";
+    const name = document.createElement("span");
+    name.textContent = `母材 #${i + 1} (${stockLen} mm)`;
+    const detail = document.createElement("span");
+    detail.textContent = `${b.cuts.length} 个切段 | 剩余: ${Math.round(b.remnant)} mm (${b.isReusable ? "可复用（模型分类）" : "废料残余"})`;
+    header.append(name, detail);
+    const track = document.createElement("div");
+    track.className = "pattern-track";
     b.cuts.forEach(c => {
-      let pct = (c.length / stockLen) * 100;
-      trackHtml += `<div class="track-seg seg-cut" style="width: ${pct}%;" title="${c.id} (${c.length}mm)">${c.id} (${c.length})</div>`;
+      const segment = document.createElement("div");
+      segment.className = "track-seg seg-cut";
+      segment.style.width = `${(c.length / stockLen) * 100}%`;
+      segment.title = `${c.id} (${c.length}mm)`;
+      segment.textContent = `${c.id} (${c.length})`;
+      track.appendChild(segment);
     });
-    let remPct = (b.remnant / stockLen) * 100;
-    let segClass = b.isReusable ? "seg-reusable" : "seg-scrap";
-    let remText = b.isReusable ? `余料复用: ${Math.round(b.remnant)}mm` : `废料: ${Math.round(b.remnant)}mm`;
-    trackHtml += `<div class="track-seg ${segClass}" style="width: ${remPct}%;" title="${remText}">${remText}</div>`;
-    trackHtml += `</div>`;
-
-    div.innerHTML = `
-      <div class="pattern-header">
-        <span><strong>母材 #${i + 1}</strong> (${stockLen} mm)</span>
-        <span>${b.cuts.length} 个切段 | 剩余: ${Math.round(b.remnant)} mm (${b.isReusable ? '<span style="color:var(--green)">可复用（模型分类）</span>' : '<span style="color:var(--rose)">废料残渣</span>'})</span>
-      </div>
-      ${trackHtml}
-    `;
+    const rem = document.createElement("div");
+    rem.className = `track-seg ${b.isReusable ? "seg-reusable" : "seg-scrap"}`;
+    rem.style.width = `${(b.remnant / stockLen) * 100}%`;
+    rem.textContent = b.isReusable ? `余料复用: ${Math.round(b.remnant)}mm` : `废料: ${Math.round(b.remnant)}mm`;
+    rem.title = rem.textContent;
+    track.appendChild(rem);
+    div.append(header, track);
     container.appendChild(div);
   });
 }

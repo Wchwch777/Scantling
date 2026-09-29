@@ -63,6 +63,25 @@ fn pipe_case() -> DemoScenario {
 }
 
 ///|
+fn cable_case() -> DemoScenario {
+  {
+    label: "Cable reel (synthetic exact fit, zero kerf)",
+    stock: @core.StockMaterial::new(
+      "CABLE", "示例线缆", 1000.0, 0.2, 5000.0,
+    ),
+    demands: [
+      @core.DemandItem::new("LONG", 600.0, 1, "长线段"),
+      @core.DemandItem::new("SHORT", 400.0, 1, "短线段"),
+    ],
+    config: @core.OptimizationConfig::new(0.0, 100.0),
+    quota: @pricing.QuotaStandard::new(
+      "CABLE-DEMO", "线缆裁切", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+    ),
+    recovery: @pricing.ScrapMarketParam::new(0.0, 0.0),
+  }
+}
+
+///|
 fn run_case(
   scenario : DemoScenario,
 ) -> (@core.OptimizationSummary, @pricing.CostBreakdown) {
@@ -75,12 +94,16 @@ fn run_case(
     Ok(value) => value
     Err(_) => abort("Demo input validation failed")
   }
-  let cost = @pricing.evaluate_cost(
-    scenario.stock,
-    summary,
-    scenario.quota,
-    scenario.recovery,
-  )
+  let cost = match
+    @pricing.try_evaluate_cost(
+      scenario.stock,
+      summary,
+      scenario.quota,
+      scenario.recovery,
+    ) {
+    Ok(value) => value
+    Err(_) => abort("Demo cost input validation failed")
+  }
   (summary, cost)
 }
 
@@ -120,4 +143,5 @@ pub fn run_all() -> Unit {
   print_case(building_case())
   print_case(timber_case())
   print_case(pipe_case())
+  print_case(cable_case())
 }

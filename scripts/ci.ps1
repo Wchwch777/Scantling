@@ -27,4 +27,10 @@ Invoke-MoonChecked @("run", "cmd")
 Write-Host "[Scantling CI] Verifying public API quickstart demo..."
 Invoke-MoonChecked @("run", "examples/quickstart")
 
+Write-Host "[Scantling CI] Checking Web input and safe rendering..."
+& node web/app.test.js
+if ($LASTEXITCODE -ne 0) {
+    throw "node web/app.test.js failed with exit code $LASTEXITCODE"
+}
+
 Write-Host "[Scantling CI] All verification checks passed successfully!"

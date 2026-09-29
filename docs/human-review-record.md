@@ -87,3 +87,23 @@ Name / GitHub handle: Wchwch777
 Date:                 2026-09-25
 Signature or signed commit reference: Wchwch777 (review of a7ba35b)
 ```
+
+## Pending owner review for later AI-assisted changes
+
+The accepted decision above applies only to `a7ba35b`. It does not approve
+the later cross-material examples or the 2026-09-29 second-stage changes.
+No owner line-by-line review occurred during this automation run. The owner
+can review the following against the exact commit proposed for resubmission:
+
+- [ ] Confirm that timber, pipe, and cable assumptions fit the intended scope;
+      inspect `examples/scenarios` and the four quickstart outputs.
+- [ ] Check the shared optimizer and checked pricing calls, including the
+      zero-kerf exact-fit case and rejection of invalid cost parameters.
+- [ ] Inspect Web text rendering, numeric validation, the 2,000-piece cap,
+      and the fact that Web uses standalone FFD with fixed example rates.
+- [ ] Re-run local CI and Wasm checks, then inspect the remote CI result for
+      the candidate commit.
+- [ ] Check README, application, and development log against actual code;
+      decide whether these synthetic examples answer the review objection.
+
+These boxes are intentionally unchecked. Automated tests are not human review.

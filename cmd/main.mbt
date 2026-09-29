@@ -160,7 +160,12 @@ fn main {
   println("[3/3] 按演示费率与价格假设计算参数化成本...")
   let quota = @pricing.QuotaStandard::default_rebar()
   let scrap_mkt = @pricing.ScrapMarketParam::default()
-  let cost = @pricing.evaluate_cost(stock, summary, quota, scrap_mkt)
+  let cost = match
+    @pricing.try_evaluate_cost(stock, summary, quota, scrap_mkt) {
+    Ok(value) => value
+    Err(_) =>
+      abort("造价参数校验失败：请检查质量、单价与费率")
+  }
 
   println("  参数化成本明细表（非当地定额或合规审查）:")
   println(

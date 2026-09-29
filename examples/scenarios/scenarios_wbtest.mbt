@@ -3,7 +3,7 @@
 
 ///|
 test "three material cases preserve quantity and physical length" {
-  for scenario in [building_case(), timber_case(), pipe_case()] {
+  for scenario in [building_case(), timber_case(), pipe_case(), cable_case()] {
     let (summary, cost) = run_case(scenario)
     let mut expected_pieces = 0
     let mut expected_length = 0.0
@@ -48,6 +48,18 @@ test "three material cases preserve quantity and physical length" {
       true,
     )
   }
+}
+
+///|
+test "synthetic cable zero-kerf exact fit has no remnant or recovery" {
+  let (summary, cost) = run_case(cable_case())
+  assert_eq(summary.total_stocks_used, 1)
+  assert_eq(summary.total_demanded_length_mm, 1000.0)
+  assert_eq(summary.total_kerf_loss_mm, 0.0)
+  assert_eq(summary.total_reusable_length_mm, 0.0)
+  assert_eq(summary.total_scrap_length_mm, 0.0)
+  assert_eq(cost.material_gross_cost, 1.0)
+  assert_eq(cost.total_project_cost, 1.0)
 }
 
 ///|

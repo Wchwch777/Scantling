@@ -16,4 +16,7 @@ moon run cmd
 echo "[Scantling CI] Verifying public API quickstart demo..."
 moon run examples/quickstart
 
+echo "[Scantling CI] Checking Web input and safe rendering..."
+node web/app.test.js
+
 echo "[Scantling CI] All verification checks passed successfully!"

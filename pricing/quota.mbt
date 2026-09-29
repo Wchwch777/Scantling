@@ -96,6 +96,62 @@ pub struct CostBreakdown {
 } derive(Debug, Eq)
 
 ///|
+/// 成本参数错误；有限且非负的单价和费率是模型可计算的最低边界。
+pub(all) enum CostInputError {
+  NonFinite(String)
+  Negative(String)
+  RatioAboveOne(String)
+} derive(Debug, Eq)
+
+///|
+pub fn validate_cost_inputs(
+  stock : @core.StockMaterial,
+  quota : QuotaStandard,
+  scrap_market : ScrapMarketParam,
+) -> Array[CostInputError] {
+  let values : Array[(String, Double)] = [
+    ("unit_weight_kg_m", stock.unit_weight_kg_m),
+    ("cost_per_ton", stock.cost_per_ton),
+    ("labor_unit_cost", quota.labor_unit_cost),
+    ("machinery_unit_cost", quota.machinery_unit_cost),
+    ("standard_loss_rate", quota.standard_loss_rate),
+    ("management_rate", quota.management_rate),
+    ("profit_rate", quota.profit_rate),
+    ("tax_rate", quota.tax_rate),
+    ("scrap_price_per_ton", scrap_market.scrap_price_per_ton),
+    ("reusable_credit_ratio", scrap_market.reusable_credit_ratio),
+  ]
+  let errors : Array[CostInputError] = []
+  for entry in values {
+    let (name, value) = entry
+    if value.is_nan() || value.is_inf() {
+      errors.push(CostInputError::NonFinite(name))
+    } else if value < 0.0 {
+      errors.push(CostInputError::Negative(name))
+    } else if name == "reusable_credit_ratio" && value > 1.0 {
+      errors.push(CostInputError::RatioAboveOne(name))
+    }
+  }
+  errors
+}
+
+///|
+/// 先验证价格和费率，再计算。摘要须来自已校验的优化入口。
+pub fn try_evaluate_cost(
+  stock : @core.StockMaterial,
+  summary : @core.OptimizationSummary,
+  quota : QuotaStandard,
+  scrap_market : ScrapMarketParam,
+) -> Result[CostBreakdown, Array[CostInputError]] {
+  let errors = validate_cost_inputs(stock, quota, scrap_market)
+  if errors.length() > 0 {
+    Err(errors)
+  } else {
+    Ok(evaluate_cost(stock, summary, quota, scrap_market))
+  }
+}
+
+///|
 /// 将排料摘要映射为参数化成本明细；调用方须核验输入与项目适用性
 pub fn evaluate_cost(
   stock : @core.StockMaterial,

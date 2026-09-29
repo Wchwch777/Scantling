@@ -237,3 +237,29 @@ moon test --target wasm            PASS 26/26
 This run was AI-assisted. No human line-by-line review of the new material scenarios occurred in this run; their business assumptions remain pending review by Wchwch777. These checks establish that the demonstration code runs and its specified arithmetic is reproducible, not that the synthetic parameters match real procurement or that the heuristic is globally optimal.
 
 Before commit, `git diff --check` passed (with Git's CRLF conversion notices), `git fetch origin` succeeded, and `git rev-list --left-right --count HEAD...origin/main` returned `0 0`. The current branch was `main`, both remote URLs targeted `Wchwch777/Scantling`, `gh api user` returned `Wchwch777`, and the repository permission response reported `push: true`. The configured commit identity was `Codex AI-assisted <codex-ai-assisted@localhost>`, reflecting the actual AI-assisted edits rather than impersonating the repository owner.
+
+## 2026-09-29 09:05 Asia/Shanghai — second-stage first-review evidence, AI-assisted
+
+The automation began from clean `main` at `458215b`, with `origin` pointing to `https://github.com/Wchwch777/Scantling.git`. The task scope was the organizer's objection about narrow demand coverage, as supplied by the repository creator. This run made implementation choices for a synthetic cable reel exact-fit case, checked cost parameters, and safer Web input/rendering. There was no new human business decision, line-by-line review, field data, or manual browser test in this run.
+
+The fourth MoonBit scenario uses the same checked optimizer and pricing chain as the first three. Its zero-kerf, 600 + 400 mm cuts exactly consume a 1,000 mm reel and yield zero remnant and a 1 yuan assumed model cost. `try_evaluate_cost` returns typed errors for non-finite or negative mass, prices, labor and machinery unit costs, rates, and recovery price, plus a reusable credit ratio above one. The legacy `evaluate_cost` remains an unchecked compatibility entry point; cost validation is numeric and does not establish business reasonableness or prevent every finite-input overflow.
+
+The Web reference workbench now reports invalid, empty, non-finite, and excessive inputs rather than silently replacing them with defaults. It caps demand rows and pieces and renders user-provided labels with DOM text nodes instead of HTML strings. It still runs a separate JavaScript FFD algorithm with fixed steel-example labor and rate assumptions. `web/app.test.js` uses a minimal DOM harness to test empty and zero inputs, a 2,000-piece cap, and an HTML-like identifier as inert text. It is not a real-browser compatibility test or cross-language parity proof.
+
+An initial focused MoonBit run failed because tuple destructuring in a `for` binding was not accepted by this compiler; the loop now binds each entry before destructuring. Focused `moon test pricing` and `moon test examples/scenarios` then passed. Local verification after implementation:
+
+```text
+moon fmt                       PASS
+moon test pricing              PASS 8/8
+moon test examples/scenarios   PASS 3/3
+.\scripts\ci.ps1             PASS; fmt/check, 29/29 MoonBit tests, CLI, four-case quickstart, Node DOM check
+node --check web/app.js        PASS
+moon check --target wasm       PASS
+moon test --target wasm        PASS 29/29
+.\scripts\build_wasm.ps1     PASS
+git diff --check              PASS (Git printed CRLF conversion notices)
+```
+
+The prior owner sign-off for `a7ba35b` does not cover these changes. The review checklist in `docs/human-review-record.md` remains unchecked for this candidate. Remote CI results and any push must be recorded only after they occur.
+
+Push preflight: `git status` listed only this run's intended files and the new `web/app.test.js`; current branch was `main`. Both `origin` URLs targeted `Wchwch777/Scantling`; `git fetch origin` succeeded, `HEAD...origin/main` was `0 0`, and `git ls-remote` showed `458215b`. `gh api user --jq .login` returned `Wchwch777`; `gh repo view` reported `Wchwch777/Scantling`, default branch `main`, and `viewerPermission: ADMIN`. The configured Git author/committer identity is `Codex AI-assisted <codex-ai-assisted@localhost>`, reflecting AI-assisted edits without attributing them to the owner.
