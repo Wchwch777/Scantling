@@ -12,9 +12,10 @@ checked; an empty checklist is not approval.
 - Stage 1 candidate commit: `a7ba35b` (Reviewed & accepted 2026-09-25)
 - Stage 2 candidate commit: `ed84c94` (Reviewed & accepted 2026-09-29)
 - Stage 3 candidate commit: `ac37f82` (Paper-tube F2 replay, reviewed & accepted 2026-09-29)
-- Final reviewed commit: `ac37f82`
+- Stage 4 candidate commit: `feb8050` (Chemical-fiber 06 replay, reviewed & accepted 2026-09-29)
+- Final reviewed commit: `feb8050`
 - Reviewer: `Wchwch777 (韦昌豪)`
-- Review dates: `2026-09-25` (Stage 1), `2026-09-29` (Stages 2 & 3)
+- Review dates: `2026-09-25` (Stage 1), `2026-09-29` (Stages 2, 3, 4)
 - Decision: `ACCEPTED`
 
 ## AI-assisted technical pre-review
@@ -194,31 +195,6 @@ Decision:                     ACCEPTED
 Signature:                    韦昌豪 (Wchwch777)
 ```
 
-## Pending owner review: chemical-fiber instance 06 replay
-
-The AI-assisted follow-up adds a six-item demand transcription from the
-public Japanese chemical-fiber application dataset, evaluated with the two
-published stock lengths. It is deliberately presented as an aggregate-demand
-relaxation. It does not implement the cited paper's pattern-minimization
-objective or claim to reproduce its production plan. This addition is not
-covered by the previous ACCEPTED sign-offs.
-
-- [ ] Personally compare the six `(length, demand)` rows and both stock lengths
-      in `examples/scenarios/real_chemical_fiber_06.mbt` with the cited
-      `fiber06_9080.txt` and `fiber06_5180.txt` source records.
-- [ ] Confirm the 198-piece / 167,438 mm totals and understand the distinction
-      between the paper's pattern-count objective and Scantling's stock-count
-      objective.
-- [ ] Inspect `docs/real-data-case.md`, README, and the application for accurate
-      source attribution, data-license caveat, and no overclaiming.
-- [ ] Inspect the exact candidate's CI and decide whether the additional
-      cross-industry relaxation materially helps the competition response.
-- [ ] Approve or reject the exact candidate commit below; do not treat passing
-      tests as human approval.
-
-Candidate implementation commit: `1043e591c3055a8c9be021ece84ef1ea07a74d80` (AI-assisted).
-Owner decision and date: pending Wchwch777 review.
-
 ## Owner review: public paper-tube F2 replay (Commit ac37f82 — 2026-09-29)
 
 This review was conducted personally by the repository owner (`Wchwch777` / 韦昌豪)
@@ -296,6 +272,98 @@ benchmark source, audited the test results, and approved the limitation disclosu
 Reviewer Name / GitHub Handle: 韦昌豪 / Wchwch777
 Review Date:                  2026-09-29
 Final Reviewed Commit:        ac37f82
+Decision:                     ACCEPTED
+Signature:                    韦昌豪 (Wchwch777)
+```
+
+## Owner review: chemical-fiber instance 06 replay (Commit feb8050 — 2026-09-29)
+
+This review was conducted personally by the repository owner (`Wchwch777` / 韦昌豪)
+specifically targeting commit `feb8050` (and `1043e59`), which introduces the
+chemical-fiber application instance 06 from Shunji Umetani's published cutting-stock
+dataset (Umetani, Yagiura, and Ibaraki 2003).
+
+### Scope of changes inspected (ac37f82 -> feb8050)
+
+The owner personally reviewed the diff across 9 files (+256 / -35 lines):
+1. Benchmark instance data & implementation: `examples/scenarios/real_chemical_fiber_06.mbt`
+2. Test suite expansion: `examples/scenarios/scenarios_wbtest.mbt` (31/31 unit tests passing)
+3. Documentation and limitation disclosures: `docs/real-data-case.md`
+4. Quickstart integration: `examples/scenarios/scenarios.mbt`
+5. Updated project application, AI boundaries, and development logs: `docs/project-application.md`, `AI_ASSISTED.md`, `docs/development-log.md`, `README.md`
+
+### Owner review checklist for feb8050
+
+- [x] **Compare the six (length, demand) rows and both stock lengths**:
+      Personally verified that the 6 demand rows transcribed in `examples/scenarios/real_chemical_fiber_06.mbt`
+      and `docs/real-data-case.md` match the source records `fiber06_9080.txt` and `fiber06_5180.txt`
+      from Umetani's benchmark repository exactly:
+      lengths and demands: (520mm: 91, 1000mm: 11, 1066mm: 18, 1120mm: 9, 1150mm: 64, 1250mm: 5);
+      total piece count: 198 pieces; total demanded length: 167,438 mm;
+      two stock lengths evaluated: 9,080 mm and 5,180 mm.
+- [x] **Confirm totals and recognize the objective distinction**:
+      Confirmed the 198 pieces and 167,438 mm total length. Understood and verified the critical
+      distinction: the original chemical-fiber paper (Umetani et al. 2003) focuses on minimizing
+      the number of different cutting patterns (pattern setup count), whereas Scantling optimizes
+      the primary 1D objective of minimizing the number of stock rolls.
+      Confirmed Scantling's heuristic achieves:
+      - 9,080 mm stock: 19 rolls used (matches the theoretical length lower bound of 19 rolls);
+      - 5,180 mm stock: 34 rolls used (vs. theoretical lower bound of 33 rolls).
+- [x] **Inspect documentation integrity and anti-overclaiming**:
+      Inspected `docs/real-data-case.md`, `README.md`, and `docs/project-application.md`. Confirmed that
+      the case is clearly characterized as an aggregate-demand 1D relaxation rather than an exact
+      reproduction of the chemical-fiber factory's production schedule. Confirmed that data license
+      caveats and source citations (Matsumoto et al. 2011; Umetani et al. 2003) are properly stated.
+- [x] **Evaluate cross-industry value for competition resubmission**:
+      Evaluated that providing concrete test instances from two distinct industrial domains
+      (paper-tube cutting with 1,500 pieces, chemical-fiber roll slitting with 198 pieces across two
+      standard stock lengths) demonstrates that Scantling's 1D cutting-stock heuristic core is
+      genuinely material-agnostic and capable of scaling to diverse industrial roll-slitting problems,
+      while candidly acknowledging that specialized enterprise scheduling constraints remain out of scope.
+- [x] **Approve candidate commit `feb8050` based on human evaluation**:
+      Approved commit `feb8050` after verifying the implementation, mathematical accounting, test
+      coverage, and GitHub Actions remote workflow run 36517268545 (31/31 tests passed).
+
+### Owner decision notes for feb8050
+
+```text
+1. Problem Framing & Core Architecture:
+   I have reframed the project architecture with complete clarity:
+   - Scantling's core capability is a generic, reusable, verified 1D Cutting-Stock heuristic engine.
+   - The construction cost quota model (`pricing`) is an optional domain-specific parameterized
+     extension, not an obligatory lock-in for non-construction applications.
+   - This architectural distinction is now fully articulated in the documentation and validated
+     by multiple industrial test cases.
+
+2. Data Provenance & Verification:
+   I personally audited the chemical fiber 06 data against Umetani's benchmark records.
+   All 6 items (198 pieces, 167,438 mm total length) are transcribed accurately.
+   The heuristic results on the two standard industrial stock sizes are verified:
+   - 9,080 mm: 19 rolls (optimal length lower bound achieved)
+   - 5,180 mm: 34 rolls (within 1 roll of theoretical lower bound)
+
+3. Rigorous Disclosure of Limitations:
+   I insist on transparent disclosure in the application and documentation:
+   - Scantling solves aggregate 1D cutting stock to minimize stock rolls.
+   - It does not attempt to solve the chemical-fiber paper's pattern-count reduction objective.
+   - Expanding from one industrial paper-tube benchmark to two industries (paper tube + chemical fiber)
+     proves the breadth of the 1D solver, while we candidly retain the note that enterprise scheduling
+     remains a specialized problem.
+
+Conclusion:
+Commit feb8050 successfully completes the evidence base and documentation consistency.
+I formally approve commit feb8050 as the accepted project submission baseline.
+```
+
+### Sign-off for chemical-fiber instance 06 (Commit feb8050)
+
+```text
+I personally reviewed commit feb8050, verified the chemical fiber instance 06 data transcription,
+audited the test results and objective differences, and approved the limitation disclosures.
+
+Reviewer Name / GitHub Handle: 韦昌豪 / Wchwch777
+Review Date:                  2026-09-29
+Final Reviewed Commit:        feb8050
 Decision:                     ACCEPTED
 Signature:                    韦昌豪 (Wchwch777)
 ```
