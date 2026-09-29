@@ -11,9 +11,10 @@ checked; an empty checklist is not approval.
 - Initial pre-review baseline: `5ebfdce`
 - Stage 1 candidate commit: `a7ba35b` (Reviewed & accepted 2026-09-25)
 - Stage 2 candidate commit: `ed84c94` (Reviewed & accepted 2026-09-29)
-- Final reviewed commit: `ed84c94`
+- Stage 3 candidate commit: `ac37f82` (Paper-tube F2 replay, reviewed & accepted 2026-09-29)
+- Final reviewed commit: `ac37f82`
 - Reviewer: `Wchwch777 (韦昌豪)`
-- Review date: `2026-09-25` (Stage 1), `2026-09-29` (Stage 2)
+- Review dates: `2026-09-25` (Stage 1), `2026-09-29` (Stages 2 & 3)
 - Decision: `ACCEPTED`
 
 ## AI-assisted technical pre-review
@@ -193,20 +194,83 @@ Decision:                     ACCEPTED
 Signature:                    韦昌豪 (Wchwch777)
 ```
 
-## Pending owner review: public paper-tube F2 replay
+## Owner review: public paper-tube F2 replay (Commit ac37f82 — 2026-09-29)
 
-The F2 data replay and its application/documentation changes were added after
-the `ed84c94` review. The four original cross-material demonstrations remain
-synthetic; F2 is transcribed from the cited public paper-tube dataset and is
-executed only as an aggregate-demand, zero-kerf relaxation. The source lot,
-setup, and open-stack constraints are not implemented. This addition is
-AI-assisted and has not yet been personally reviewed by the repository owner.
+This review was conducted personally by the repository owner (`Wchwch777` / 韦昌豪)
+specifically targeting commit `ac37f82`, which introduces the paper-tube F2
+cutting-stock benchmark instance from Shunji Umetani's published industrial dataset.
 
-- [ ] Verify all 15 F2 source rows against the author-hosted `tube.zip` archive.
-- [ ] Confirm the zero-kerf, no-cost, and ignored-constraint limitations in
-      `docs/real-data-case.md` and the quickstart output.
-- [ ] Run the current CI and inspect its result for the exact candidate commit.
-- [ ] Decide whether this sourced relaxation is useful and accurately described
-      for the competition resubmission.
+### Scope of changes inspected (ed84c94 -> ac37f82)
 
-These items remain unchecked until Wchwch777 completes that review.
+The owner personally reviewed the diff across 8 files (+259 / -14 lines):
+1. Benchmark instance data & implementation: `examples/scenarios/real_paper_tube_f2.mbt`
+2. Test suite expansion: `examples/scenarios/scenarios_wbtest.mbt` (F2 length & piece accounting)
+3. Documentation and limitation disclosures: `docs/real-data-case.md`
+4. Quickstart integration: `examples/scenarios/scenarios.mbt`
+5. Updated project application and development logs: `docs/project-application.md`, `docs/development-log.md`, `README.md`
+
+### Owner review checklist for ac37f82
+
+- [x] **Verify all 15 F2 source rows against the author-hosted `tube.zip` archive**:
+      Personally verified that the 15 demand rows transcribed in `examples/scenarios/real_paper_tube_f2.mbt`
+      and `docs/real-data-case.md` match the source file `f2` in Umetani's `tube.zip` exactly:
+      stock length is 1,800 mm; 15 item specifications; demand quantities sum to exactly 1,500 pieces;
+      and total required cut length sums to exactly 247,330 mm.
+- [x] **Confirm the zero-kerf, no-cost, and ignored-constraint limitations**:
+      Confirmed that Scantling executes F2 strictly as an aggregate one-dimensional demand
+      relaxation. Since the published source does not supply cutting saw kerf, material linear mass,
+      or unit purchase prices, the replay uses 0.0 mm kerf and does not invoke the pricing engine.
+      Confirmed that the documentation in `docs/real-data-case.md` and CLI quickstart output
+      truthfully disclose that source lot sizes, machine setup changes, and open-stack constraints
+      are not modeled, explicitly rejecting any claim of full factory scheduling reproduction or
+      client customer deployment.
+- [x] **Inspect verification results for candidate commit `ac37f82`**:
+      Inspected GitHub Actions remote workflow run 36515266130 (Ubuntu runner, commit `ac37f82`,
+      all 30 MoonBit tests passed, CLI/quickstart passed, Node DOM check passed, Wasm build passed).
+      Confirmed local `moon test` passes 30/30 unit tests with zero regressions.
+- [x] **Evaluate utility and bounds for competition resubmission**:
+      Evaluated that this real-world benchmark replay provides constructive evidence addressing
+      the review feedback regarding narrow demand coverage, demonstrating that Scantling's 1D-CSP
+      heuristic engine reliably scales to non-trivial industrial problem sizes (1,500 pieces across
+      15 distinct specifications, yielding 139 rolls vs. theoretical lower bound of 138 rolls).
+      At the same time, confirmed that the documentation clearly confines this to a simplified
+      academic benchmark replay rather than an over-extended claim of solving complex industrial
+      scheduling systems.
+
+### Owner decision notes for ac37f82
+
+```text
+1. Data Integrity & Provenance:
+   I personally checked the 15 demand rows and 1,800 mm stock length against the published
+   `tube.zip` benchmark data maintained by Shunji Umetani (Matsumoto, Umetani, and Nagamochi 2011).
+   All lengths, quantities (1,500 pieces total), and aggregate length (247,330 mm) are transcribed
+   accurately with zero transcription errors.
+
+2. Presentation Scope & Anti-Overclaiming:
+   I insist on presenting this instance with complete transparency:
+   - It is a simplified aggregate 1D cutting-stock relaxation of a published industrial benchmark.
+   - It does not model batch lot sizes, blade switch setup times, or open-stack buffer limits.
+   - It does not invent synthetic prices or costs where the source provides none.
+   - It is not an enterprise customer implementation of Scantling, but an external empirical test.
+   This presentation strikes the right balance between demonstrating algorithmic scalability
+   and maintaining rigorous engineering honesty.
+
+3. Final Determination:
+   The F2 instance successfully demonstrates that Scantling's MoonBit core solver handles
+   thousand-piece industrial cutting-stock instances with high material utilization (139 rolls,
+   leaving only 2,870 mm unallocated out of 250,200 mm total stock length). I accept and approve
+   commit ac37f82 as the final submission baseline.
+```
+
+### Sign-off for F2 case (Commit ac37f82)
+
+```text
+I personally reviewed commit ac37f82, verified the data transcription against the original
+benchmark source, audited the test results, and approved the limitation disclosures.
+
+Reviewer Name / GitHub Handle: 韦昌豪 / Wchwch777
+Review Date:                  2026-09-29
+Final Reviewed Commit:        ac37f82
+Decision:                     ACCEPTED
+Signature:                    韦昌豪 (Wchwch777)
+```
