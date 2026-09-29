@@ -174,7 +174,7 @@ remnant = stock_length - sum(cut_length) - kerf_loss
 ### 7.2 可运行演示
 
 - CLI 完整工程示例；
-- `examples/quickstart` 三材料公共 API Demo；
+- `examples/quickstart` 四材料（钢筋、木料、管材、线缆）公共 API Demo；
 - 可离线打开的网页交互参考工作台；
 - 可选的 MoonBit Wasm 构建产物。
 

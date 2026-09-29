@@ -98,7 +98,7 @@ concerns regarding single-material specialization and narrow demand scenarios).
 
 ### Scope of changes inspected (a7ba35b -> ed84c94)
 
-The owner personally reviewed the diff across 20 files (+706 / -177 lines):
+The owner personally reviewed the diff across 20 files (+970 / -173 lines, confirmed via `git diff --stat a7ba35b..ed84c94`):
 1. Cross-material scenario expansion: `examples/scenarios/` (rebar, timber, pipe, cable reel)
    and `examples/quickstart/`.
 2. Pricing parameter validation: `pricing/quota.mbt` (`validate_cost_inputs`,
@@ -134,9 +134,9 @@ The owner personally reviewed the diff across 20 files (+706 / -177 lines):
 - [x] **Local & remote CI verification**:
       Executed and verified local test suite (`moon test` passed 29/29, `moon run cmd`,
       `moon run examples/quickstart`, `scripts/ci.ps1`, `scripts/build_wasm.ps1`).
-      Inspected GitHub Actions remote workflow run 36506363782 (Ubuntu runner, moon
-      0.1.20260920, all 29 tests passed, Wasm build passed). Machine verification
-      is recorded as technical evidence, separate from human approval.
+      Inspected GitHub Actions remote workflow run 36506463759 for candidate commit ed84c94
+      (Ubuntu runner, moon 0.1.20260920, all 29 tests passed, Wasm build passed). Machine
+      verification is recorded as technical evidence, separate from human approval.
 - [x] **Documentation integrity & AI-assisted disclosure**:
       Inspected `README.md`, `docs/project-application.md`, and `docs/development-log.md`.
       Confirmed applicant details (韦昌豪, 18260898003, 1341376491@qq.com) are accurate.
@@ -158,8 +158,11 @@ The owner personally reviewed the diff across 20 files (+706 / -177 lines):
      Maintained a clean parameterized model where callers supply prices and rates.
    - Enforced strict numerical sanity checks in `pricing/quota.mbt` to prevent invalid
      rates or NaN values from propagating into financial totals.
-   - Preserved clear algorithmic boundaries: FFD and BFD are heuristic approximations
-     (<= 11/9 OPT + 1) designed for engineering transparency, not global optimality proofs.
+   - Preserved clear algorithmic boundaries: FFD and BFD originate as greedy heuristics
+     from the classical 1D bin packing / cutting-stock literature. In our practical engineering
+     model with blade kerf loss and remnant thresholding, they serve strictly as deterministic
+     heuristic approximations to generate candidate patterns, with no ungrounded claims of
+     theoretical global optimality or direct unadjusted bin-packing asymptotic bounds.
    - Hardened the Web reference implementation against DOM injection and unbounded input
      sizes while keeping it lightweight and offline-accessible.
 
