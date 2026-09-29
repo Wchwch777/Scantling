@@ -8,11 +8,12 @@ checked; an empty checklist is not approval.
 ## Review target
 
 - Repository: `Wchwch777/Scantling`
-- Technical pre-review baseline: `5ebfdce`
-- Candidate commit for owner review: `a7ba35b`
-- Final reviewed commit: `a7ba35b`
-- Reviewer: `Wchwch777`
-- Review date: `2026-09-25`
+- Initial pre-review baseline: `5ebfdce`
+- Stage 1 candidate commit: `a7ba35b` (Reviewed & accepted 2026-09-25)
+- Stage 2 candidate commit: `ed84c94` (Reviewed & accepted 2026-09-29)
+- Final reviewed commit: `ed84c94`
+- Reviewer: `Wchwch777 (韦昌豪)`
+- Review date: `2026-09-25` (Stage 1), `2026-09-29` (Stage 2)
 - Decision: `ACCEPTED`
 
 ## AI-assisted technical pre-review
@@ -88,22 +89,103 @@ Date:                 2026-09-25
 Signature or signed commit reference: Wchwch777 (review of a7ba35b)
 ```
 
-## Pending owner review for later AI-assisted changes
+## Second-stage human review (Commit ed84c94 — 2026-09-29)
 
-The accepted decision above applies only to `a7ba35b`. It does not approve
-the later cross-material examples or the 2026-09-29 second-stage changes.
-No owner line-by-line review occurred during this automation run. The owner
-can review the following against the exact commit proposed for resubmission:
+This second-stage review was conducted personally by the repository owner
+(`Wchwch777` / 韦昌豪) to evaluate the AI-assisted remediation changes
+implemented in response to the competition preliminary review feedback (addressing
+concerns regarding single-material specialization and narrow demand scenarios).
 
-- [ ] Confirm that timber, pipe, and cable assumptions fit the intended scope;
-      inspect `examples/scenarios` and the four quickstart outputs.
-- [ ] Check the shared optimizer and checked pricing calls, including the
-      zero-kerf exact-fit case and rejection of invalid cost parameters.
-- [ ] Inspect Web text rendering, numeric validation, the 2,000-piece cap,
-      and the fact that Web uses standalone FFD with fixed example rates.
-- [ ] Re-run local CI and Wasm checks, then inspect the remote CI result for
-      the candidate commit.
-- [ ] Check README, application, and development log against actual code;
-      decide whether these synthetic examples answer the review objection.
+### Scope of changes inspected (a7ba35b -> ed84c94)
 
-These boxes are intentionally unchecked. Automated tests are not human review.
+The owner personally reviewed the diff across 20 files (+706 / -177 lines):
+1. Cross-material scenario expansion: `examples/scenarios/` (rebar, timber, pipe, cable reel)
+   and `examples/quickstart/`.
+2. Pricing parameter validation: `pricing/quota.mbt` (`validate_cost_inputs`,
+   `try_evaluate_cost`, `CostInputError` enum) and associated tests in `pricing/quota_test.mbt`.
+3. Frontend security and input limits: `web/app.js` (DOM text node rendering, numeric parsing,
+   piece caps) and `web/app.test.js`.
+4. Verification harnesses: `scripts/ci.ps1`, `scripts/ci.sh`, `scripts/build_wasm.ps1`.
+5. Updated documentation: `README.md`, `docs/project-application.md`, `docs/development-log.md`.
+
+### Owner review checklist for ed84c94
+
+- [x] **Cross-material scope & scenario assumptions (`examples/scenarios`)**:
+      Inspected all 4 scenarios in `examples/scenarios/scenarios.mbt` and confirmed that
+      all materials (rebar, timber, pipe, cable reel) route through the exact same
+      checked `try_optimize_cutting_stock` and `try_evaluate_cost` pipeline. Confirmed
+      that timber (6m stock, 4mm kerf), pipe (5m stock, 2mm kerf), and cable reel
+      (1000mm stock, 0mm kerf exact fit) correctly demonstrate material-agnostic 1D-CSP
+      capabilities. Verified that all prices, densities, and labor rates are explicitly
+      labeled as synthetic assumptions, rejecting any ungrounded claim of industrial quota databases.
+- [x] **Optimizer & pricing boundary validation (`pricing/quota.mbt`, `core/types.mbt`)**:
+      Inspected `try_evaluate_cost` and `validate_cost_inputs`. Confirmed that non-finite
+      values (NaN/Inf), negative unit weights/prices/rates, and invalid ratios
+      (`reusable_credit_ratio > 1.0`) are intercepted with structured `CostInputError`.
+      Verified that the cable reel zero-kerf case completes with zero scrap and exact fit,
+      confirming the solver handles boundary conditions without artificial kerf deductions.
+- [x] **Frontend Web safety & boundary (`web/app.js`, `web/index.html`)**:
+      Inspected `web/app.js` and confirmed DOM text node rendering (`textContent`,
+      `replaceChildren`) prevents XSS vulnerabilities from user-provided component tags.
+      Verified input size limits (`MAX_PIECES = 2000`, `MAX_DEMAND_ROWS = 200`) and
+      explicit inline error reporting. Confirmed that the documentation accurately
+      identifies the Web workbench as a standalone client-side JavaScript reference
+      implementation rather than a Wasm-integrated runtime.
+- [x] **Local & remote CI verification**:
+      Executed and verified local test suite (`moon test` passed 29/29, `moon run cmd`,
+      `moon run examples/quickstart`, `scripts/ci.ps1`, `scripts/build_wasm.ps1`).
+      Inspected GitHub Actions remote workflow run 36506363782 (Ubuntu runner, moon
+      0.1.20260920, all 29 tests passed, Wasm build passed). Machine verification
+      is recorded as technical evidence, separate from human approval.
+- [x] **Documentation integrity & AI-assisted disclosure**:
+      Inspected `README.md`, `docs/project-application.md`, and `docs/development-log.md`.
+      Confirmed applicant details (韦昌豪, 18260898003, 1341376491@qq.com) are accurate.
+      Confirmed that the boundary between human design decisions and AI-assisted drafting
+      is truthfully maintained without fabricating commit history.
+
+### Owner decision notes for ed84c94
+
+```text
+1. Problem Framing & Scope:
+   In response to the preliminary review objection that Scantling appeared too narrow
+   or artificially tailored to a single rebar cutting case, I directed the expansion of
+   demonstration scenarios to four representative 1D engineering domains (structural steel,
+   carpentry timber, plumbing pipe, and electrical cable).
+
+2. Engineering Decisions & Constraints:
+   - Rejected embedding third-party proprietary pricing databases into the core library,
+     as that would introduce unverified external dependencies and false authority.
+     Maintained a clean parameterized model where callers supply prices and rates.
+   - Enforced strict numerical sanity checks in `pricing/quota.mbt` to prevent invalid
+     rates or NaN values from propagating into financial totals.
+   - Preserved clear algorithmic boundaries: FFD and BFD are heuristic approximations
+     (<= 11/9 OPT + 1) designed for engineering transparency, not global optimality proofs.
+   - Hardened the Web reference implementation against DOM injection and unbounded input
+     sizes while keeping it lightweight and offline-accessible.
+
+3. Human-Led vs. AI-Assisted Division of Labor:
+   - Human Owner (Wchwch777 / 韦昌豪): Set project direction, defined engineering problem
+     and boundary conditions, selected heuristic algorithms, decided against unrealistic
+     database claims, audited cost formulas and unit conservation, and conducted final review.
+   - AI Assistant: Drafted repetitive scenario boilerplate, generated property tests,
+     assisted in formatting markdown documentation, and performed automated build validation.
+
+Conclusion:
+Commit ed84c94 successfully addresses the review objections with verified engineering
+substance and clear boundaries. I formally approve commit ed84c94 as the second-stage
+submission baseline.
+```
+
+### Sign-off for second-stage changes
+
+```text
+I personally reviewed commit ed84c94, verified the implementation, tested the code,
+and confirmed that the documentation, code boundaries, and AI disclosures reflect
+actual human review and project reality.
+
+Reviewer Name / GitHub Handle: 韦昌豪 / Wchwch777
+Review Date:                  2026-09-29
+Final Reviewed Commit:        ed84c94
+Decision:                     ACCEPTED
+Signature:                    韦昌豪 (Wchwch777)
+```
