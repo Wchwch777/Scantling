@@ -2,7 +2,7 @@
 // Licensed under Apache-2.0
 
 ///|
-test "three material cases preserve quantity and physical length" {
+test "four synthetic material cases preserve quantity and physical length" {
   for scenario in [building_case(), timber_case(), pipe_case(), cable_case()] {
     let (summary, cost) = run_case(scenario)
     let mut expected_pieces = 0
@@ -48,6 +48,48 @@ test "three material cases preserve quantity and physical length" {
       true,
     )
   }
+}
+
+///|
+test "published paper-tube F2 case preserves sourced demand and length" {
+  let (stock, demands, config) = paper_tube_f2_inputs()
+  assert_eq(stock.length_mm, 1800.0)
+  assert_eq(demands.length(), 15)
+  let mut expected_pieces = 0
+  let mut expected_length = 0.0
+  for demand in demands {
+    expected_pieces = expected_pieces + demand.quantity
+    expected_length = expected_length +
+      demand.length_mm * demand.quantity.to_double()
+  }
+  assert_eq(expected_pieces, 1500)
+  assert_eq(expected_length, 247330.0)
+
+  let summary = match
+    @optimizer.try_optimize_cutting_stock(stock, demands, config) {
+    Ok(value) => value
+    Err(_) => abort("Published paper-tube F2 replay input validation failed")
+  }
+  assert_eq(summary.total_demanded_length_mm, 247330.0)
+  assert_eq(summary.total_kerf_loss_mm, 0.0)
+  assert_eq(summary.total_stocks_used, 139)
+  assert_eq(
+    summary.total_stock_length_mm,
+    summary.total_stocks_used.to_double() * 1800.0,
+  )
+  assert_eq(
+    summary.total_stock_length_mm - summary.total_demanded_length_mm,
+    2870.0,
+  )
+  assert_eq(
+    (summary.total_stock_length_mm -
+    summary.total_demanded_length_mm -
+    summary.total_kerf_loss_mm -
+    summary.total_scrap_length_mm -
+    summary.total_reusable_length_mm).abs() <
+    1.0e-9,
+    true,
+  )
 }
 
 ///|

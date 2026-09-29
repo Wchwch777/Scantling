@@ -265,3 +265,44 @@ The prior owner sign-off for `a7ba35b` does not cover these changes. The review 
 Push preflight: `git status` listed only this run's intended files and the new `web/app.test.js`; current branch was `main`. Both `origin` URLs targeted `Wchwch777/Scantling`; `git fetch origin` succeeded, `HEAD...origin/main` was `0 0`, and `git ls-remote` showed `458215b`. `gh api user --jq .login` returned `Wchwch777`; `gh repo view` reported `Wchwch777/Scantling`, default branch `main`, and `viewerPermission: ADMIN`. The configured Git author/committer identity is `Codex AI-assisted <codex-ai-assisted@localhost>`, reflecting AI-assisted edits without attributing them to the owner.
 
 Commit `dcc66ca` was pushed to `origin/main` through that authenticated account. GitHub Actions [run 36506363782](https://github.com/Wchwch777/Scantling/actions/runs/36506363782) completed successfully for that exact commit: repository verification reported 29/29 MoonBit tests, CLI and quickstart completed, the Node DOM check passed, and the Wasm build step succeeded. The runner reported `moon 0.1.20260920` from the mutable `latest` installer. This CI result is automated verification; it does not mark the pending owner review complete.
+
+## 2026-09-29 — sourced paper-tube F2 replay, AI-assisted
+
+The repository creator requested real, attributable demand data to strengthen
+the evidence for broader 1D cutting-stock use. I selected instance F2 from
+Shunji Umetani's author-hosted benchmark page, which identifies six paper-tube
+factory application instances, and transcribed its 1,800 mm stock length and
+15 demand rows. The original record totals 1,500 pieces and 247,330 mm. See
+`docs/real-data-case.md` for the data citation and constraints.
+
+The F2 dataset also includes lot-size information and belongs to a problem
+variant with setup and open-stack constraints. Scantling does not implement
+those constraints, and the source provides no kerf, mass-per-length, or price.
+The new executable therefore replays only the aggregate standard 1D-CSP demand
+with zero kerf and does not call the pricing package. Zero mass/price fields are
+structural placeholders and are not used in the replay. The full source archive
+is not copied into this repository; its license is not stated by the source page.
+
+The test verifies the 15 types, piece count, total length, stock accounting,
+and the current reproducible result of 139 rolls with 2,870 mm unused; the
+simple length lower bound is 138 rolls. This does not prove optimality or
+reproduce the paper's factory schedule. The user requested the sourced-data
+addition; source selection, transcription, implementation, tests, and wording
+were AI-assisted. The new F2 addition remains pending owner review, recorded in
+`docs/human-review-record.md`.
+
+Local verification:
+
+```text
+moon fmt                              PASS
+moon test examples/scenarios         PASS 4/4
+moon run examples/quickstart         PASS; four synthetic cases and F2 replay
+.\\scripts\\ci.ps1                   PASS; 30/30 MoonBit tests, CLI, quickstart, Node DOM checks
+.\\scripts\\build_wasm.ps1          PASS
+git diff --check                     PASS (CRLF conversion notices only)
+```
+
+The F2 source is publicly listed at
+https://sites.google.com/view/umepon/benchmark and the associated paper is
+Matsumoto, Umetani, and Nagamochi (2011), doi:10.1007/s10951-010-0164-2.
+These are research-instance inputs, not Scantling customer records.

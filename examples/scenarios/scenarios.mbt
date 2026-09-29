@@ -1,7 +1,7 @@
 // Copyright 2026 Scantling Authors
 // Licensed under Apache-2.0
 //
-// Three synthetic material cases through the same public MoonBit packages.
+// Four synthetic material cases through the same public MoonBit packages.
 
 ///|
 priv struct DemoScenario {
@@ -135,8 +135,9 @@ fn print_case(scenario : DemoScenario) -> Unit {
 ///|
 pub fn run_all() -> Unit {
   println("Scantling: one-dimensional cutting and parameterized cost")
-  println("All inputs and currency values below are synthetic assumptions.")
-  println("Units: length mm; mass kg/m; prices yuan/ton of material mass.")
+  println("First four cases use synthetic input assumptions.")
+  println("The final F2 case is a sourced historical-demand relaxation.")
+  println("Units: length mm; synthetic cost cases use kg/m and yuan/ton.")
   println(
     "FFD/BFD are heuristics; outputs do not prove a global optimum or actual savings.",
   )
@@ -144,4 +145,5 @@ pub fn run_all() -> Unit {
   print_case(timber_case())
   print_case(pipe_case())
   print_case(cable_case())
+  run_paper_tube_f2()
 }

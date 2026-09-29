@@ -14,7 +14,7 @@
 - **实现语言**：MoonBit；浏览器演示使用独立 JavaScript 参考实现
 - **是否为移植项目**：否。本项目不是对某个既有同类工程的直接移植，核心数据模型、套裁启发式和参数化计价逻辑按 MoonBit 包结构原生组织。
 - **开源许可证**：Apache-2.0
-- **人工审查范围**：仓库创建者（韦昌豪）已完成两阶段逐项人工审查并签署 ACCEPTED 结论（阶段一基线 `a7ba35b`，阶段二补强基线 `ed84c94`），详见 `docs/human-review-record.md`。
+- **人工审查范围**：仓库创建者（韦昌豪）已完成并接受截至 `ed84c94` 的两阶段逐项审查；本次新增的公开纸管 F2 数据重放为 AI 辅助实现，尚待仓库创建者复核，详见 `docs/human-review-record.md`。
 
 ## 二、项目简介
 
@@ -24,7 +24,7 @@ Scantling 是一个使用 MoonBit 编写的一维定长材料套裁与参数化�
 
 在排料结果之上，项目提供一个参数化成本模型，将材料采购投入、废料回收估值、可复用余料折价、人工费、机具费、管理费、利润和税率纳入同一份成本明细。所有价格、费率和余料折价均为输入参数或演示默认值，项目不声称拥有地方定额数据库，也不把模型结果表述为 GB 50500 合规审查、现场实测或工程审计结论。
 
-项目同时提供 MoonBit CLI、四场景 quickstart、可选 WebAssembly 构建脚本和浏览器交互式参考工作台。网页仍是独立 JavaScript FFD 参考实现，跨材料示例目前由 MoonBit CLI 演示和测试覆盖，不能把网页称为这些示例的统一前端。
+项目同时提供 MoonBit CLI、四种合成材料演示、一个公开论文记录的纸管工厂实例重放、可选 WebAssembly 构建脚本和浏览器交互式参考工作台。新增 F2 输入尚待仓库创建者复核；该重放不涵盖来源中的 lot/setup 与 open-stack 约束，也不计算来源未提供的价格和锯缝。网页仍是独立 JavaScript FFD 参考实现，跨材料与 F2 算例目前由 MoonBit CLI 演示和测试覆盖，不能把网页称为这些示例的统一前端。
 
 ## 三、项目背景与问题定义
 
@@ -83,12 +83,13 @@ Scantling 将上述因素拆分为可测试的领域对象和参数，目标不�
 
 - `moon run cmd`：运行完整 CLI 示例，输出输入清单、排料版样和成本明细；
 - `moon run examples/quickstart`：运行钢筋、木料、管材、线缆四组假设输入，均展示“校验 → 优化 → 计价”链路；
+- 同一命令还重放 Umetani 公开数据页所列日本纸管工厂 F2 实际应用的聚合长度需求；只验证一维长度套裁，不模拟原研究中的批次/开垛约束，也不进行造价计算，详见 `docs/real-data-case.md`；
 - `web/index.html`：离线打开的浏览器工作台，使用独立 JavaScript FFD 参考实现展示排料图谱和参数化成本；固定采用钢筋示例的人工、机具和费率假设；
 - `scripts/build_wasm.*`：构建 MoonBit WebAssembly 产物；当前页面尚未在浏览器运行时加载该 Wasm 产物。
 
 ### 4.6 跨材料可运行算例
 
-`examples/scenarios` 对四组输入使用同一个 `optimizer.try_optimize_cutting_stock`（调用领域校验）和 `pricing.try_evaluate_cost` 链路，`examples/quickstart` 负责运行并输出结果。以下数据均为自设算术样例，不来自企业、行业调查或现场记录。
+`examples/scenarios` 的四组跨材料数据为合成算术样例；另加入一个可追溯至公开研究数据的纸管工厂 F2 实际应用需求实例。F2 只调用 `optimizer.try_optimize_cutting_stock` 重放聚合长度需求，不调用成本模型；原实例的 lot/setup 与 open-stack 约束被明确排除。代码、来源、数据许可边界与复现限制见 `docs/real-data-case.md`。
 
 | 示例 | 母材与需求 | 锯口 / 复用阈值 | 当前模型结果 |
 | --- | --- | --- | --- |
@@ -96,6 +97,8 @@ Scantling 将上述因素拆分为可测试的领域对象和参数，目标不�
 | 家具木料 | 6,000 mm；2,500×2、900×1 mm | 4 / 500 mm | 1 根；锯口 8 mm；残料 92 mm；材料净成本 24 元 |
 | 车间管材 | 5,000 mm；2,400×2 mm | 2 / 150 mm | 1 根；锯口 2 mm；可复用余料 198 mm；材料净成本约 14.701 元 |
 | 线缆卷盘 | 1,000 mm；600×1、400×1 mm | 0 / 100 mm | 1 卷；恰好用尽，无锯口和剩余长度；模型总成本 1 元 |
+
+纸管工厂 F2 实际应用实例：1,800 mm 原材、15 类切件、1,500 件需求总量。按来源未提供的 kerf 设为 0 后，当前启发式重放使用 139 卷，留下 2,870 mm 未分配长度；仅按总长度计算的下界为 138 卷。该结果是当前算法在简化问题上的可复跑结果，不是原工厂方案或最优性证明。
 
 所有场景使用 kg/m 的质量和元/t 的材料计价口径。非建筑场景的质量、采购价、人工设备单价、费率及残值均是假设参数，不具备市场代表性；当前模型只检查计价数值边界，不校验这些参数的业务范围，也不提供二维板材排样、多母材规格混合或库存优化。
 
@@ -111,7 +114,7 @@ graph TD
     F --> G[CostBreakdown 成本明细]
     G --> H[cmd CLI 演示]
     G --> I[cmd 建筑材料 CLI]
-    C --> J[examples/scenarios 四种材料共用 API]
+    C --> J[examples/scenarios 合成材料与纸管 F2 案例]
 ```
 
 ### 5.1 包职责
@@ -122,7 +125,7 @@ graph TD
 | `optimizer` | 实现 FFD、BFD、锯口处理和候选方案选择 | 不证明全局最优，不依赖造价包 |
 | `pricing` | 实现参数化成本、余料折价和假设基线 | 不提供地方定额库、库存系统或审计结论 |
 | `cmd` | 提供完整命令行示例和可读输出 | 使用固定的演示输入 |
-| `examples/scenarios` 与 `examples/quickstart` | 四种材料数据共用校验、FFD/BFD、计价链路及测试 | 参数全为演示假设，不代表行业数据 |
+| `examples/scenarios` 与 `examples/quickstart` | 四种合成材料共用校验、FFD/BFD、计价链路；纸管 F2 公开实际应用需求重放与测试 | F2 忽略原始 lot/setup 与 open-stack 约束，不含成本/锯缝数据；其余计价参数为演示假设 |
 | `web` | 提供离线浏览器参考工作台 | 与 MoonBit 核心实现尚未做逐项等价性测试 |
 | `scripts` | 提供 CI 和 Wasm 构建入口 | 构建 Wasm，不负责浏览器加载集成 |
 
@@ -185,7 +188,7 @@ remnant = stock_length - sum(cut_length) - kerf_loss
 ```text
 moon fmt --check                    PASS
 moon check                          PASS
-moon test                           29 passed, 0 failed
+moon test                           30 passed, 0 failed
 moon run cmd                        PASS
 moon run examples/quickstart       PASS
 .\scripts\ci.ps1                   PASS
@@ -201,6 +204,7 @@ GitHub Actions 工作流配置了格式检查、类型检查、MoonBit 测试、
 - 一维套裁数学模型与参数化成本公式说明；
 - 架构回顾与限制说明；
 - AI 辅助边界说明；
+- 纸管工厂公开 F2 需求案例的数据来源与简化边界；
 - 开发与验证日志；
 - 仓库所有者两阶段人工审查记录（阶段一与阶段二均完成逐项核验并签署 ACCEPTED 结论）。
 

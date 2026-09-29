@@ -192,3 +192,21 @@ Final Reviewed Commit:        ed84c94
 Decision:                     ACCEPTED
 Signature:                    韦昌豪 (Wchwch777)
 ```
+
+## Pending owner review: public paper-tube F2 replay
+
+The F2 data replay and its application/documentation changes were added after
+the `ed84c94` review. The four original cross-material demonstrations remain
+synthetic; F2 is transcribed from the cited public paper-tube dataset and is
+executed only as an aggregate-demand, zero-kerf relaxation. The source lot,
+setup, and open-stack constraints are not implemented. This addition is
+AI-assisted and has not yet been personally reviewed by the repository owner.
+
+- [ ] Verify all 15 F2 source rows against the author-hosted `tube.zip` archive.
+- [ ] Confirm the zero-kerf, no-cost, and ignored-constraint limitations in
+      `docs/real-data-case.md` and the quickstart output.
+- [ ] Run the current CI and inspect its result for the exact candidate commit.
+- [ ] Decide whether this sourced relaxation is useful and accurately described
+      for the competition resubmission.
+
+These items remain unchecked until Wchwch777 completes that review.

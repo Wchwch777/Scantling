@@ -85,11 +85,11 @@ moon run cmd
 ```
 
 ### 5. 运行跨材料 MoonBit Demo
-用四组小规模假设输入，查看相同的“校验 → 优化 → 计价”链路：
+用四组小规模假设输入查看相同的“校验 → 优化 → 计价”链路，并额外重放一个公开论文记录的纸管工厂 F2 下料实例：
 ```bash
 moon run examples/quickstart
 ```
-钢筋、木料、管材、线缆均输出母材根数、需求长度、锯口、余料/废料及参数化成本；线缆算例覆盖零锯口与恰好用尽母材。计价统一使用 kg/m 和元/t 的质量口径，因此输入必须提供材料每米质量；非建筑场景的质量、价格、费率、回收折价只是可复跑的算例假设，不是行业数据。当前仅支持单一母材规格和同质切件，不处理板材二维排样、多规格混合、实际库存、采购约束或精确最优求解。
+钢筋、木料、管材、线缆均输出母材根数、需求长度、锯口、余料/废料及参数化成本；线缆算例覆盖零锯口与恰好用尽母材。F2 来自公开记录的日本纸管工厂实际应用数据，但仅作聚合需求的标准一维套裁重放：原记录中的 lot/setup 与 open-stack 约束不受支持，来源也没有给出锯缝、米重或价格，因此不计算成本，也不声称复现工厂排程。详情、逐项来源和适用边界见 [docs/real-data-case.md](docs/real-data-case.md)。其余四场景仍为合成示例。当前仅支持单一母材规格和同质切件，不处理板材二维排样、多规格混合、实际库存、采购约束或精确最优求解。
 
 ### 6. WebAssembly 编译
 ```bash
@@ -150,14 +150,15 @@ scantling/
 │   ├── quota_test.mbt      # 财务守恒、免税工况与边界测试
 │   └── moon.pkg
 ├── cmd/                    # 终端交互入口与 ASCII 排料图谱可视化看板
-├── examples/scenarios/     # 四材料共用 API 演示与守恒测试
+├── examples/scenarios/     # 四种合成材料与公开纸管案例，共用 API 演示/测试
 ├── examples/quickstart/    # 运行四组材料示例的入口
 ├── web/                    # 纯前端交互工作台 (支持离线与本地浏览器直接运行)
 ├── docs/                   # 专业工程文档
 │   ├── specifications.md   # 1D-CSP 数学模型与造价计算标准公式推导
 │   ├── retrospective.md    # 架构选型权衡与技术演进回顾
 │   ├── human-review-record.md # 当前提交的人工审查记录
-│   └── project-application.md # 项目申报书
+│   ├── project-application.md # 项目申报书
+│   └── real-data-case.md      # 纸管工厂 F2 数据来源与适用边界
 ├── scripts/                # 自动化构建脚本 (Wasm 构建)
 │   ├── build_wasm.sh
 │   ├── build_wasm.ps1
