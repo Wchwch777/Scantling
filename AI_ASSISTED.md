@@ -44,4 +44,4 @@ No AI-suggested change is considered complete until it has a focused test or an 
 - The browser workbench currently uses a standalone JavaScript reference engine; the Wasm scripts verify an optional build, not browser Wasm loading.
 - GB 50500 is represented as a parameterized formula model. Project data, local quota rules, contracts, and tax treatment must be supplied separately.
 - The README benchmark is an illustrative deterministic example, not an independent construction-site measurement.
-- The paper-tube F2 and chemical-fiber 06 inputs are small transcriptions from published historical application datasets. Their simplified replays do not reproduce the source studies' full objectives or production constraints; the chemical-fiber addition remains subject to owner review until signed.
+- The paper-tube F2 and chemical-fiber 06 inputs are small transcriptions from published historical application datasets. Their simplified replays do not reproduce the source studies' full objectives or production constraints; the chemical-fiber addition has been reviewed and signed off in the human review record.

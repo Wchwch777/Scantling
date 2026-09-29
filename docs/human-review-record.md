@@ -13,7 +13,8 @@ checked; an empty checklist is not approval.
 - Stage 2 candidate commit: `ed84c94` (Reviewed & accepted 2026-09-29)
 - Stage 3 candidate commit: `ac37f82` (Paper-tube F2 replay, reviewed & accepted 2026-09-29)
 - Stage 4 candidate commit: `feb8050` (Chemical-fiber 06 replay, reviewed & accepted 2026-09-29)
-- Final reviewed commit: `feb8050`
+- Technical review baseline: `feb8050` (All source code, algorithms, and tests)
+- Documentation sync & polishing commits: Subsequent commits on `main` (including `231372f` and current commit) contain only owner review sign-offs, project application phrasing refinements, and documentation synchronization; no codebase or algorithm logic was modified.
 - Reviewer: `Wchwch777 (韦昌豪)`
 - Review dates: `2026-09-25` (Stage 1), `2026-09-29` (Stages 2, 3, 4)
 - Decision: `ACCEPTED`
@@ -360,10 +361,12 @@ I formally approve commit feb8050 as the accepted project submission baseline.
 ```text
 I personally reviewed commit feb8050, verified the chemical fiber instance 06 data transcription,
 audited the test results and objective differences, and approved the limitation disclosures.
+Technical implementation was finalized and reviewed at commit feb8050; subsequent commits on main
+only synchronize human review records and refine application wording with no code changes.
 
 Reviewer Name / GitHub Handle: 韦昌豪 / Wchwch777
 Review Date:                  2026-09-29
-Final Reviewed Commit:        feb8050
+Technical Review Baseline:    feb8050
 Decision:                     ACCEPTED
 Signature:                    韦昌豪 (Wchwch777)
 ```
