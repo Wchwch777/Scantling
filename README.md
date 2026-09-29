@@ -172,7 +172,7 @@ scantling/
 
 ## 🔍 开发透明度 (Development Transparency)
 
-项目采用人工主导、AI 辅助的开发方式。仓库保留真实的 AI 辅助提交归属，不通过改写历史制造人工作者。发布或提交前，项目维护者需要按 [docs/human-review-record.md](docs/human-review-record.md) 逐项检查并确认当前提交；[AI_ASSISTED.md](AI_ASSISTED.md) 与 [docs/development-log.md](docs/development-log.md) 记录辅助边界和实际验证过程。
+项目采用人工主导、AI 辅助的开发方式。仓库保留真实的 AI 辅助提交归属，不通过改写历史制造人工作者。发布或提交前，由我本人按 [docs/human-review-record.md](docs/human-review-record.md) 逐项检查并确认提交；[AI_ASSISTED.md](AI_ASSISTED.md) 与 [docs/development-log.md](docs/development-log.md) 记录辅助边界和实际验证过程。
 
 ---
 
