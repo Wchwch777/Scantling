@@ -216,7 +216,7 @@ covered by the previous ACCEPTED sign-offs.
 - [ ] Approve or reject the exact candidate commit below; do not treat passing
       tests as human approval.
 
-Candidate commit: pending AI-assisted implementation commit.
+Candidate implementation commit: `1043e591c3055a8c9be021ece84ef1ea07a74d80` (AI-assisted).
 Owner decision and date: pending Wchwch777 review.
 
 ## Owner review: public paper-tube F2 replay (Commit ac37f82 — 2026-09-29)
