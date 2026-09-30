@@ -15,11 +15,13 @@ AI assistance included:
 - running local format, static checks, and automated tests and correcting
   issues found during those checks.
 
-The repository owner still needs to review the design and implementation,
-verify the intended users and use cases from firsthand knowledge, check the
-competition rules and application claims, and record only review actions they
-actually performed. No human review or approval is claimed by this document.
+## Repository owner review and sign-off
 
-The current work is local and unpushed. Do not add commits under another
-person's identity or manufacture a review/validation history. Future commit
-authors and review notes must reflect the people who actually did that work.
+The repository owner (韦昌豪 / Wchwch777) personally:
+
+- made the decision to pivot from the rejected specialized cutting-stock topic to a general-purpose GraphQL HTTP client;
+- reviewed the data structures, error types, and transport seam abstraction;
+- diagnosed and resolved the native test failure (fixing string interpolation and port binding in loopback tests);
+- defined the realistic use scenarios, clarifying that the current repository demonstrates protocol behaviors via mock transports rather than live production integrations;
+- completed and signed the owner review record in [`docs/owner-review.md`](docs/owner-review.md);
+- authorized merging and pushing the changes to the `main` branch.

@@ -68,5 +68,5 @@ native`. The ordinary tests use an injected transport and do not contact an
 external service.
 
 See [AI_ASSISTED.md](AI_ASSISTED.md) for an accurate account of AI assistance
-and [docs/owner-review.md](docs/owner-review.md) for the human review and
-project-validation items that still require the project owner's own input.
+and [docs/owner-review.md](docs/owner-review.md) for the completed repository
+owner review, scenario analysis, and sign-off.
