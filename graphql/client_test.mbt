@@ -4,7 +4,12 @@ fn expect_response(
 ) -> GraphQLResponse {
   match value {
     Ok(response) => response
-    Err(_) => abort("expected GraphQL response")
+    Err(ClientError::InvalidEndpoint(s)) => abort("InvalidEndpoint: \{s}")
+    Err(ClientError::InvalidRequest(s)) => abort("InvalidRequest: \{s}")
+    Err(ClientError::TransportFailure(s)) => abort("TransportFailure: \{s}")
+    Err(ClientError::HttpFailure(code, s)) =>
+      abort("HttpFailure(\{code}): \{s}")
+    Err(ClientError::InvalidResponse(s)) => abort("InvalidResponse: \{s}")
   }
 }
 
@@ -204,8 +209,9 @@ async test "default transport sends a POST to a local HTTP server" {
         .end_response()
       })
     })
-    @async.sleep(50)
-    let client = GraphQLClient::new("http://127.0.0.1:{address.port()}/graphql").unwrap()
+    @async.sleep(100)
+    let port = address.port()
+    let client = GraphQLClient::new("http://127.0.0.1:\{port}/graphql").unwrap()
     let response = expect_response(client.execute("{ ping }"))
     assert_eq(response.http_status, 200)
     assert_eq(
