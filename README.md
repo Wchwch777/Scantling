@@ -1,72 +1,87 @@
-# MoonBit GraphQL HTTP Client
+# Scantling — MoonBit MQTT Client
 
-A small asynchronous GraphQL-over-HTTP client for MoonBit. It sends JSON POST
-requests, decodes GraphQL response envelopes, and keeps partial `data` when a
-response also contains `errors`.
+An asynchronous MQTT 3.1.1 TCP client runtime for MoonBit. Scantling builds on
+the existing [`zbhzs1/moonbit-mqtt`](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt)
+packet codec instead of reimplementing packet encoding. It adds connection
+handshake, topic subscription, QoS 0 publish, inbound QoS 1 acknowledgement,
+and a native TCP transport.
 
-## Scope
+The project targets a reusable messaging protocol layer, not one industry or
+one device. MQTT is used by IoT telemetry, device command channels, and
+application event messaging. These are intended application areas, not claims
+of existing Scantling deployments or surveyed customers; see
+[`docs/project-application.md`](docs/project-application.md) for the evidence
+and scope boundaries.
 
-- Queries and mutations over HTTP POST.
-- JSON `variables` and optional `operationName`.
-- Configurable request headers (for example, authorization).
-- Structured GraphQL errors, extensions, response status, and partial data.
-- An injectable asynchronous transport for deterministic tests and custom
-  environments.
+## Current implementation
 
-This is not a schema/code generator and does not currently implement
-subscriptions, WebSockets, automatic retries, persisted queries, or a typed
-model layer. The default transport is based on `moonbitlang/async` (currently
-experimental); check that library's platform support before adopting it in a
-production target. Use `with_transport` to provide a transport suited to your
-runtime.
+- TCP connection by host and port, MQTT 3.1.1 CONNECT / CONNACK handshake.
+- Subscribe to one topic filter at a time and wait for the matching SUBACK.
+- Publish QoS 0 messages.
+- Receive QoS 0 and QoS 1 PUBLISH packets; acknowledge QoS 1 before returning
+  the message to the caller.
+- Decode framed MQTT packets with a 1 MiB inbound packet limit.
+- Packet encoding and decoding delegated to the Apache-2.0
+  [`moonbit-mqtt` codec](https://github.com/zbhzs1/moonbit-mqtt).
+
+The initial runtime does not implement TLS, authentication, automatic
+reconnection, scheduled keep-alive pings, QoS 1 publishing, QoS 2 session
+handling, MQTT 5.0, or WebSocket transport. Do not use it for production
+connections that require these features.
 
 ## Quick start
 
-Add the package to a MoonBit project, then construct a client and execute a
-request:
-
 ```moonbit
 import {
-  "moonbit_graphql_client/graphql" @graphql,
-  "moonbitlang/core/json" @json,
+  "scantling_mqtt_client/mqtt" @mqtt,
+  "zbhzs1/moonbit-mqtt" @codec,
 }
 
-let client = @graphql.GraphQLClient::new(
-  "https://api.example.test/graphql",
-  headers={ "authorization": "Bearer YOUR_TOKEN" },
-).unwrap()
-
-match client.execute(
-  "query Viewer($id: ID!) { user(id: $id) { name } }",
-  variables=@json.Json::object({ "id": @json.Json::string("42") }),
-  operation_name="Viewer",
-) {
-  Ok(response) => {
-    // Inspect response.data and response.errors independently:
-    // GraphQL may return useful partial data together with errors.
-    println(response.data)
-    println(response.errors)
-  }
-  Err(error) => println(error)
+async fn main {
+  let client = @mqtt.Client::connect(
+    "127.0.0.1",
+    port=1883,
+    client_id="scantling-demo",
+  )
+  client.subscribe(topic="demo/temperature", qos=@codec.QoS1)
+  client.publish(topic="demo/temperature", payload=b"21.5")
+  let message = client.receive()
+  println("Received \{message.topic}: \{message.payload}")
+  client.disconnect()
 }
 ```
 
-## Error behavior
+Start an MQTT 3.1.1 broker first. For example, with Mosquitto installed:
 
-`GraphQLResponse` is returned for a valid GraphQL envelope, including a valid
-envelope with a non-2xx HTTP status. Callers should inspect `http_status`,
-`data`, and `errors`; a GraphQL error is not necessarily a transport failure.
-Malformed successful responses, non-GraphQL HTTP failures, and transport
-failures use distinct `ClientError` variants.
+```sh
+mosquitto -p 1883
+```
+
+Then run the example:
+
+```sh
+moon run --target native examples/mqtt_client
+```
 
 ## Development and verification
 
-Run `moon fmt`, `moon check`, and `moon test`. A native-target test also sends a
-real request to an ephemeral loopback HTTP server to exercise the default
-transport; it requires a C compiler and can be run with `moon test --target
-native`. The ordinary tests use an injected transport and do not contact an
-external service.
+```sh
+moon update
+moon fmt --check
+moon check --target wasm
+moon test --target wasm
+moon check --target native
+moon test --target native
+```
 
-See [AI_ASSISTED.md](AI_ASSISTED.md) for an accurate account of AI assistance
-and [docs/owner-review.md](docs/owner-review.md) for the completed repository
-owner review, scenario analysis, and sign-off.
+The portable tests cover MQTT Remaining Length framing and input limits. A
+native integration test is provided for a local TCP broker peer through CONNECT,
+SUBSCRIBE, QoS 0 PUBLISH, inbound QoS 1/PUBACK, and DISCONNECT. The CI workflow
+is configured to run it on Ubuntu; this local revision has not yet produced a
+passing CI result. A passing local codec/framing test is not a substitute for
+the native socket test or for testing against an independent external broker.
+
+See [`AI_ASSISTED.md`](AI_ASSISTED.md) for the assistance boundary and
+[`docs/owner-review.md`](docs/owner-review.md) for the earlier, historical
+review record. That earlier sign-off applies only to its recorded commit, not
+to this MQTT direction change.

@@ -1,0 +1,6 @@
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+  "scantling_mqtt_client/mqtt" @client,
+  "zbhzs1/moonbit-mqtt" @codec,
+}

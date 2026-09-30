@@ -1,4 +1,4 @@
-name: MoonBit GraphQL Client CI
+name: MoonBit MQTT Client CI
 
 on:
   push:
@@ -22,9 +22,11 @@ jobs:
         run: moon update
       - name: Format check
         run: moon fmt --check
-      - name: Type check
-        run: moon check
-      - name: Run default tests
-        run: moon test
+      - name: Type check portable target
+        run: moon check --target wasm
+      - name: Run portable tests
+        run: moon test --target wasm
+      - name: Type check native client
+        run: moon check --target native
       - name: Run native integration tests
         run: moon test --target native

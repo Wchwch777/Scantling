@@ -1,0 +1,7 @@
+import {
+  "moonbitlang/async",
+  "zbhzs1/moonbit-mqtt" @codec,
+  "scantling_mqtt_client/mqtt",
+}
+
+pkgtype(kind: "executable")

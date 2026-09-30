@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/async/io",
+  "moonbitlang/async/socket",
+  "zbhzs1/moonbit-mqtt" @codec,
+}
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/socket",
+  "zbhzs1/moonbit-mqtt" @codec,
+} for "test"
