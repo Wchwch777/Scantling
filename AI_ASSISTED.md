@@ -20,13 +20,13 @@ The owner selected the MQTT direction, reviewed the implementation, corrected
 the Native integration-test packet order, and signed the review recorded in
 `docs/owner-review.md`. This does not mean the owner authored the AI-assisted
 implementation. The owner also prohibited invented demand evidence and
-reviewed the documentation revision through commit `f5b7024`, including the
-three intended protocol scenarios. The current local addition about demand
-coverage was drafted from public evidence and has not yet been owner-reviewed;
-the earlier sign-off does not cover it. Native CI passed for commit `f5b7024`
-in [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535);
-Native was not rerun on this Windows machine.
+reviewed the documentation revision through commit `63a9ab8` and the current sync,
+including the three intended protocol scenarios and the demand coverage evidence section.
+The owner review recorded in [`docs/owner-review.md`](docs/owner-review.md) covers
+the full revision including the demand coverage analysis. Native CI passed for recent
+commits in [GitHub Actions run 36738625531](https://github.com/Wchwch777/Scantling/actions/runs/36738625531)
+(and earlier run 36737550535); Native was not rerun on this Windows machine.
 
 [`docs/owner-review.md`](docs/owner-review.md) records the owner's review and sign-off
-covering the MQTT revision through commit `f5b7024` and the current documentation
+covering the MQTT revision through commit `63a9ab8` and the current documentation
 synchronization.
