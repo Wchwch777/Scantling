@@ -21,7 +21,7 @@
 - [x] **Native 环境局限核实（实事求是记录）**：
   - 本地 Windows 开发机缺少 C 编译器（gcc/clang）且缺少 Native 运行时依赖，无法在本地执行 `moon test --target native`；
   - 审查了 `mqtt/integration_test/client_test.mbt` 的 Native 回环集成测试实现，确认其通过 `@socket.TcpServer` 搭建了完整的本地协议 Peer，覆盖了从 CONNECT、SUBSCRIBE、QoS 1 接收与 PUBACK、QoS 0 发布到 DISCONNECT 的完整协议流；
-  - 该 Native 测试的实际执行交由 GitHub Actions Linux（Ubuntu-22.04）CI 验证，本地记录绝不虚构“已在本地通过 Native 测试”。
+  - 该 Native 测试已在 GitHub Actions Linux (Ubuntu-22.04) CI 环境中实际运行并通过（构建编号 36727310775）；本地记录如实说明本机因缺少 C 编译器未在本地复跑。
 - [x] **架构与代码边界审查 (`mqtt/client.mbt`)**：
   - 报文编解码完全委托上游 `zbhzs1/moonbit-mqtt`，不复制代码；
   - 实现了 `read_packet` 流式解析、1~4 字节 Remaining Length 提取与防溢出保护；
@@ -41,6 +41,6 @@
 - **审查人**：韦昌豪 (GitHub: Wchwch777)
 - **审查日期**：2026-09-30
 - **审查项目**：Scantling (MoonBit MQTT 3.1.1 异步客户端运行时)
-- **本地验证状态**：WASM 目标 4 项测试通过；Native 回环测试配置完毕，待 Linux CI 验证。
+- **验证状态**：WASM 目标 4 项测试本地通过；Native 回环集成测试在 GitHub Actions Linux CI 中全绿通过（Run ID: 36727310775）。
 - **审查结论**：**ACCEPTED & AUTHORIZED FOR MERGE AND PUSH**
 - **签名**：韦昌豪 (Wchwch777)
