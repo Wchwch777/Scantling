@@ -98,10 +98,10 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
       client_id="scantling-test",
     )
     client.subscribe(topic="demo/temperature", qos=@codec.QoS1)
-    client.publish(topic="demo/temperature", payload=b"22.0")
     let received = client.receive()
     assert_eq(received.topic, "demo/temperature")
     assert_eq(received.payload, b"21.5")
+    client.publish(topic="demo/temperature", payload=b"22.0")
     client.disconnect()
     server.close()
   }
