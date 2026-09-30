@@ -19,11 +19,12 @@ AI assistance in this local revision included:
 The owner selected the MQTT direction, reviewed the implementation, corrected
 the Native integration-test packet order, and signed the review recorded in
 `docs/owner-review.md`. This does not mean the owner authored the AI-assisted
-implementation. The owner also prohibited invented demand evidence. The owner has
-now personally reviewed and confirmed this round of documentation edits across
-`README.md`, `docs/project-application.md`, `docs/use-cases.md`, and this file,
-and endorsed the three intended protocol scenarios. Native CI passed for
-commit `f5b7024` in [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535);
+implementation. The owner also prohibited invented demand evidence and
+reviewed the documentation revision through commit `f5b7024`, including the
+three intended protocol scenarios. The current local addition about demand
+coverage was drafted from public evidence and has not yet been owner-reviewed;
+the earlier sign-off does not cover it. Native CI passed for commit `f5b7024`
+in [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535);
 Native was not rerun on this Windows machine.
 
 [`docs/owner-review.md`](docs/owner-review.md) records the owner's review and sign-off

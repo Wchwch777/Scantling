@@ -13,6 +13,12 @@ of existing Scantling deployments or surveyed customers; see
 [`docs/project-application.md`](docs/project-application.md) for the evidence
 and scope boundaries.
 
+The proposal's rationale is checkable: the competition charter recommends an
+MQTT client/runtime direction, while the existing MoonBit MQTT package documents
+packet codecs without transport or a client runtime. This is evidence of an
+ecosystem capability gap, not proof of user adoption; see the proposal's
+"Demand coverage and verifiable evidence" section.
+
 ## Current implementation
 
 - TCP connection by host and port, MQTT 3.1.1 CONNECT / CONNACK handshake.
@@ -77,8 +83,8 @@ moon test --target native
 The portable tests cover MQTT Remaining Length framing and input limits. A
 native integration test is provided for a local TCP broker peer through CONNECT,
 SUBSCRIBE, QoS 0 PUBLISH, inbound QoS 1/PUBACK, and DISCONNECT. That native test
-passed in [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535)
-on commit `f5b7024`. The implementation is unchanged from code commit
+passed in [GitHub Actions run 36738625531](https://github.com/Wchwch777/Scantling/actions/runs/36738625531)
+on commit `3b165ef`. The implementation is unchanged from code commit
 `a3d3e04`; later commits and the current workspace contain documentation-only
 changes. Native has not been rerun on this Windows machine. A local
 protocol-peer test is not a substitute for interoperability testing against

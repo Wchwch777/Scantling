@@ -4,6 +4,13 @@ The project targets the MQTT 3.1.1 client role. The use cases below describe
 common workloads that use the same publish/subscribe protocol; they are not
 claims of Scantling customers, deployments, or market research.
 
+The breadth rationale has three separately checkable parts: the competition's
+recommended MQTT client/runtime direction, the documented absence of a client
+runtime in the existing MoonBit packet-codec package, and CI coverage of client
+protocol flows. These establish topic fit, an ecosystem-level implementation
+gap, and working code—not user counts, adoption, or field demand. See the
+[proposal's evidence section](project-application.md#需求覆盖与可核查依据).
+
 ## 1. Sensor telemetry collection
 
 - **Actor and task:** a gateway or service subscribes to a sensor topic such as
@@ -14,8 +21,8 @@ claims of Scantling customers, deployments, or market research.
 - **Expected output:** a message containing the original topic and bytes.
 - **Implementation/evidence:** the API and a native loopback integration test
   exercise CONNECT, SUBSCRIBE, inbound QoS 1, and PUBACK. The test passed in
-  [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535)
-  on commit `f5b7024`. It uses a local protocol peer, not a real sensor deployment or third-party
+  [GitHub Actions run 36738625531](https://github.com/Wchwch777/Scantling/actions/runs/36738625531)
+  on commit `3b165ef`. It uses a local protocol peer, not a real sensor deployment or third-party
   broker certification; Native was not rerun on the owner's Windows machine.
 
 ## 2. Device command channel
