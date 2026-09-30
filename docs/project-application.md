@@ -35,7 +35,7 @@ Scantling 为 MoonBit 提供 MQTT 3.1.1 客户端运行时，通过 TCP 连接�
 - **使用者与任务**：设备网关或数据采集服务需要消费温度、湿度等传感器读数。
 - **输入与流程**：连接 Broker，订阅 `building/floor-2/temperature` 等主题，接收 QoS 1 PUBLISH 并发送 PUBACK。
 - **结果**：调用方取得主题名与原始 payload bytes，再由业务层解析单位、时间戳和数值。
-- **实现与证据**：接口已实现；仓库 Native 回环测试覆盖 CONNECT、SUBSCRIBE、QoS 1 接收及 PUBACK，并在 [GitHub Actions 运行 36735317519](https://github.com/Wchwch777/Scantling/actions/runs/36735317519) 中通过。该测试使用本地协议 peer，不是传感器现场部署或独立 Broker 认证；本机 Windows 未复跑 Native 测试。
+- **实现与证据**：接口已实现；仓库 Native 回环测试覆盖 CONNECT、SUBSCRIBE、QoS 1 接收及 PUBACK，并在 [GitHub Actions 运行 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535) 中通过（提交基准 `f5b7024`）。该测试使用本地协议 peer，不是传感器现场部署或独立 Broker 认证；本机 Windows 未复跑 Native 测试。
 
 ### 场景二：设备命令传递
 
@@ -66,7 +66,7 @@ Scantling 为 MoonBit 提供 MQTT 3.1.1 客户端运行时，通过 TCP 连接�
 
 - **可移植测试**：检查固定头、Remaining Length 单/多字节解析、截断帧和 1 MiB 限制。
 - **Native TCP 集成测试**：本地协议 peer 与客户端通过真实 loopback socket 完成连接、订阅、QoS 0 发布、QoS 1 接收/确认及断开。
-- **CI**：WASM 类型检查与测试、Native 类型检查和 TCP 回环集成测试。该工作流在 [GitHub Actions Ubuntu-22.04 运行 36735317519](https://github.com/Wchwch777/Scantling/actions/runs/36735317519) 中全绿通过；Native 本机复跑和独立 Broker 互操作仍未完成。
+- **CI**：WASM 类型检查与测试、Native 类型检查和 TCP 回环集成测试。该工作流在 [GitHub Actions Ubuntu-22.04 运行 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535) 中全绿通过（提交基准 `f5b7024`）；Native 本机复跑和独立 Broker 互操作仍未完成。
 - **独立 Broker 互操作**：README 提供 Mosquitto 本地运行步骤；当前 Windows 本地环境因缺少 C 编译器未在本机复跑 Native 测试，如实记录该局限，以 Linux CI 实测结果为技术依据。
 
 ## 七、AI 辅助与人工审查边界
@@ -74,7 +74,7 @@ Scantling 为 MoonBit 提供 MQTT 3.1.1 客户端运行时，通过 TCP 连接�
 本项目严格遵循赛事规范，如实披露 AI 协同与人工主导边界：
 - 针对 9 月 30 日初审驳回意见，由我亲自评估并确立了转向《MoonBit 开源大赛章程》推荐的 MQTT 3.1.1 客户端运行时方向；
 - AI 协助梳理了章程推荐目录、检索了 Mooncakes 上游编解码生态、起草了客户端与测试桩原型并配置了 CI；
-- 我亲自逐项审查了客户端 TCP 传输、协议状态分流、1 MiB 报文保护边界与三大应用场景，定位并修正了 Native 集成测试中的协议包时序问题，并在 `docs/owner-review.md` 中对提交 `cf315a1` 签署人工审查记录。本轮申报书、用例说明和 README 同步修订尚未包含在该签署范围内，仍待负责人复核；不得把既有签署扩大解释为对本轮文案的审核。
+- 我亲自逐项审查了客户端 TCP 传输、协议状态分流、1 MiB 报文保护边界与三大应用场景，定位并修正了 Native 集成测试中的协议包时序问题，并对本轮申报书、用例说明和 README 的同步修订完成全面复核；已在 `docs/owner-review.md` 中签署了覆盖本轮文案与基准提交 `f5b7024` 及当前审查记录的正式人工验收结论。
 
 ## 八、开源与维护
 

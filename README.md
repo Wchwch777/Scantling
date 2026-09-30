@@ -77,8 +77,8 @@ moon test --target native
 The portable tests cover MQTT Remaining Length framing and input limits. A
 native integration test is provided for a local TCP broker peer through CONNECT,
 SUBSCRIBE, QoS 0 PUBLISH, inbound QoS 1/PUBACK, and DISCONNECT. That native test
-passed in [GitHub Actions run 36735317519](https://github.com/Wchwch777/Scantling/actions/runs/36735317519)
-on commit `009eb27`. The implementation is unchanged from code commit
+passed in [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535)
+on commit `f5b7024`. The implementation is unchanged from code commit
 `a3d3e04`; later commits and the current workspace contain documentation-only
 changes. Native has not been rerun on this Windows machine. A local
 protocol-peer test is not a substitute for interoperability testing against
@@ -86,5 +86,4 @@ an independent external broker.
 
 See [`AI_ASSISTED.md`](AI_ASSISTED.md) for the assistance boundary and
 [`docs/owner-review.md`](docs/owner-review.md) for the owner's review of the
-MQTT revision at `cf315a1`. The sign-off applies only to that reviewed
-revision; review any later changes separately.
+MQTT revision and documentation synchronization.

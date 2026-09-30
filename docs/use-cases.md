@@ -14,8 +14,8 @@ claims of Scantling customers, deployments, or market research.
 - **Expected output:** a message containing the original topic and bytes.
 - **Implementation/evidence:** the API and a native loopback integration test
   exercise CONNECT, SUBSCRIBE, inbound QoS 1, and PUBACK. The test passed in
-  [GitHub Actions run 36735317519](https://github.com/Wchwch777/Scantling/actions/runs/36735317519).
-  It uses a local protocol peer, not a real sensor deployment or third-party
+  [GitHub Actions run 36737550535](https://github.com/Wchwch777/Scantling/actions/runs/36737550535)
+  on commit `f5b7024`. It uses a local protocol peer, not a real sensor deployment or third-party
   broker certification; Native was not rerun on the owner's Windows machine.
 
 ## 2. Device command channel
