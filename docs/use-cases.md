@@ -13,10 +13,10 @@ claims of Scantling customers, deployments, or market research.
   application code.
 - **Expected output:** a message containing the original topic and bytes.
 - **Implementation/evidence:** the API and a native loopback integration test
-  are written to exercise CONNECT, SUBSCRIBE, inbound QoS 1, and PUBACK. The
-  test has not been run successfully in the current local environment. It uses
-  a local protocol peer, not a real sensor deployment or third-party broker
-  certification.
+  exercise CONNECT, SUBSCRIBE, inbound QoS 1, and PUBACK. The test passed in
+  [GitHub Actions run 36735317519](https://github.com/Wchwch777/Scantling/actions/runs/36735317519).
+  It uses a local protocol peer, not a real sensor deployment or third-party
+  broker certification; Native was not rerun on the owner's Windows machine.
 
 ## 2. Device command channel
 
@@ -28,8 +28,8 @@ claims of Scantling customers, deployments, or market research.
 - **Expected output:** the broker accepts the outgoing packet and forwards it
   to matching subscribers; delivery guarantees remain those of QoS 0.
 - **Implementation/evidence:** QoS 0 publish and topic-filter subscription
-  methods are implemented. The current automated test exercises QoS 0 publish
-  against a local peer, not an actual device.
+  methods are implemented. The CI loopback test exercises the QoS 0 publish
+  packet against a local peer, not an actual device or device control flow.
 
 ## 3. Application event fan-out
 
