@@ -1,4 +1,4 @@
-name: Scantling CI
+name: MoonBit GraphQL Client CI
 
 on:
   push:
@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Check out sources
         uses: actions/checkout@v4
-      # A pinned 0.1.20260920 archive returned HTTP 403 on Linux CI run
-      # 36086851330. Keep latest until a versioned Linux/core pair is available.
       - name: Install MoonBit toolchain
         shell: bash
         run: |
@@ -20,9 +18,11 @@ jobs:
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - name: Show toolchain
         run: moon version --all
-      - name: Run repository verification
-        shell: bash
-        run: bash scripts/ci.sh
-      - name: Verify WebAssembly build
-        shell: bash
-        run: bash scripts/build_wasm.sh
+      - name: Format check
+        run: moon fmt --check
+      - name: Type check
+        run: moon check
+      - name: Run default tests
+        run: moon test
+      - name: Run native integration tests
+        run: moon test --target native

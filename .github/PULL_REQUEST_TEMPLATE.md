@@ -1,26 +1,15 @@
 ## Change summary
 
-Describe the user-visible or domain-level change in plain language.
-
-## Human review gate
-
-- [ ] I personally inspected the affected code and public claims.
-- [ ] I understand and accept the domain assumptions and limitations.
-- [ ] AI assistance, if used, is disclosed and commit authorship is truthful.
-- [ ] I ran the relevant focused verification and the repository CI checks.
-- [ ] I checked that no local path, secret, token, or unnecessary personal data
-      is included.
-- [ ] If this is a release candidate, I updated
-      [`docs/human-review-record.md`](../docs/human-review-record.md).
+<!-- Describe the user-visible behavior and why the change is needed. -->
 
 ## Verification
 
-```text
-Commands:
-Results:
-```
+- [ ] `moon fmt --check`
+- [ ] `moon check`
+- [ ] `moon test`
+- [ ] Native integration test, when applicable (`moon test --target native`)
+- [ ] I reviewed the diff and the stated behavior matches what I personally verified.
 
-## Known limitations
+## Limitations / follow-up
 
-List limitations that a reviewer should know instead of implying unsupported
-correctness, optimality, compliance, or field performance.
+<!-- State known gaps. Do not mark unchecked review items as approved. -->

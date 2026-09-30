@@ -1,5 +1,0 @@
-import {
-  "scantling/examples/scenarios",
-}
-
-pkgtype(kind: "executable")
