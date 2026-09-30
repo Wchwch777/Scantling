@@ -76,12 +76,14 @@ moon test --target native
 
 The portable tests cover MQTT Remaining Length framing and input limits. A
 native integration test is provided for a local TCP broker peer through CONNECT,
-SUBSCRIBE, QoS 0 PUBLISH, inbound QoS 1/PUBACK, and DISCONNECT. The CI workflow
-is configured to run it on Ubuntu; this local revision has not yet produced a
-passing CI result. A passing local codec/framing test is not a substitute for
-the native socket test or for testing against an independent external broker.
+SUBSCRIBE, QoS 0 PUBLISH, inbound QoS 1/PUBACK, and DISCONNECT. That native test
+passed in [GitHub Actions run 36727310775](https://github.com/Wchwch777/Scantling/actions/runs/36727310775)
+for code commit `a3d3e04`; subsequent changes through `cf315a1` and the current
+workspace are documentation-only. Native has not been rerun on this Windows
+machine. A local protocol-peer test is not a substitute for interoperability
+testing against an independent external broker.
 
 See [`AI_ASSISTED.md`](AI_ASSISTED.md) for the assistance boundary and
-[`docs/owner-review.md`](docs/owner-review.md) for the earlier, historical
-review record. That earlier sign-off applies only to its recorded commit, not
-to this MQTT direction change.
+[`docs/owner-review.md`](docs/owner-review.md) for the owner's review of the
+MQTT revision at `cf315a1`. The sign-off applies only to that reviewed
+revision; review any later changes separately.

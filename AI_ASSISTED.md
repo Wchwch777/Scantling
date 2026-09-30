@@ -16,13 +16,19 @@ AI assistance in this local revision included:
 - adding a TCP loopback integration test, framing tests, CI changes, and a
   revised README and application draft.
 
-No claims are made that the repository owner personally authored or verified
-these new changes. The owner asked for a reality-based revision, prohibited
-inventing demand evidence, and has not yet reviewed this local diff. Before
-submission, the owner should inspect the implementation, run the native tests
-with a C toolchain, and decide whether the listed scenarios accurately
-describe intended uses.
+The owner selected the MQTT direction, reviewed the implementation, corrected
+the Native integration-test packet order, and signed the review recorded in
+`docs/owner-review.md`. This does not mean the owner authored the AI-assisted
+implementation. The owner also prohibited invented demand evidence. The only
+uncommitted changes in this workspace are wording corrections to this file and
+the README; the owner has not yet reviewed that documentation-only diff.
+Before submission, the owner should decide whether the listed scenarios
+accurately describe intended uses. Native CI passed for the code revision
+identified below; Native was not rerun on this Windows machine.
 
-[`docs/owner-review.md`](docs/owner-review.md) records an earlier GraphQL
-client review at commit `079629f`. It is historical evidence only; it does not
-review, approve, or authorize pushing the current MQTT changes.
+[`docs/owner-review.md`](docs/owner-review.md) records the owner's review of
+the MQTT revision at commit `cf315a1`. The cited Linux CI run
+[`36727310775`](https://github.com/Wchwch777/Scantling/actions/runs/36727310775)
+succeeded for commit `a3d3e04`. That sign-off applies to the reviewed revision;
+any later changes must be reviewed separately. Do not describe the prior
+sign-off as approval of a later diff.
