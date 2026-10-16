@@ -24,16 +24,21 @@ ecosystem capability gap, not proof of user adoption; see the proposal's
 - TCP connection by host and port, MQTT 3.1.1 CONNECT / CONNACK handshake.
 - Subscribe to one topic filter at a time and wait for the matching SUBACK.
 - Publish QoS 0 messages.
+- Publish QoS 1 messages and wait for the matching PUBACK.
 - Receive QoS 0 and QoS 1 PUBLISH packets; acknowledge QoS 1 before returning
   the message to the caller.
+- Unsubscribe from one topic filter and wait for the matching UNSUBACK.
+- Send a PINGREQ and wait for PINGRESP; applications schedule these calls
+  within the configured Keep Alive interval.
 - Decode framed MQTT packets with a 1 MiB inbound packet limit.
 - Packet encoding and decoding delegated to the Apache-2.0
   [`moonbit-mqtt` codec](https://github.com/zbhzs1/moonbit-mqtt).
 
-The initial runtime does not implement TLS, authentication, automatic
-reconnection, scheduled keep-alive pings, QoS 1 publishing, QoS 2 session
-handling, MQTT 5.0, or WebSocket transport. Do not use it for production
-connections that require these features.
+The client is a small sequential API: callers should not issue concurrent
+operations on the same connection. It does not implement TLS, authentication,
+automatic reconnection, automatic Keep Alive scheduling, QoS 2 session
+handling, MQTT 5.0, WebSocket transport, or operation timeouts. Do not use it
+for production connections that require these features.
 
 ## Quick start
 
@@ -51,8 +56,11 @@ async fn main {
   )
   client.subscribe(topic="demo/temperature", qos=@codec.QoS1)
   client.publish(topic="demo/temperature", payload=b"21.5")
+  client.publish_qos1(topic="demo/temperature", payload=b"21.5")
   let message = client.receive()
-  println("Received \{message.topic}: \{message.payload}")
+  println("Received \{message.topic} at QoS \{message.qos}: \{message.payload}")
+  client.unsubscribe(topic="demo/temperature")
+  client.ping()
   client.disconnect()
 }
 ```

@@ -33,7 +33,7 @@ async fn broker_write_packet(tcp : @socket.Tcp, packet : @codec.Packet) -> Unit 
 async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" {
   @async.with_task_group <| root => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
-    let address = server.addr()
+    let address = server.addr
     root.spawn_bg(no_wait=true, () => {
       server.run_forever(max_connections=1) <| ((tcp, _) => {
         match broker_read_packet(tcp) {
@@ -77,6 +77,16 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
           @codec.PubackPacket(packet_id) => assert_eq(packet_id.message_id, 77)
           _ => fail("expected PUBACK")
         }
+        let qos1_id = match broker_read_packet(tcp) {
+          @codec.PublishPacket(message) => {
+            assert_eq(message.topic, "demo/temperature")
+            assert_eq(message.payload, b"23.0")
+            assert_eq(message.qos, @codec.QoS1)
+            message.message_id.unwrap()
+          }
+          _ => fail("expected QoS 1 PUBLISH")
+        }
+        broker_write_packet(tcp, @codec.PubackPacket({ message_id: qos1_id, }))
         match broker_read_packet(tcp) {
           @codec.PublishPacket(message) => {
             assert_eq(message.topic, "demo/temperature")
@@ -84,6 +94,22 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
             assert_eq(message.qos, @codec.QoS0)
           }
           _ => fail("expected QoS 0 PUBLISH")
+        }
+        let unsubscribe_id = match broker_read_packet(tcp) {
+          @codec.UnsubscribePacket(request) => {
+            assert_eq(request.topics, ["demo/temperature"])
+            request.message_id
+          }
+          _ => fail("expected UNSUBSCRIBE")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.UnsubackPacket({ message_id: unsubscribe_id, }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PingreqPacket =>
+            broker_write_packet(tcp, @codec.PingrespPacket)
+          _ => fail("expected PINGREQ")
         }
         match broker_read_packet(tcp) {
           @codec.DisconnectPacket => ()
@@ -101,7 +127,11 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
     let received = client.receive()
     assert_eq(received.topic, "demo/temperature")
     assert_eq(received.payload, b"21.5")
+    assert_eq(received.qos, @codec.QoS1)
+    client.publish_qos1(topic="demo/temperature", payload=b"23.0")
     client.publish(topic="demo/temperature", payload=b"22.0")
+    client.unsubscribe(topic="demo/temperature")
+    client.ping()
     client.disconnect()
     server.close()
   }

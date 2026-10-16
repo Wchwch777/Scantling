@@ -5,6 +5,7 @@
 pub(all) struct Message {
   topic : String
   payload : Bytes
+  qos : @codec.QoS
   retain : Bool
 } derive(Eq, Debug)
 
@@ -20,7 +21,47 @@ pub suberror ClientError {
 ///|
 pub(all) struct Client {
   tcp : @socket.Tcp
+  keep_alive : Int
   mut next_packet_id : Int
+}
+
+///|
+fn next_packet_id(current : Int) -> Int {
+  if current >= 65535 || current <= 0 {
+    1
+  } else {
+    current + 1
+  }
+}
+
+///|
+fn Client::allocate_packet_id(self : Client) -> Int {
+  let message_id = self.next_packet_id
+  self.next_packet_id = next_packet_id(message_id)
+  message_id
+}
+
+///|
+fn validate_publish_topic(topic : String) -> Result[Unit, ClientError] {
+  if topic == "" {
+    return Err(ClientError::InvalidConfig("publish topic must not be empty"))
+  }
+  if topic.contains("#") || topic.contains("+") {
+    return Err(
+      ClientError::InvalidConfig("publish topic must not contain wildcards"),
+    )
+  }
+  Ok(())
+}
+
+///|
+fn validate_subscription_filter(topic : String) -> Result[Unit, ClientError] {
+  if topic == "" {
+    return Err(
+      ClientError::InvalidConfig("subscription filter must not be empty"),
+    )
+  }
+  Ok(())
 }
 
 ///|
@@ -109,6 +150,9 @@ pub async fn Client::connect(
   if port <= 0 || port > 65535 {
     raise ClientError::InvalidConfig("port must be between 1 and 65535")
   }
+  if client_id == "" {
+    raise ClientError::InvalidConfig("client_id must not be empty")
+  }
   if keep_alive < 0 || keep_alive > 65535 {
     raise ClientError::InvalidConfig("keep_alive must fit in 16 bits")
   }
@@ -139,7 +183,7 @@ pub async fn Client::connect(
   match read_packet(tcp) {
     @codec.ConnackPacket(response) =>
       match response.return_code {
-        @codec.ConnectionAccepted => { tcp, next_packet_id: 1, }
+        @codec.ConnectionAccepted => { tcp, keep_alive, next_packet_id: 1, }
         @codec.UnacceptableProtocolVersion => raise ClientError::Rejected(1)
         @codec.IdentifierRejected => raise ClientError::Rejected(2)
         @codec.ServerUnavailable => raise ClientError::Rejected(3)
@@ -159,6 +203,10 @@ pub async fn Client::publish(
   payload~ : Bytes,
   retain? : Bool = false,
 ) -> Unit raise ClientError {
+  match validate_publish_topic(topic) {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
   write_packet(
     self.tcp,
     @codec.PublishPacket({
@@ -170,6 +218,40 @@ pub async fn Client::publish(
       dup: false,
     }),
   )
+}
+
+///|
+/// Publish one QoS 1 message and wait for the matching PUBACK.
+pub async fn Client::publish_qos1(
+  self : Client,
+  topic~ : String,
+  payload~ : Bytes,
+  retain? : Bool = false,
+) -> Unit raise ClientError {
+  match validate_publish_topic(topic) {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
+  let message_id = self.allocate_packet_id()
+  write_packet(
+    self.tcp,
+    @codec.PublishPacket({
+      topic,
+      payload,
+      qos: @codec.QoS1,
+      message_id: Some(message_id),
+      retain,
+      dup: false,
+    }),
+  )
+  match read_packet(self.tcp) {
+    @codec.PubackPacket(response) if response.message_id == message_id => ()
+    @codec.PubackPacket(_) =>
+      raise ClientError::UnexpectedPacket(
+        "PUBACK packet identifier did not match",
+      )
+    _ => raise ClientError::UnexpectedPacket("expected PUBACK")
+  }
 }
 
 ///|
@@ -210,11 +292,14 @@ pub async fn Client::subscribe(
   topic~ : String,
   qos~ : @codec.QoS,
 ) -> Unit raise ClientError {
+  match validate_subscription_filter(topic) {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
   if qos == @codec.QoS2 {
     raise ClientError::InvalidConfig("QoS 2 subscription is not supported")
   }
-  let message_id = self.next_packet_id
-  self.next_packet_id = if message_id >= 65535 { 1 } else { message_id + 1 }
+  let message_id = self.allocate_packet_id()
   write_packet(
     self.tcp,
     @codec.SubscribePacket({ topics: [{ topic, qos, }], message_id, }),
@@ -226,6 +311,47 @@ pub async fn Client::subscribe(
         Err(error) => raise error
       }
     _ => raise ClientError::UnexpectedPacket("expected matching SUBACK")
+  }
+}
+
+///|
+/// Unsubscribe from one topic filter and wait for the matching UNSUBACK.
+pub async fn Client::unsubscribe(
+  self : Client,
+  topic~ : String,
+) -> Unit raise ClientError {
+  match validate_subscription_filter(topic) {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
+  let message_id = self.allocate_packet_id()
+  write_packet(
+    self.tcp,
+    @codec.UnsubscribePacket({ topics: [topic], message_id, }),
+  )
+  match read_packet(self.tcp) {
+    @codec.UnsubackPacket(response) if response.message_id == message_id => ()
+    @codec.UnsubackPacket(_) =>
+      raise ClientError::UnexpectedPacket(
+        "UNSUBACK packet identifier did not match",
+      )
+    _ => raise ClientError::UnexpectedPacket("expected UNSUBACK")
+  }
+}
+
+///|
+/// Send one keep-alive ping and wait for the broker's PINGRESP.
+/// The caller is responsible for scheduling pings within the configured interval.
+pub async fn Client::ping(self : Client) -> Unit raise ClientError {
+  if self.keep_alive == 0 {
+    raise ClientError::InvalidConfig(
+      "PINGREQ is unnecessary when keep_alive is disabled",
+    )
+  }
+  write_packet(self.tcp, @codec.PingreqPacket)
+  match read_packet(self.tcp) {
+    @codec.PingrespPacket => ()
+    _ => raise ClientError::UnexpectedPacket("expected PINGRESP")
   }
 }
 
@@ -248,6 +374,7 @@ pub async fn Client::receive(self : Client) -> Message raise ClientError {
       {
         topic: message.topic,
         payload: message.payload,
+        qos: message.qos,
         retain: message.retain,
       }
     }
@@ -258,6 +385,45 @@ pub async fn Client::receive(self : Client) -> Message raise ClientError {
 ///|
 /// Send DISCONNECT and close the TCP connection.
 pub async fn Client::disconnect(self : Client) -> Unit raise ClientError {
-  write_packet(self.tcp, @codec.DisconnectPacket)
+  let result : Result[Unit, ClientError] = try {
+    write_packet(self.tcp, @codec.DisconnectPacket)
+    Ok(())
+  } catch {
+    error => Err(error)
+  }
   self.tcp.close()
+  match result {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
+}
+
+///|
+test "MQTT packet identifiers wrap to the valid nonzero range" {
+  assert_eq(next_packet_id(1), 2)
+  assert_eq(next_packet_id(65534), 65535)
+  assert_eq(next_packet_id(65535), 1)
+  assert_eq(next_packet_id(0), 1)
+}
+
+///|
+test "MQTT publish topics reject empty names and wildcards" {
+  assert_eq(
+    validate_publish_topic(""),
+    Err(ClientError::InvalidConfig("publish topic must not be empty")),
+  )
+  assert_eq(
+    validate_publish_topic("demo/#"),
+    Err(ClientError::InvalidConfig("publish topic must not contain wildcards")),
+  )
+  assert_eq(validate_publish_topic("demo/temperature"), Ok(()))
+}
+
+///|
+test "MQTT subscription filters reject empty values" {
+  assert_eq(
+    validate_subscription_filter(""),
+    Err(ClientError::InvalidConfig("subscription filter must not be empty")),
+  )
+  assert_eq(validate_subscription_filter("demo/+"), Ok(()))
 }
