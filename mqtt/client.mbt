@@ -42,7 +42,7 @@ fn Client::allocate_packet_id(self : Client) -> Int32 {
 }
 
 ///|
-fn validate_publish_topic(topic : String) -> Result[Unit, ClientError] {
+pub fn validate_publish_topic(topic : String) -> Result[Unit, ClientError] {
   if topic == "" {
     return Err(ClientError::InvalidConfig("publish topic must not be empty"))
   }
@@ -55,7 +55,9 @@ fn validate_publish_topic(topic : String) -> Result[Unit, ClientError] {
 }
 
 ///|
-fn validate_subscription_filter(topic : String) -> Result[Unit, ClientError] {
+pub fn validate_subscription_filter(
+  topic : String,
+) -> Result[Unit, ClientError] {
   if topic == "" {
     return Err(
       ClientError::InvalidConfig("subscription filter must not be empty"),
