@@ -13,7 +13,7 @@ pub(all) struct Message {
 pub suberror ClientError {
   InvalidConfig(String)
   Codec(String)
-  Rejected(Int)
+  Rejected(Int32)
   TransportFailure
   UnexpectedPacket(String)
 } derive(Eq, Debug)
@@ -21,12 +21,12 @@ pub suberror ClientError {
 ///|
 pub(all) struct Client {
   tcp : @socket.Tcp
-  keep_alive : Int
-  mut next_packet_id : Int
+  keep_alive : Int32
+  mut next_packet_id : Int32
 }
 
 ///|
-fn next_packet_id(current : Int) -> Int {
+fn next_packet_id(current : Int32) -> Int32 {
   if current >= 65535 || current <= 0 {
     1
   } else {
@@ -35,7 +35,7 @@ fn next_packet_id(current : Int) -> Int {
 }
 
 ///|
-fn Client::allocate_packet_id(self : Client) -> Int {
+fn Client::allocate_packet_id(self : Client) -> Int32 {
   let message_id = self.next_packet_id
   self.next_packet_id = next_packet_id(message_id)
   message_id
@@ -117,7 +117,7 @@ async fn read_packet(tcp : @socket.Tcp) -> @codec.Packet raise ClientError {
 ///|
 /// Decode the Remaining Length field from a fixed-header buffer. Kept pure so
 /// malformed and oversized frames can be tested without opening a socket.
-pub fn packet_body_length(frame : Array[Byte]) -> Result[Int, ClientError] {
+pub fn packet_body_length(frame : Array[Byte]) -> Result[Int32, ClientError] {
   if frame.length() < 2 {
     return Err(ClientError::Codec("incomplete fixed header"))
   }
@@ -140,9 +140,9 @@ pub fn packet_body_length(frame : Array[Byte]) -> Result[Int, ClientError] {
 /// of scope for this first client runtime.
 pub async fn Client::connect(
   host : String,
-  port~ : Int,
+  port~ : Int32,
   client_id~ : String,
-  keep_alive? : Int = 30,
+  keep_alive~ : Int32 = 30,
 ) -> Client raise ClientError {
   if host == "" {
     raise ClientError::InvalidConfig("host must not be empty")
@@ -201,7 +201,7 @@ pub async fn Client::publish(
   self : Client,
   topic~ : String,
   payload~ : Bytes,
-  retain? : Bool = false,
+  retain~ : Bool = false,
 ) -> Unit raise ClientError {
   match validate_publish_topic(topic) {
     Ok(_) => ()
@@ -226,7 +226,7 @@ pub async fn Client::publish_qos1(
   self : Client,
   topic~ : String,
   payload~ : Bytes,
-  retain? : Bool = false,
+  retain~ : Bool = false,
 ) -> Unit raise ClientError {
   match validate_publish_topic(topic) {
     Ok(_) => ()
@@ -257,7 +257,7 @@ pub async fn Client::publish_qos1(
 ///|
 fn validate_suback(
   response : @codec.Suback,
-  expected_message_id : Int,
+  expected_message_id : Int32,
   requested_qos : @codec.QoS,
 ) -> Result[Unit, ClientError] {
   if response.message_id != expected_message_id {
