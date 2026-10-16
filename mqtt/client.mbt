@@ -61,6 +61,35 @@ fn validate_subscription_filter(topic : String) -> Result[Unit, ClientError] {
       ClientError::InvalidConfig("subscription filter must not be empty"),
     )
   }
+  // MQTT wildcards are whole topic levels: '+' matches exactly one level,
+  // and '#' matches the remaining levels only when it is the final level.
+  let mut hash_level_seen = false
+  for level in topic.split("/") {
+    if hash_level_seen {
+      return Err(
+        ClientError::InvalidConfig(
+          "multi-level wildcard must be the final topic level",
+        ),
+      )
+    }
+    if level.contains("#".view()) {
+      if level != "#".view() {
+        return Err(
+          ClientError::InvalidConfig(
+            "multi-level wildcard must occupy a complete topic level",
+          ),
+        )
+      }
+      hash_level_seen = true
+    }
+    if level.contains("+".view()) && level != "+".view() {
+      return Err(
+        ClientError::InvalidConfig(
+          "single-level wildcard must occupy a complete topic level",
+        ),
+      )
+    }
+  }
   Ok(())
 }
 
