@@ -136,3 +136,34 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
     server.close()
   }
 }
+
+///|
+#cfg(target="native")
+async test "MQTT client interoperates with an independent Mosquitto broker" {
+  match @env.get_env_var("SCANTLING_MOSQUITTO_HOST") {
+    None => ()
+    Some(host) => {
+      let topic = "scantling/interop/roundtrip"
+      let subscriber = @client.Client::connect(
+        host,
+        port=1883,
+        client_id="scantling-mosquitto-subscriber",
+      )
+      subscriber.subscribe(topic=topic, qos=@codec.QoS1)
+      let publisher = @client.Client::connect(
+        host,
+        port=1883,
+        client_id="scantling-mosquitto-publisher",
+      )
+      publisher.publish_qos1(topic=topic, payload=b"mosquitto-roundtrip")
+      let message = subscriber.receive()
+      assert_eq(message.topic, topic)
+      assert_eq(message.payload, b"mosquitto-roundtrip")
+      assert_eq(message.qos, @codec.QoS1)
+      publisher.ping()
+      subscriber.unsubscribe(topic=topic)
+      publisher.disconnect()
+      subscriber.disconnect()
+    }
+  }
+}

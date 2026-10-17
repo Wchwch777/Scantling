@@ -88,15 +88,40 @@ moon check --target native
 moon test --target native
 ```
 
-The portable tests cover MQTT Remaining Length framing and input limits. A
-native integration test is provided for a local TCP broker peer through CONNECT,
-SUBSCRIBE, QoS 0 PUBLISH, inbound QoS 1/PUBACK, and DISCONNECT. That native test
-passed in [GitHub Actions run 36738625531](https://github.com/Wchwch777/Scantling/actions/runs/36738625531)
-on commit `3b165ef`. The implementation is unchanged from code commit
-`a3d3e04`; later commits and the current workspace contain documentation-only
-changes. Native has not been rerun on this Windows machine. A local
-protocol-peer test is not a substitute for interoperability testing against
-an independent external broker.
+The portable tests cover MQTT Remaining Length framing and input limits. Native
+integration tests cover both a local TCP protocol peer and an independent
+Mosquitto broker. The CI starts Mosquitto 2.0.22 with the checked-in test
+configuration, then verifies CONNECT, QoS 1 SUBSCRIBE, cross-client QoS 1
+publish/delivery/PUBACK, PINGREQ/PINGRESP, UNSUBSCRIBE, and DISCONNECT.
+
+To run the independent broker test locally, start Mosquitto with the same
+configuration:
+
+```sh
+docker run --rm --detach --name scantling-mosquitto \
+  --publish 1883:1883 \
+  --volume "$PWD/.github/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro" \
+  eclipse-mosquitto:2.0.22
+SCANTLING_MOSQUITTO_HOST=127.0.0.1 moon test --target native
+docker stop scantling-mosquitto
+```
+
+On PowerShell, set `$env:SCANTLING_MOSQUITTO_HOST = "127.0.0.1"` before running
+`moon test --target native`. Without that variable, the independent broker test
+is skipped and the local TCP peer test still runs.
+
+PowerShell broker startup:
+
+```powershell
+$config = (Resolve-Path .github/mosquitto.conf).Path
+docker run --rm --detach --name scantling-mosquitto `
+  --publish 1883:1883 `
+  --mount "type=bind,source=$config,target=/mosquitto/config/mosquitto.conf,readonly" `
+  eclipse-mosquitto:2.0.22
+$env:SCANTLING_MOSQUITTO_HOST = "127.0.0.1"
+moon test --target native
+docker stop scantling-mosquitto
+```
 
 See [`AI_ASSISTED.md`](AI_ASSISTED.md) for the assistance boundary and
 [`docs/owner-review.md`](docs/owner-review.md) for the owner's review of the

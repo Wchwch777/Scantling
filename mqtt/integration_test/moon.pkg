@@ -4,3 +4,7 @@ import {
   "scantling_mqtt_client/mqtt" @client,
   "zbhzs1/moonbit-mqtt" @codec,
 }
+
+import {
+  "moonbitlang/core/env" @env,
+} for "test"

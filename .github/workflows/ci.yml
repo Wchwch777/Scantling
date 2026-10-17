@@ -8,9 +8,25 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-22.04
+    env:
+      SCANTLING_MOSQUITTO_HOST: 127.0.0.1
     steps:
       - name: Check out sources
         uses: actions/checkout@v4
+      - name: Start Mosquitto broker
+        run: |
+          docker run --detach --rm --name scantling-mosquitto \
+            --publish 1883:1883 \
+            --volume "$GITHUB_WORKSPACE/.github/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro" \
+            eclipse-mosquitto:2.0.22
+          for attempt in $(seq 1 30); do
+            if (echo > /dev/tcp/127.0.0.1/1883) >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs scantling-mosquitto
+          exit 1
       - name: Install MoonBit toolchain
         shell: bash
         run: |
@@ -30,3 +46,6 @@ jobs:
         run: moon check --target native
       - name: Run native integration tests
         run: moon test --target native
+      - name: Stop Mosquitto broker
+        if: always()
+        run: docker rm --force scantling-mosquitto 2>/dev/null || true
