@@ -139,6 +139,70 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
 
 ///|
 #cfg(target="native")
+async test "MQTT client buffers an inbound PUBLISH while awaiting PUBACK" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        let request_id = match broker_read_packet(tcp) {
+          @codec.PublishPacket(message) => message.message_id.unwrap()
+          _ => fail("expected QoS 1 PUBLISH")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PublishPacket({
+            topic: "demo/async",
+            payload: b"broker-message",
+            qos: @codec.QoS1,
+            message_id: Some(91),
+            retain: false,
+            dup: false,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PubackPacket(message) => assert_eq(message.message_id, 91)
+          _ => fail("expected PUBACK for the inbound message")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PubackPacket({ message_id: request_id, }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.DisconnectPacket => ()
+          _ => fail("expected DISCONNECT")
+        }
+      })
+    })
+    @async.sleep(100)
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-buffer-inbound",
+    )
+    client.publish_qos1(topic="demo/outbound", payload=b"client-message")
+    let received = client.receive()
+    assert_eq(received.topic, "demo/async")
+    assert_eq(received.payload, b"broker-message")
+    assert_eq(received.qos, @codec.QoS1)
+    client.disconnect()
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "MQTT client rejects CONNACK session state for Clean Session" {
   @async.with_task_group <| root => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))

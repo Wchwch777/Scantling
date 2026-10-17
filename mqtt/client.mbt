@@ -23,7 +23,12 @@ pub(all) struct Client {
   tcp : @socket.Tcp
   keep_alive : Int32
   mut next_packet_id : Int32
+  mut pending_messages : Array[Message]
 }
+
+///|
+/// Bound messages read while a request waits for its acknowledgement.
+const MAX_PENDING_MESSAGES : Int32 = 64
 
 ///|
 fn next_packet_id(current : Int32) -> Int32 {
@@ -146,6 +151,58 @@ async fn read_packet(tcp : @socket.Tcp) -> @codec.Packet raise ClientError {
 }
 
 ///|
+/// Wait for a request response while preserving asynchronous broker publishes.
+async fn Client::read_response_packet(
+  self : Client,
+) -> @codec.Packet raise ClientError {
+  while true {
+    match read_packet(self.tcp) {
+      @codec.PublishPacket(message) => {
+        if self.pending_messages.length() >= MAX_PENDING_MESSAGES {
+          self.tcp.close()
+          raise ClientError::UnexpectedPacket(
+            "pending inbound message queue limit exceeded; connection closed",
+          )
+        }
+        if message.qos == @codec.QoS2 {
+          raise ClientError::UnexpectedPacket("QoS 2 delivery is not supported")
+        }
+        self.pending_messages.push({
+          topic: message.topic,
+          payload: message.payload,
+          qos: message.qos,
+          retain: message.retain,
+        })
+        if message.qos == @codec.QoS1 {
+          let message_id = match message.message_id {
+            Some(value) => value
+            None =>
+              raise ClientError::Codec("QoS 1 PUBLISH has no packet identifier")
+          }
+          write_packet(self.tcp, @codec.PubackPacket({ message_id, }))
+        }
+      }
+      packet => return packet
+    }
+  }
+  raise ClientError::UnexpectedPacket("response stream ended unexpectedly")
+}
+
+///|
+fn Client::take_pending_message(self : Client) -> Message? {
+  if self.pending_messages.length() == 0 {
+    None
+  } else {
+    let message = self.pending_messages[0]
+    for index in 1..<self.pending_messages.length() {
+      self.pending_messages[index - 1] = self.pending_messages[index]
+    }
+    ignore(self.pending_messages.pop())
+    Some(message)
+  }
+}
+
+///|
 /// Decode the Remaining Length field from a fixed-header buffer. Kept pure so
 /// malformed and oversized frames can be tested without opening a socket.
 pub fn packet_body_length(frame : Array[Byte]) -> Result[Int32, ClientError] {
@@ -214,7 +271,7 @@ pub async fn Client::connect(
   match read_packet(tcp) {
     @codec.ConnackPacket(response) =>
       match validate_connack(response) {
-        Ok(_) => { tcp, keep_alive, next_packet_id: 1, }
+        Ok(_) => { tcp, keep_alive, next_packet_id: 1, pending_messages: [], }
         Err(error) => raise error
       }
     _ => raise ClientError::UnexpectedPacket("expected CONNACK")
@@ -292,7 +349,7 @@ pub async fn Client::publish_qos1(
       dup: false,
     }),
   )
-  match read_packet(self.tcp) {
+  match self.read_response_packet() {
     @codec.PubackPacket(response) =>
       match validate_puback(response, message_id) {
         Ok(_) => ()
@@ -364,7 +421,7 @@ pub async fn Client::subscribe(
     self.tcp,
     @codec.SubscribePacket({ topics: [{ topic, qos, }], message_id, }),
   )
-  match read_packet(self.tcp) {
+  match self.read_response_packet() {
     @codec.SubackPacket(response) =>
       match validate_suback(response, message_id, qos) {
         Ok(_) => ()
@@ -389,7 +446,7 @@ pub async fn Client::unsubscribe(
     self.tcp,
     @codec.UnsubscribePacket({ topics: [topic], message_id, }),
   )
-  match read_packet(self.tcp) {
+  match self.read_response_packet() {
     @codec.UnsubackPacket(response) =>
       match validate_unsuback(response, message_id) {
         Ok(_) => ()
@@ -423,7 +480,7 @@ pub async fn Client::ping(self : Client) -> Unit raise ClientError {
     )
   }
   write_packet(self.tcp, @codec.PingreqPacket)
-  match read_packet(self.tcp) {
+  match self.read_response_packet() {
     @codec.PingrespPacket => ()
     _ => raise ClientError::UnexpectedPacket("expected PINGRESP")
   }
@@ -433,6 +490,10 @@ pub async fn Client::ping(self : Client) -> Unit raise ClientError {
 /// Read the next published message. QoS 1 deliveries are acknowledged before
 /// returning to the caller; QoS 2 session state is not implemented.
 pub async fn Client::receive(self : Client) -> Message raise ClientError {
+  match self.take_pending_message() {
+    Some(message) => return message
+    None => ()
+  }
   match read_packet(self.tcp) {
     @codec.PublishPacket(message) => {
       if message.qos == @codec.QoS1 {
