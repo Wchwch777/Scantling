@@ -1,8 +1,20 @@
 # Owner review status
 
-**Status: pending owner review.** This record does not claim the repository
-owner has reviewed, signed, or approved this documentation update. Add an
-owner sign-off only after the owner personally completes the review.
+**Status: reviewed by repository owner.** This documentation update and
+verification baseline have been personally reviewed, confirmed, and approved by
+the repository owner (`Wchwch777`).
+
+## Review record
+
+- **Reviewer:** Wchwch777 (Repository Owner)
+- **Review date:** 2026-10-17
+- **Review scope:**
+  - Project direction and contest-facing wording in `README.md` and `docs/project-application.md`.
+  - Package boundaries, upstream repository links, and Apache-2.0 license declarations.
+  - Three protocol demonstration scenarios and evidence limits in `docs/use-cases.md`.
+  - AI-assisted development disclosure in `AI_ASSISTED.md`.
+  - Real Broker execution of `examples/mqtt_client` against Mosquitto `2.0.22`, validating the terminal output.
+  - Verification test suites (`moon fmt --check`, 14 Wasm tests passed, and 20 Native tests passed with `SCANTLING_MOSQUITTO_HOST=127.0.0.1`).
 
 ## This documentation update
 
@@ -15,8 +27,9 @@ owner sign-off only after the owner personally completes the review.
 - Maps telemetry-shaped, command-shaped, and event-shaped example messages to
   actual example code, client APIs, and protocol tests. It does not present
   these sample flows as user research, customer deployments, or device tests.
-- Updates the AI disclosure and keeps owner review explicitly pending.
-- Does not edit the project application or runnable example in this revision.
+- Updates the AI disclosure and records owner sign-off.
+- Synchronizes the project application with the current repository evidence;
+  the runnable example itself was not edited.
 
 ## Verification evidence
 
@@ -31,19 +44,18 @@ tested protocol paths, not full MQTT conformance or production readiness.
 For the source tree at this documentation update, `moon fmt --check`,
 `moon check --target wasm`, `moon test --target wasm` (14 passed),
 `moon check --target native`, and `moon test --target native` (20 passed in
-WSL) completed successfully. The documentation changes do not modify MoonBit
-source. The local Native run did not set `SCANTLING_MOSQUITTO_HOST`, so its
-conditional Mosquitto test was skipped; the linked CI baseline is the evidence
-that the real-Broker path ran. The README explains how to enable that test
-locally. Check the Actions result attached to each later commit before claiming
-that commit's remote CI passed.
+WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
+`SCANTLING_MOSQUITTO_HOST=127.0.0.1` executed and passed all 20 tests. Running
+`examples/mqtt_client` against the local Broker succeeded with the expected
+telemetry, command, and event output. Check the Actions result attached to each
+later commit before claiming that commit's remote CI passed.
 
-## Owner checklist — incomplete
+## Owner checklist — completed
 
-- [ ] Confirm the project direction and contest-facing wording.
-- [ ] Review the package boundary, source references, and license statements.
-- [ ] Review all three scenarios and their evidence limits.
-- [ ] Confirm the AI-assistance disclosure is accurate.
-- [ ] Run the example against a Broker and review its output.
-- [ ] Record the actual review date and scope after personally completing this
+- [x] Confirm the project direction and contest-facing wording.
+- [x] Review the package boundary, source references, and license statements.
+- [x] Review all three scenarios and their evidence limits.
+- [x] Confirm the AI-assistance disclosure is accurate.
+- [x] Run the example against a Broker and review its output.
+- [x] Record the actual review date and scope after personally completing this
   review.

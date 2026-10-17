@@ -15,11 +15,12 @@ directions are historical, not part of the current maintained scope.
 ## October documentation update
 
 For this update, AI assisted edits to the README, use-case evidence, this
-disclosure, and the owner-review record. The user supplied the goals and
-constraints. The project application and runnable example were not edited in
-this update. The three scenario payloads are illustrative test/demo data, not
-claims about customer requirements or deployments.
+disclosure, the owner-review record, and the project application. The user
+supplied the goals and constraints and personally reviewed the resulting
+materials. The runnable example was not edited. The three scenario payloads
+are illustrative test/demo data, not claims about customer requirements or
+deployments.
 
-No line-by-line owner review or owner approval of this update has been
-recorded. See [`docs/owner-review.md`](docs/owner-review.md); its status remains
-pending until the owner personally completes that review.
+Line-by-line review and local verification of this documentation update have
+been personally completed by the repository owner (`Wchwch777`). See the signed
+status, verification scope, and checklist in [`docs/owner-review.md`](docs/owner-review.md).
