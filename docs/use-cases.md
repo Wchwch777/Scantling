@@ -1,63 +1,81 @@
-# MQTT client use cases and evidence boundaries
+# MQTT message-flow examples and evidence
 
-These are protocol-level examples for the same MQTT 3.1.1 client API. They are
-not claims of Scantling customers, device deployments, user research, or measured
-market demand. The runnable demonstration sends three representative message
-flows through separate publisher and subscriber connections:
-[`examples/mqtt_client/main.mbt`](../examples/mqtt_client/main.mbt).
+The scenarios below explain how the current client API could carry common
+message shapes. They are protocol demonstrations, not validated customer
+requirements, user research, hardware integrations, or deployment reports. All
+three appear in the runnable [`main.mbt` example](../examples/mqtt_client/main.mbt),
+which uses one subscriber connection and one publisher connection.
 
-## 1. Sensor telemetry collection
+## 1. Telemetry-shaped message
 
-- **Actor and task:** a gateway subscribes to a sensor topic such as
-  `building/floor-2/temperature` and consumes measurement bytes.
-- **Client flow:** `subscribe` at QoS 1, then `receive`; the client acknowledges
-  QoS 1 messages with PUBACK before returning them to the caller.
-- **Evidence:** [`subscribe`](../mqtt/client.mbt#L321) and
-  [`receive`](../mqtt/client.mbt#L392) implement the caller flow. The
-  [loopback test](../mqtt/integration_test/client_test.mbt#L33) checks
-  SUBSCRIBE/SUBACK and inbound QoS 1/PUBACK; the
-  [Mosquitto test](../mqtt/integration_test/client_test.mbt#L142) checks a
-  separate publisher and subscriber exchanging a QoS 1 message.
-- **Not established:** no physical sensor or gateway is connected, and no
-  telemetry format or field deployment is validated.
+- **Illustrative task:** an application subscribes to
+  `demo/sensor/temperature` and receives a measurement payload.
+- **Example flow:** the subscriber requests QoS 1, the publisher sends the
+  opaque bytes `21.5`, and the subscriber receives and prints them. See the
+  [topic and subscription](../examples/mqtt_client/main.mbt#L15) and the
+  [publish/receive calls](../examples/mqtt_client/main.mbt#L23).
+- **Implementation evidence:** [`subscribe`](../mqtt/client.mbt#L350) waits for
+  SUBACK; [`publish_qos1`](../mqtt/client.mbt#L273) waits for the matching
+  PUBACK; [`receive`](../mqtt/client.mbt#L435) acknowledges QoS 1 delivery
+  before returning the message. The [loopback protocol test](../mqtt/integration_test/client_test.mbt#L33)
+  checks subscription and inbound QoS 1 acknowledgement. The
+  [Mosquitto round-trip test](../mqtt/integration_test/client_test.mbt#L313)
+  checks one generic payload between separate clients in CI.
+- **Not established:** no sensor, gateway, measurement schema, or deployed
+  telemetry system is included. The Mosquitto test uses its own test topic and
+  payload; it does not run this example's telemetry scenario.
 
-## 2. Device command publishing
+## 2. Command-shaped message
 
-- **Actor and task:** an application publishes a command to a topic such as
-  `factory/line-1/device-7/cmd` for a device client subscribed to that topic.
-- **Client flow:** `publish_qos1` sends the payload and waits for PUBACK; QoS 0
-  publish is also available where the application accepts its weaker delivery
-  semantics.
-- **Evidence:** [`publish_qos1`](../mqtt/client.mbt#L256) waits for PUBACK. The
-  [independent Mosquitto test](../mqtt/integration_test/client_test.mbt#L142)
-  verifies QoS 1 publishing, acknowledgement, and delivery to a different
-  subscribed client. This covers
-  the generic broker message path used by the example, not a real device or
-  command execution.
-- **Not established:** device identity, authorization, command schema, safety,
-  or downstream execution are outside this library.
+- **Illustrative task:** a publisher sends opaque bytes to
+  `demo/device/device-7/cmd` for a subscriber to receive.
+- **Example flow:** the payload is `SET_TEMP=22.0`; the example prints what the
+  subscriber receives. See the [topic and subscription](../examples/mqtt_client/main.mbt#L16)
+  and the [publish/receive calls](../examples/mqtt_client/main.mbt#L27).
+- **Implementation evidence:** the same [`publish_qos1`](../mqtt/client.mbt#L273)
+  and [`receive`](../mqtt/client.mbt#L435) methods carry the bytes; the
+  [QoS 1 loopback test](../mqtt/integration_test/client_test.mbt#L33) verifies
+  a generic publish, matching PUBACK, and delivery path. The broker round trip
+  provides a separate interoperability check, not a command-specific test.
+- **Not established:** Scantling does not validate command syntax, identify or
+  authorize a device, execute an action, or measure command latency/reliability.
 
-## 3. Application event consumption
+## 3. Event-shaped message
 
-- **Actor and task:** a service subscribes to a topic such as
-  `service/orders/created` and passes the received opaque bytes to its own event
-  decoder or handler.
-- **Client flow:** `subscribe` to one topic filter and call `receive`; the API
-  returns topic, payload, QoS, and retain metadata.
-- **Evidence:** the loopback test checks subscription and message receipt; the
-  Mosquitto test checks one publisher-to-subscriber opaque payload. The
-  [example](../examples/mqtt_client/main.mbt) uses an event topic and
-  event-shaped payload to demonstrate the API path; CI does not assert business
-  event semantics.
-- **Not established:** the current tests do not verify multiple subscribers,
-  durable sessions, ordering across reconnects, retries, or end-to-end business
-  event processing.
+- **Illustrative task:** an application receives opaque bytes on
+  `demo/service/orders/created` and could pass them to its own event handler.
+- **Example flow:** the example publishes `order_id=demo-1`, receives it on the
+  separate subscriber connection, and prints the payload. See the
+  [topic and subscription](../examples/mqtt_client/main.mbt#L17) and the
+  [publish/receive calls](../examples/mqtt_client/main.mbt#L31).
+- **Implementation evidence:** [`receive`](../mqtt/client.mbt#L435) returns the
+  topic, bytes, QoS, and retain flag. The
+  [loopback test](../mqtt/integration_test/client_test.mbt#L33) and
+  [Mosquitto round trip](../mqtt/integration_test/client_test.mbt#L313)
+  exercise generic message receipt, but neither checks event semantics.
+- **Not established:** there is no event schema, decoder, ordering guarantee
+  across reconnects, durable delivery, or business processing in this project.
 
-## Scope shared by all three examples
+## October protocol checks
 
-The implementation is a small sequential MQTT 3.1.1 TCP client. It supports one
-topic filter per subscribe/unsubscribe call and the tested QoS 0/1 paths. TLS,
-authentication, automatic reconnection, automatic Keep Alive scheduling,
-operation timeouts, QoS 2, MQTT 5.0, WebSocket transport, and production
-certification are not included. CI results validate the checked protocol paths;
-they do not establish market demand or production readiness.
+The October code change also adds evidence beyond the three sample payloads:
+unit tests cover broker return-code mapping, Clean Session CONNACK validation,
+and matching PUBACK/UNSUBACK identifiers in
+[`client.mbt`](../mqtt/client.mbt#L506); native local-peer tests cover broker
+rejection, an invalid session flag, a mismatched PUBACK, and a truncated
+CONNACK in [`client_test.mbt`](../mqtt/integration_test/client_test.mbt#L145).
+The frame-reader unit tests cover truncated Remaining Length and the configured
+1 MiB packet-body cap in [`client_test.mbt`](../mqtt/client_test.mbt#L2).
+The [CI run for code commit `ecbda25`](https://github.com/Wchwch777/Scantling/actions/runs/39027210274)
+passed with its Mosquitto service enabled.
+
+## Shared scope
+
+Scantling is a sequential MQTT 3.1.1 TCP client. It handles one topic filter
+per subscribe/unsubscribe call and the exercised QoS 0/1 paths. It does not
+provide TLS, MQTT authentication, automatic reconnect, automatic Keep Alive
+scheduling, operation timeouts, persistent sessions, QoS 2, MQTT 5.0, or
+WebSocket transport. The packet codec comes from the separately licensed
+[`zbhzs1/moonbit-mqtt` package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt);
+the runtime and dependency boundary are summarized in the
+[README](../README.md#source-and-license-boundaries).

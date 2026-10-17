@@ -1,39 +1,82 @@
 # Scantling — MoonBit MQTT 3.1.1 Client
 
-Scantling is an asynchronous MQTT 3.1.1 TCP client runtime for MoonBit. It
-reuses the [`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt)
-packet codec and implements the client-side connection and message flow. The
-repository demonstrates protocol-level telemetry, command, and application
-event examples; it does not claim customer deployments or measured demand.
-See the [project application](docs/project-application.md) and
-[use-case evidence](docs/use-cases.md).
+Scantling is an asynchronous MQTT 3.1.1 client runtime over TCP for MoonBit.
+The current project direction is a protocol client: the repository's earlier
+history includes a one-dimensional cutting-stock optimizer/visualizer and an
+intervening GraphQL-over-HTTP prototype; neither is the maintained project.
+The MQTT runtime starts at [`679c721`](https://github.com/Wchwch777/Scantling/commit/679c721),
+after the [GraphQL pivot](https://github.com/Wchwch777/Scantling/commit/d424a6f)
+and the earlier [cutting-stock work](https://github.com/Wchwch777/Scantling/commit/458215b).
+
+Scantling builds on the `zbhzs1/moonbit-mqtt` packet codec and the
+`moonbitlang/async` runtime. It implements the client-side TCP connection and
+MQTT request/response flow; it does not implement a Broker. The package
+boundaries and licenses are listed below, with feature evidence in
+[`docs/use-cases.md`](docs/use-cases.md).
 
 ## Implemented
 
-- TCP connection and MQTT CONNECT/CONNACK handshake.
-- Subscribe to one topic filter at a time and wait for SUBACK; unsubscribe and
-  wait for UNSUBACK.
-- QoS 0 publish; QoS 1 publish with matching PUBACK.
-- Receive QoS 0/1 PUBLISH packets; acknowledge QoS 1 before returning the
-  message's topic, payload, QoS, and retain flag.
-- PINGREQ/PINGRESP and a 1 MiB inbound packet-body limit.
-- Validation for publish topics, subscription filters, and client identifiers.
+- MQTT CONNECT/CONNACK over TCP, with Clean Session requested and checked.
+- One topic filter per SUBSCRIBE or UNSUBSCRIBE call, awaiting SUBACK or
+  UNSUBACK.
+- QoS 0 publish and QoS 1 publish that waits for the matching PUBACK.
+- QoS 0/1 PUBLISH receive; QoS 1 deliveries are acknowledged before the
+  message is returned.
+- PINGREQ/PINGRESP, DISCONNECT, topic/filter validation, and a 1 MiB inbound
+  packet-body limit.
+- Sequential API calls on each connection. Do not issue concurrent operations
+  on the same client.
 
-The API is sequential: do not run concurrent operations on the same connection.
-This version does not implement TLS, authentication, automatic reconnection,
-automatic Keep Alive scheduling, operation timeouts, persistent sessions, QoS
-2, MQTT 5.0, or WebSocket transport. Applications must schedule PINGREQ within
-the configured Keep Alive interval where needed. This is not a production
-complete MQTT SDK or a conformance certification.
+October code work added an independent Mosquitto interoperability path and
+explicit protocol-error handling for broker rejection, invalid Clean Session
+state, mismatched acknowledgements, and truncated frames. The implementation
+and tests are visible in [`ecbda25`](https://github.com/Wchwch777/Scantling/commit/ecbda25b94f463e534e3efa9c4fa11e6bb66f2f2) and
+[`84538b8`](https://github.com/Wchwch777/Scantling/commit/84538b8).
+
+## Boundaries
+
+This is a small MQTT 3.1.1 TCP client, not a production-complete SDK or a
+conformance certification. TLS, MQTT authentication, automatic reconnection,
+automatic Keep Alive scheduling, operation timeouts, persistent sessions,
+QoS 2, MQTT 5.0, and WebSocket transport are not implemented. The application
+must schedule PINGREQ within the configured Keep Alive interval. The sample
+topics and payloads below are protocol demonstrations; they are not evidence
+of customer deployments, physical devices, user research, or measured demand.
+This repository does not claim a Scantling Mooncakes release.
+
+## Three protocol demonstrations
+
+The runnable example uses separate publisher and subscriber connections for
+three representative message flows:
+
+1. **Telemetry-shaped message:** `demo/sensor/temperature` carries `21.5`.
+2. **Command-shaped message:** `demo/device/device-7/cmd` carries
+   `SET_TEMP=22.0`.
+3. **Event-shaped message:** `demo/service/orders/created` carries
+   `order_id=demo-1`.
+
+In each case the subscriber receives the opaque payload; the example does not
+simulate a sensor, execute a device command, or parse a business event. See the
+[scenario-by-scenario evidence and limits](docs/use-cases.md).
+
+## Source and license boundaries
+
+The Scantling module declares Apache-2.0 in [`moon.mod`](moon.mod), with the
+full text in [`LICENSE`](LICENSE). Its pinned dependencies are:
+
+| Module | Role in Scantling | Version and license evidence |
+| --- | --- | --- |
+| [`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt) | MQTT 3.1.1 packet encoding/decoding; it does not provide transport or a client runtime. | `0.1.0`, Apache-2.0: [Mooncakes package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt), [upstream module metadata](https://github.com/zbhzs1/moonbit-mqtt/blob/main/moon.mod), [license](https://github.com/zbhzs1/moonbit-mqtt/blob/main/LICENSE). |
+| [`moonbitlang/async`](https://github.com/moonbitlang/async) | General async runtime and TCP socket APIs used for transport; it does not supply MQTT semantics. | `0.21.3`, Apache-2.0: [versioned Mooncakes package](https://mooncakes.io/docs/moonbitlang/async@0.21.3), [upstream repository](https://github.com/moonbitlang/async), [license](https://github.com/moonbitlang/async/blob/main/LICENSE). |
+
+The versions are pinned in Scantling's [`moon.mod`](moon.mod). The CI Broker
+is the separate Mosquitto `2.0.22` container described in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml); it is a test service,
+not part of Scantling or either MoonBit dependency.
 
 ## Run the example
 
-The example connects two clients to a broker. One subscribes to three
-representative topics; the other publishes telemetry, command-shaped, and
-event-shaped messages at QoS 1. The first client prints the messages it receives.
-This is a protocol demo, not a simulated physical device or application service.
-
-Start a local broker. With Docker:
+Start Mosquitto with the repository's test configuration. With Docker:
 
 ```sh
 docker run --rm --detach --name scantling-mosquitto \
@@ -52,13 +95,13 @@ docker run --rm --detach --name scantling-mosquitto `
   eclipse-mosquitto:2.0.22
 ```
 
-Then run the example from the repository root:
+Then run from the repository root:
 
 ```sh
 moon run --target native examples/mqtt_client
 ```
 
-After it exits, stop the broker with `docker stop scantling-mosquitto`.
+Stop the broker with `docker stop scantling-mosquitto` after the example exits.
 
 ## Development and verification
 
@@ -71,20 +114,12 @@ moon check --target native
 moon test --target native
 ```
 
-The portable tests cover MQTT Remaining Length framing and input limits. Native
-integration tests cover a local TCP protocol peer and an independent Mosquitto
-2.0.22 broker. CI starts Mosquitto with [the checked-in test config](.github/mosquitto.conf)
-and runs the broker integration path. For local integration testing, start the
-broker as above, then run `moon test --target native`; on PowerShell, set
-`$env:SCANTLING_MOSQUITTO_HOST = "127.0.0.1"` before the test command. Without
-that variable, the real-broker test is skipped while the loopback test runs.
-
-The preceding client/runtime baseline, commit
-[`d7112e7`](https://github.com/Wchwch777/Scantling/commit/d7112e7bc57821cbe75701344c12931088aaf128),
-passed [GitHub Actions run 39005161469](https://github.com/Wchwch777/Scantling/actions/runs/39005161469).
-The current documentation/example revision has also passed the local checks
-listed in [`docs/owner-review.md`](docs/owner-review.md); that prior CI run does
-not establish production readiness or device deployment.
+The native integration tests include a local protocol peer and an independent
+Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
+Mosquitto `2.0.22`, and runs both test targets. Without that environment
+variable, the real-Broker test is skipped. The protocol checks are not a full
+MQTT conformance suite. Code-baseline CI evidence is recorded in
+[`docs/owner-review.md`](docs/owner-review.md).
 
 ## Project records
 

@@ -1,64 +1,49 @@
 # Owner review status
 
-**Status: pending owner review for the 2026-10-17 documentation and example update.**
+**Status: pending owner review.** This record does not claim the repository
+owner has reviewed, signed, or approved this documentation update. Add an
+owner sign-off only after the owner personally completes the review.
 
-This file records verifiable repository evidence and the items awaiting the
-repository owner's review. It does not claim that the owner has reviewed,
-signed, or approved this revision. Earlier versions of this file contained
-first-person sign-off and manual-review claims; they are not carried forward as
-evidence for the current code or this documentation revision.
+## This documentation update
 
-## Changes prepared in this revision
+- Clarifies that the current maintained project is the MQTT 3.1.1 TCP client;
+  the earlier one-dimensional cutting-stock work remains in Git history but
+  is no longer the active project direction.
+- Describes Scantling's client/runtime responsibilities separately from the
+  `zbhzs1/moonbit-mqtt` packet codec and `moonbitlang/async` runtime, and links
+  to version and Apache-2.0 license evidence.
+- Maps telemetry-shaped, command-shaped, and event-shaped example messages to
+  actual example code, client APIs, and protocol tests. It does not present
+  these sample flows as user research, customer deployments, or device tests.
+- Updates the AI disclosure and keeps owner review explicitly pending.
+- Does not edit the project application or runnable example in this revision.
 
-- The project application and README describe the current MQTT 3.1.1 client
-  features and limitations.
-- Three protocol-level use cases point to the implementation, runnable example,
-  and available integration coverage; they are explicitly not presented as
-  customer or deployment evidence.
-- The runnable example uses separate publisher and subscriber clients and
-  telemetry, command, and event-shaped topics.
-- AI assistance and the current owner-review status are disclosed in the
-  repository documents.
+## Verification evidence
 
-These materials were prepared with AI assistance under the task instruction.
-The owner has not yet confirmed the wording or completed a line-by-line review
-of this revision.
+The code baseline used for the documentation is commit
+[`ecbda25`](https://github.com/Wchwch777/Scantling/commit/ecbda25b94f463e534e3efa9c4fa11e6bb66f2f2).
+Its [GitHub Actions run 39027210274](https://github.com/Wchwch777/Scantling/actions/runs/39027210274)
+completed successfully: formatting, Wasm and Native type checks, 14 Wasm tests,
+and 20 Native tests passed. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1` and
+starts Mosquitto `2.0.22`, so the independent-Broker test ran. This verifies the
+tested protocol paths, not full MQTT conformance or production readiness.
 
-## Verification completed for this revision
+For the source tree at this documentation update, `moon fmt --check`,
+`moon check --target wasm`, `moon test --target wasm` (14 passed),
+`moon check --target native`, and `moon test --target native` (20 passed in
+WSL) completed successfully. The documentation changes do not modify MoonBit
+source. The local Native run did not set `SCANTLING_MOSQUITTO_HOST`, so its
+conditional Mosquitto test was skipped; the linked CI baseline is the evidence
+that the real-Broker path ran. The README explains how to enable that test
+locally. Check the Actions result attached to each later commit before claiming
+that commit's remote CI passed.
 
-- MoonBit CLI `0.1.20261012` / compiler `0.10.15`: `moon fmt --check` passed.
-- `moon check --target wasm` and `moon check --target native` passed.
-- `moon test --target wasm`: 10 tests passed.
-- `moon test --target native`: 12 tests passed in WSL Ubuntu with GCC and
-  `SCANTLING_MOSQUITTO_HOST=127.0.0.1`; the independent Mosquitto `2.0.22`
-  integration test was enabled.
-- `moon run --target native examples/mqtt_client` ran against that broker and
-  printed the telemetry, command-shaped, and event-shaped demo messages.
-- `git diff --check` passed. Compiler warnings were emitted for existing
-  deprecated implicit trait methods and unused imports; there were no errors.
+## Owner checklist — incomplete
 
-The Windows Native run cannot use MSVC because Build Tools and the Windows SDK
-are not installed; the Native checks and runtime tests above ran in WSL Ubuntu.
-The preceding code baseline's GitHub Actions run is recorded below. For any
-later push, use the Actions result associated with that exact commit before
-claiming remote CI success.
-
-## Earlier code-baseline evidence
-
-- Preceding code work is present on `main` through commit
-  [`d7112e7`](https://github.com/Wchwch777/Scantling/commit/d7112e7bc57821cbe75701344c12931088aaf128).
-- That commit's GitHub Actions run completed successfully, including formatting,
-  Wasm/native checks and tests, and the Mosquitto integration path:
-  [run 39005161469](https://github.com/Wchwch777/Scantling/actions/runs/39005161469).
-- The CI uses Mosquitto `2.0.22` and the checked-in test configuration. This
-  validates the exercised MQTT 3.1.1 flow; it is not a complete conformance
-  suite or a certification.
-
-## Owner review checklist — not yet completed
-
-- [ ] Confirm the project description and contest-facing wording.
-- [ ] Review the three use-case descriptions and their evidence boundaries.
-- [ ] Run or inspect the documented example against a broker.
-- [ ] Confirm the AI-assistance disclosure is accurate for the repository.
-- [ ] Add an owner sign-off only after the owner has personally completed this
-  review; record its actual date and scope.
+- [ ] Confirm the project direction and contest-facing wording.
+- [ ] Review the package boundary, source references, and license statements.
+- [ ] Review all three scenarios and their evidence limits.
+- [ ] Confirm the AI-assistance disclosure is accurate.
+- [ ] Run the example against a Broker and review its output.
+- [ ] Record the actual review date and scope after personally completing this
+  review.
