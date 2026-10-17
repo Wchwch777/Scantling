@@ -149,19 +149,19 @@ async test "MQTT client interoperates with an independent Mosquitto broker" {
         port=1883,
         client_id="scantling-mosquitto-subscriber",
       )
-      subscriber.subscribe(topic=topic, qos=@codec.QoS1)
+      subscriber.subscribe(topic~, qos=@codec.QoS1)
       let publisher = @client.Client::connect(
         host,
         port=1883,
         client_id="scantling-mosquitto-publisher",
       )
-      publisher.publish_qos1(topic=topic, payload=b"mosquitto-roundtrip")
+      publisher.publish_qos1(topic~, payload=b"mosquitto-roundtrip")
       let message = subscriber.receive()
       assert_eq(message.topic, topic)
       assert_eq(message.payload, b"mosquitto-roundtrip")
       assert_eq(message.qos, @codec.QoS1)
       publisher.ping()
-      subscriber.unsubscribe(topic=topic)
+      subscriber.unsubscribe(topic~)
       publisher.disconnect()
       subscriber.disconnect()
     }
