@@ -1,13 +1,41 @@
 ///|
 async fn main {
-  let client = @mqtt.Client::connect(
-    "127.0.0.1",
+  let broker = "127.0.0.1"
+  let subscriber = @mqtt.Client::connect(
+    broker,
     port=1883,
-    client_id="scantling-demo",
+    client_id="scantling-example-subscriber",
   )
-  client.subscribe(topic="demo/temperature", qos=@codec.QoS1)
-  client.publish(topic="demo/temperature", payload=b"21.5")
-  let message = client.receive()
-  println("Received \{message.topic}: \{message.payload}")
-  client.disconnect()
+  let publisher = @mqtt.Client::connect(
+    broker,
+    port=1883,
+    client_id="scantling-example-publisher",
+  )
+
+  let telemetry_topic = "demo/sensor/temperature"
+  let command_topic = "demo/device/device-7/cmd"
+  let event_topic = "demo/service/orders/created"
+
+  subscriber.subscribe(topic=telemetry_topic, qos=@codec.QoS1)
+  subscriber.subscribe(topic=command_topic, qos=@codec.QoS1)
+  subscriber.subscribe(topic=event_topic, qos=@codec.QoS1)
+
+  publisher.publish_qos1(topic=telemetry_topic, payload=b"21.5")
+  let telemetry = subscriber.receive()
+  println("telemetry \{telemetry.topic}: \{telemetry.payload}")
+
+  publisher.publish_qos1(topic=command_topic, payload=b"SET_TEMP=22.0")
+  let command = subscriber.receive()
+  println("command \{command.topic}: \{command.payload}")
+
+  publisher.publish_qos1(topic=event_topic, payload=b"order_id=demo-1")
+  let event = subscriber.receive()
+  println("event \{event.topic}: \{event.payload}")
+
+  publisher.ping()
+  subscriber.unsubscribe(topic=telemetry_topic)
+  subscriber.unsubscribe(topic=command_topic)
+  subscriber.unsubscribe(topic=event_topic)
+  publisher.disconnect()
+  subscriber.disconnect()
 }

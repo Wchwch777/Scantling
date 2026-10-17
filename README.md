@@ -1,81 +1,64 @@
-# Scantling — MoonBit MQTT Client
+# Scantling — MoonBit MQTT 3.1.1 Client
 
-An asynchronous MQTT 3.1.1 TCP client runtime for MoonBit. Scantling builds on
-the existing [`zbhzs1/moonbit-mqtt`](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt)
-packet codec instead of reimplementing packet encoding. It adds connection
-handshake, topic subscription, QoS 0 publish, inbound QoS 1 acknowledgement,
-and a native TCP transport.
+Scantling is an asynchronous MQTT 3.1.1 TCP client runtime for MoonBit. It
+reuses the [`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt)
+packet codec and implements the client-side connection and message flow. The
+repository demonstrates protocol-level telemetry, command, and application
+event examples; it does not claim customer deployments or measured demand.
+See the [project application](docs/project-application.md) and
+[use-case evidence](docs/use-cases.md).
 
-The project targets a reusable messaging protocol layer, not one industry or
-one device. MQTT is used by IoT telemetry, device command channels, and
-application event messaging. These are intended application areas, not claims
-of existing Scantling deployments or surveyed customers; see
-[`docs/project-application.md`](docs/project-application.md) for the evidence
-and scope boundaries.
+## Implemented
 
-The proposal's rationale is checkable: the competition charter recommends an
-MQTT client/runtime direction, while the existing MoonBit MQTT package documents
-packet codecs without transport or a client runtime. This is evidence of an
-ecosystem capability gap, not proof of user adoption; see the proposal's
-"Demand coverage and verifiable evidence" section.
+- TCP connection and MQTT CONNECT/CONNACK handshake.
+- Subscribe to one topic filter at a time and wait for SUBACK; unsubscribe and
+  wait for UNSUBACK.
+- QoS 0 publish; QoS 1 publish with matching PUBACK.
+- Receive QoS 0/1 PUBLISH packets; acknowledge QoS 1 before returning the
+  message's topic, payload, QoS, and retain flag.
+- PINGREQ/PINGRESP and a 1 MiB inbound packet-body limit.
+- Validation for publish topics, subscription filters, and client identifiers.
 
-## Current implementation
+The API is sequential: do not run concurrent operations on the same connection.
+This version does not implement TLS, authentication, automatic reconnection,
+automatic Keep Alive scheduling, operation timeouts, persistent sessions, QoS
+2, MQTT 5.0, or WebSocket transport. Applications must schedule PINGREQ within
+the configured Keep Alive interval where needed. This is not a production
+complete MQTT SDK or a conformance certification.
 
-- TCP connection by host and port, MQTT 3.1.1 CONNECT / CONNACK handshake.
-- Subscribe to one topic filter at a time and wait for the matching SUBACK.
-- Publish QoS 0 messages.
-- Publish QoS 1 messages and wait for the matching PUBACK.
-- Receive QoS 0 and QoS 1 PUBLISH packets; acknowledge QoS 1 before returning
-  the message to the caller.
-- Unsubscribe from one topic filter and wait for the matching UNSUBACK.
-- Send a PINGREQ and wait for PINGRESP; applications schedule these calls
-  within the configured Keep Alive interval.
-- Decode framed MQTT packets with a 1 MiB inbound packet limit.
-- Packet encoding and decoding delegated to the Apache-2.0
-  [`moonbit-mqtt` codec](https://github.com/zbhzs1/moonbit-mqtt).
+## Run the example
 
-The client is a small sequential API: callers should not issue concurrent
-operations on the same connection. It does not implement TLS, authentication,
-automatic reconnection, automatic Keep Alive scheduling, QoS 2 session
-handling, MQTT 5.0, WebSocket transport, or operation timeouts. Do not use it
-for production connections that require these features.
+The example connects two clients to a broker. One subscribes to three
+representative topics; the other publishes telemetry, command-shaped, and
+event-shaped messages at QoS 1. The first client prints the messages it receives.
+This is a protocol demo, not a simulated physical device or application service.
 
-## Quick start
-
-```moonbit
-import {
-  "scantling_mqtt_client/mqtt" @mqtt,
-  "zbhzs1/moonbit-mqtt" @codec,
-}
-
-async fn main {
-  let client = @mqtt.Client::connect(
-    "127.0.0.1",
-    port=1883,
-    client_id="scantling-demo",
-  )
-  client.subscribe(topic="demo/temperature", qos=@codec.QoS1)
-  client.publish(topic="demo/temperature", payload=b"21.5")
-  client.publish_qos1(topic="demo/temperature", payload=b"21.5")
-  let message = client.receive()
-  println("Received \{message.topic} at QoS \{message.qos}: \{message.payload}")
-  client.unsubscribe(topic="demo/temperature")
-  client.ping()
-  client.disconnect()
-}
-```
-
-Start an MQTT 3.1.1 broker first. For example, with Mosquitto installed:
+Start a local broker. With Docker:
 
 ```sh
-mosquitto -p 1883
+docker run --rm --detach --name scantling-mosquitto \
+  --publish 1883:1883 \
+  --volume "$PWD/.github/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro" \
+  eclipse-mosquitto:2.0.22
 ```
 
-Then run the example:
+On PowerShell:
+
+```powershell
+$config = (Resolve-Path .github/mosquitto.conf).Path
+docker run --rm --detach --name scantling-mosquitto `
+  --publish 1883:1883 `
+  --mount "type=bind,source=$config,target=/mosquitto/config/mosquitto.conf,readonly" `
+  eclipse-mosquitto:2.0.22
+```
+
+Then run the example from the repository root:
 
 ```sh
 moon run --target native examples/mqtt_client
 ```
+
+After it exits, stop the broker with `docker stop scantling-mosquitto`.
 
 ## Development and verification
 
@@ -89,40 +72,23 @@ moon test --target native
 ```
 
 The portable tests cover MQTT Remaining Length framing and input limits. Native
-integration tests cover both a local TCP protocol peer and an independent
-Mosquitto broker. The CI starts Mosquitto 2.0.22 with the checked-in test
-configuration, then verifies CONNECT, QoS 1 SUBSCRIBE, cross-client QoS 1
-publish/delivery/PUBACK, PINGREQ/PINGRESP, UNSUBSCRIBE, and DISCONNECT.
+integration tests cover a local TCP protocol peer and an independent Mosquitto
+2.0.22 broker. CI starts Mosquitto with [the checked-in test config](.github/mosquitto.conf)
+and runs the broker integration path. For local integration testing, start the
+broker as above, then run `moon test --target native`; on PowerShell, set
+`$env:SCANTLING_MOSQUITTO_HOST = "127.0.0.1"` before the test command. Without
+that variable, the real-broker test is skipped while the loopback test runs.
 
-To run the independent broker test locally, start Mosquitto with the same
-configuration:
+The preceding client/runtime baseline, commit
+[`d7112e7`](https://github.com/Wchwch777/Scantling/commit/d7112e7bc57821cbe75701344c12931088aaf128),
+passed [GitHub Actions run 39005161469](https://github.com/Wchwch777/Scantling/actions/runs/39005161469).
+The current documentation/example revision has also passed the local checks
+listed in [`docs/owner-review.md`](docs/owner-review.md); that prior CI run does
+not establish production readiness or device deployment.
 
-```sh
-docker run --rm --detach --name scantling-mosquitto \
-  --publish 1883:1883 \
-  --volume "$PWD/.github/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro" \
-  eclipse-mosquitto:2.0.22
-SCANTLING_MOSQUITTO_HOST=127.0.0.1 moon test --target native
-docker stop scantling-mosquitto
-```
+## Project records
 
-On PowerShell, set `$env:SCANTLING_MOSQUITTO_HOST = "127.0.0.1"` before running
-`moon test --target native`. Without that variable, the independent broker test
-is skipped and the local TCP peer test still runs.
-
-PowerShell broker startup:
-
-```powershell
-$config = (Resolve-Path .github/mosquitto.conf).Path
-docker run --rm --detach --name scantling-mosquitto `
-  --publish 1883:1883 `
-  --mount "type=bind,source=$config,target=/mosquitto/config/mosquitto.conf,readonly" `
-  eclipse-mosquitto:2.0.22
-$env:SCANTLING_MOSQUITTO_HOST = "127.0.0.1"
-moon test --target native
-docker stop scantling-mosquitto
-```
-
-See [`AI_ASSISTED.md`](AI_ASSISTED.md) for the assistance boundary and
-[`docs/owner-review.md`](docs/owner-review.md) for the owner's review of the
-MQTT revision and documentation synchronization.
+- [Project application](docs/project-application.md)
+- [Use cases and evidence boundaries](docs/use-cases.md)
+- [AI-assisted development disclosure](AI_ASSISTED.md)
+- [Owner review status](docs/owner-review.md)

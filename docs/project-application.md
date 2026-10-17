@@ -1,28 +1,69 @@
 # Scantling：MoonBit MQTT 3.1.1 异步 TCP 客户端
 
-**方向：** MoonBit 网络基础库 / 协议客户端　 **仓库：** <https://github.com/Wchwch777/Scantling>　 **许可证：** Apache-2.0
+**项目方向：** MoonBit 网络协议客户端与消息运行时
 
-## 项目目标
+**仓库：** <https://github.com/Wchwch777/Scantling>
 
-Scantling 为 MoonBit 应用提供可复用的 MQTT 3.1.1 客户端运行时，供需要连接 MQTT Broker 的程序使用。MoonBit 已有 `zbhzs1/moonbit-mqtt` 报文编解码包，但它不提供 TCP 传输或客户端会话流程；Scantling 复用该 codec，补充客户端侧能力，不重复实现 Broker 或报文编解码。此生态缺口判断基于公开包功能说明，不代表已完成用户调研或生产部署。
+**许可证：** Apache-2.0
 
-## 当前功能
+## 项目简介
 
-- 使用 MoonBit 和 `moonbitlang/async` 进行 TCP 连接，完成 CONNECT/CONNACK；
-- 单主题订阅并等待匹配 SUBACK；
-- QoS 0 发布、QoS 1 发布并等待匹配 PUBACK；
-- 接收 QoS 0/1 消息并在交付 QoS 1 消息前发送 PUBACK；返回主题、payload、QoS 和 retain 标志；
-- 单主题取消订阅并等待匹配 UNSUBACK；可发送 PINGREQ 并等待 PINGRESP；
-- 限制入站报文体不超过 1 MiB；拒绝空发布主题、发布主题通配符、空订阅过滤器及空 Client ID。
+Scantling 为 MoonBit 程序提供 MQTT 3.1.1 原生 TCP 客户端能力。它复用
+[`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt) 的报文编解码，
+在其上实现连接、订阅、发布、消息接收和连接控制流程。项目希望补充
+MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包的功能边界，
+不是用户调研、客户需求或生产部署的结论。
 
-## 范围与限制
+## 已实现功能与可核查证据
 
-当前目标是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 客户端。当前不提供 TLS、身份认证、自动重连、自动 Keep Alive 调度、操作超时、持久会话、QoS 2、MQTT 5.0 或 WebSocket，也不声称生产级可用或完整协议认证。应用需自行按连接配置安排 PINGREQ，不能并发操作同一 Client。
+- MQTT 3.1.1 TCP CONNECT/CONNACK 握手，以及顺序调用的连接 API：
+  [`mqtt/client.mbt`](../mqtt/client.mbt)。
+- 单主题过滤器订阅与取消订阅，并等待对应应答；支持 QoS 0 发布、QoS 1
+  发布及 PUBACK、QoS 0/1 接收与 QoS 1 PUBACK。
+- PINGREQ/PINGRESP；入站报文体限制为 1 MiB；拒绝无效发布主题及空订阅过滤器。
+- 原生 loopback 测试覆盖客户端与协议对端的请求/应答流程；独立 Mosquitto
+  测试使用两个客户端验证 QoS 1 订阅、投递和发布应答：
+  [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
+- CI 固定运行 Mosquitto `2.0.22` 并执行完整 MoonBit 检查。提交
+  [`d7112e7`](https://github.com/Wchwch777/Scantling/commit/d7112e7bc57821cbe75701344c12931088aaf128)
+  的主分支 CI 成功：
+  [GitHub Actions run 39005161469](https://github.com/Wchwch777/Scantling/actions/runs/39005161469)。
 
-## 使用与验收
+## 代表性使用场景
 
-仓库 README 提供安装、快速开始与本地 Broker 示例；`examples/mqtt_client` 演示连接、订阅、发布、接收、取消订阅和 ping。测试包括 Remaining Length 与报文限制单元测试，以及使用 loopback TCP 协议对端覆盖 CONNECT、SUBSCRIBE/SUBACK、QoS 1 接收/PUBACK、QoS 1 发布/PUBACK、UNSUBSCRIBE/UNSUBACK、PINGREQ/PINGRESP 和 DISCONNECT。CI 检查格式、Wasm/native 类型、Wasm 测试和 native 回环测试。CI 的实际状态以对应 GitHub Actions 运行记录为准；本地 Windows 环境没有 C 编译器，不能在此运行 native 测试。
+仓库展示三种使用同一 MQTT 客户端接口的消息流：传感器遥测接收、设备命令
+发布、应用事件消费。它们是协议层示例，不是已部署客户案例。场景与代码、测试
+之间的对应关系及未覆盖部分见 [`docs/use-cases.md`](use-cases.md)。可运行演示位于
+[`examples/mqtt_client`](../examples/mqtt_client/main.mbt)。
 
-## 开源与 AI 辅助
+## 运行方式
 
-仓库采用 Apache-2.0，并在 `moon.mod` 声明 codec 与 async 依赖。本项目以 AI 辅助开发，AI 参与代码、测试和文档草拟；项目方向、功能边界与最终质量由参赛者本人负责。实际变更、测试结果及已知限制以仓库代码和 CI 记录为准。
+先启动 MQTT 3.1.1 Broker（README 提供 Mosquitto 示例），再运行：
+
+```sh
+moon run --target native examples/mqtt_client
+```
+
+CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#development-and-verification)。
+
+## 能力边界
+
+当前实现是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 客户端。它不提供 TLS、身份
+认证、自动重连、自动 Keep Alive 调度、操作超时、持久会话、QoS 2、MQTT 5.0
+或 WebSocket，也没有真实设备接入、客户部署、性能基准或市场调研证据。应用需
+自行调度 PINGREQ，且不得并发操作同一个客户端连接。项目不声称生产级完整性或
+协议认证。
+
+## 赛事与申报材料
+
+本项目申报面向 MoonBit 开源生态中的网络协议客户端方向。适用范围和验收要求
+应以当届官方材料为准：[比赛章程](https://bxup9uklfcb.feishu.cn/wiki/Dx4Bwd6D1i3GfHkajQCcF7SznEd)、
+[比赛官网](https://moonbitlang.github.io/Hackathon2026/#process)。官网/章程的方向匹配
+只说明选题背景，不替代对实际需求、用户采用或项目完成度的证明。
+
+## AI 辅助与人工复核状态
+
+AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
+[`AI_ASSISTED.md`](../AI_ASSISTED.md)。截至本版文档整理，尚无本轮提交的逐项人工
+审查确认。因此，[`docs/owner-review.md`](owner-review.md) 记录了可核查的技术证据
+和待仓库所有者复核事项，不代表所有者已经签署或批准本轮材料。

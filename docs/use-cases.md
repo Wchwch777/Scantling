@@ -1,69 +1,63 @@
 # MQTT client use cases and evidence boundaries
 
-The project targets the MQTT 3.1.1 client role. The use cases below describe
-common workloads that use the same publish/subscribe protocol; they are not
-claims of Scantling customers, deployments, or market research.
-
-The breadth rationale has three separately checkable parts: the competition's
-recommended MQTT client/runtime direction, the documented absence of a client
-runtime in the existing MoonBit packet-codec package, and CI coverage of client
-protocol flows. These establish topic fit, an ecosystem-level implementation
-gap, and working code—not user counts, adoption, or field demand. See the
-[proposal's evidence section](project-application.md#需求覆盖与可核查依据).
+These are protocol-level examples for the same MQTT 3.1.1 client API. They are
+not claims of Scantling customers, device deployments, user research, or measured
+market demand. The runnable demonstration sends three representative message
+flows through separate publisher and subscriber connections:
+[`examples/mqtt_client/main.mbt`](../examples/mqtt_client/main.mbt).
 
 ## 1. Sensor telemetry collection
 
-- **Actor and task:** a gateway or service subscribes to a sensor topic such as
-  `building/floor-2/temperature` and consumes measurements.
-- **Input and flow:** connect to a broker, subscribe at QoS 1, receive a
-  `PUBLISH`, acknowledge it with `PUBACK`, then pass the topic and payload to
-  application code.
-- **Expected output:** a message containing the original topic and bytes.
-- **Implementation/evidence:** the API and a native loopback integration test
-  exercise CONNECT, SUBSCRIBE, inbound QoS 1, and PUBACK. The test passed in
-  [GitHub Actions run 36738625531](https://github.com/Wchwch777/Scantling/actions/runs/36738625531)
-  on commit `3b165ef`. It uses a local protocol peer, not a real sensor deployment or third-party
-  broker certification; Native was not rerun on the owner's Windows machine.
+- **Actor and task:** a gateway subscribes to a sensor topic such as
+  `building/floor-2/temperature` and consumes measurement bytes.
+- **Client flow:** `subscribe` at QoS 1, then `receive`; the client acknowledges
+  QoS 1 messages with PUBACK before returning them to the caller.
+- **Evidence:** [`subscribe`](../mqtt/client.mbt#L321) and
+  [`receive`](../mqtt/client.mbt#L392) implement the caller flow. The
+  [loopback test](../mqtt/integration_test/client_test.mbt#L33) checks
+  SUBSCRIBE/SUBACK and inbound QoS 1/PUBACK; the
+  [Mosquitto test](../mqtt/integration_test/client_test.mbt#L142) checks a
+  separate publisher and subscriber exchanging a QoS 1 message.
+- **Not established:** no physical sensor or gateway is connected, and no
+  telemetry format or field deployment is validated.
 
-## 2. Device command channel
+## 2. Device command publishing
 
-- **Actor and task:** a command-line operator or service publishes a small
-  command to a device-specific topic, for example `factory/line-1/device-7/cmd`.
-- **Input and flow:** connect to an MQTT 3.1.1 broker and publish a UTF-8 or
-  binary payload at QoS 0; the receiving device subscribes to the matching
-  topic filter.
-- **Expected output:** the broker accepts the outgoing packet and forwards it
-  to matching subscribers; delivery guarantees remain those of QoS 0.
-- **Implementation/evidence:** QoS 0 publish and topic-filter subscription
-  methods are implemented. The CI loopback test exercises the QoS 0 publish
-  packet against a local peer, not an actual device or device control flow.
+- **Actor and task:** an application publishes a command to a topic such as
+  `factory/line-1/device-7/cmd` for a device client subscribed to that topic.
+- **Client flow:** `publish_qos1` sends the payload and waits for PUBACK; QoS 0
+  publish is also available where the application accepts its weaker delivery
+  semantics.
+- **Evidence:** [`publish_qos1`](../mqtt/client.mbt#L256) waits for PUBACK. The
+  [independent Mosquitto test](../mqtt/integration_test/client_test.mbt#L142)
+  verifies QoS 1 publishing, acknowledgement, and delivery to a different
+  subscribed client. This covers
+  the generic broker message path used by the example, not a real device or
+  command execution.
+- **Not established:** device identity, authorization, command schema, safety,
+  or downstream execution are outside this library.
 
-## 3. Application event fan-out
+## 3. Application event consumption
 
-- **Actor and task:** a service consumes events from a shared topic family,
-  such as `service/orders/created`, without depending on the publisher's
-  implementation language.
-- **Input and flow:** subscribe using an MQTT topic filter; handle each message
-  as opaque bytes and decode the application's chosen payload format above the
-  client layer.
-- **Expected output:** callers receive messages as delivered by the broker
-  connection and may route them to their own handlers.
-- **Implementation/evidence:** the current API returns topic and payload and
-  can subscribe to one topic filter. Ordering, durable sessions, retries,
-  reconnection, and end-to-end processing guarantees are not implemented or
-  claimed.
+- **Actor and task:** a service subscribes to a topic such as
+  `service/orders/created` and passes the received opaque bytes to its own event
+  decoder or handler.
+- **Client flow:** `subscribe` to one topic filter and call `receive`; the API
+  returns topic, payload, QoS, and retain metadata.
+- **Evidence:** the loopback test checks subscription and message receipt; the
+  Mosquitto test checks one publisher-to-subscriber opaque payload. The
+  [example](../examples/mqtt_client/main.mbt) uses an event topic and
+  event-shaped payload to demonstrate the API path; CI does not assert business
+  event semantics.
+- **Not established:** the current tests do not verify multiple subscribers,
+  durable sessions, ordering across reconnects, retries, or end-to-end business
+  event processing.
 
-## Ecosystem relationship and scope
+## Scope shared by all three examples
 
-The MoonBit package `zbhzs1/moonbit-mqtt` provides MQTT 3.1.1 packet codecs and
-explicitly excludes network transport and client runtime. Scantling depends on
-that codec and implements the separate client-runtime layer. A MoonBit MQTT
-broker is also listed on Mooncakes; it serves the broker role, not the client
-role. These projects are adjacent ecosystem components, not evidence of
-Scantling deployments. Before submission, recheck Mooncakes and consider
-whether a collaboration or upstream contribution is preferable to maintaining
-a separate package.
-
-The first release is a plain TCP, unauthenticated client with a limited QoS
-surface. It is a runnable development foundation, not a production-complete
-MQTT SDK.
+The implementation is a small sequential MQTT 3.1.1 TCP client. It supports one
+topic filter per subscribe/unsubscribe call and the tested QoS 0/1 paths. TLS,
+authentication, automatic reconnection, automatic Keep Alive scheduling,
+operation timeouts, QoS 2, MQTT 5.0, WebSocket transport, and production
+certification are not included. CI results validate the checked protocol paths;
+they do not establish market demand or production readiness.
