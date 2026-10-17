@@ -139,6 +139,177 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
 
 ///|
 #cfg(target="native")
+async test "MQTT client rejects CONNACK session state for Clean Session" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: true,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+      })
+    })
+    @async.sleep(100)
+    let result : Result[@client.Client, @client.ClientError] = Ok(
+      @client.Client::connect(
+        "127.0.0.1",
+        port=address.port(),
+        client_id="scantling-invalid-session",
+      ),
+    ) catch {
+      error => Err(error)
+    }
+    match result {
+      Err(
+        @client.ClientError::UnexpectedPacket(
+          "CONNACK session_present must be false for a clean session"
+        )
+      ) => ()
+      _ => fail("expected invalid Clean Session CONNACK to be rejected")
+    }
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client reports broker rejection from CONNACK" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.NotAuthorized,
+          }),
+        )
+      })
+    })
+    @async.sleep(100)
+    let result : Result[@client.Client, @client.ClientError] = Ok(
+      @client.Client::connect(
+        "127.0.0.1",
+        port=address.port(),
+        client_id="scantling-rejected-client",
+      ),
+    ) catch {
+      error => Err(error)
+    }
+    match result {
+      Err(@client.ClientError::Rejected(5)) => ()
+      _ => fail("expected broker rejection code 5")
+    }
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client rejects a PUBACK with a different packet identifier" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        let message_id = match broker_read_packet(tcp) {
+          @codec.PublishPacket(message) => message.message_id.unwrap()
+          _ => fail("expected QoS 1 PUBLISH")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PubackPacket({ message_id: message_id + 1, }),
+        )
+      })
+    })
+    @async.sleep(100)
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-mismatched-ack",
+    )
+    let result : Result[Unit, @client.ClientError] = try {
+      client.publish_qos1(topic="demo/ack", payload=b"test")
+      Ok(())
+    } catch {
+      error => Err(error)
+    }
+    match result {
+      Err(
+        @client.ClientError::UnexpectedPacket(
+          "PUBACK packet identifier did not match"
+        )
+      ) => ()
+      _ => fail("expected mismatched PUBACK to be rejected")
+    }
+    client.disconnect()
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client maps a truncated CONNACK frame to transport failure" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        let truncated_header : Bytes = [0x20]
+        tcp.write(truncated_header)
+        tcp.close()
+      })
+    })
+    @async.sleep(100)
+    let result : Result[@client.Client, @client.ClientError] = Ok(
+      @client.Client::connect(
+        "127.0.0.1",
+        port=address.port(),
+        client_id="scantling-truncated-connack",
+      ),
+    ) catch {
+      error => Err(error)
+    }
+    match result {
+      Err(@client.ClientError::TransportFailure) => ()
+      _ => fail("expected a transport failure for truncated CONNACK")
+    }
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "MQTT client interoperates with an independent Mosquitto broker" {
   match @env.get_env_var("SCANTLING_MOSQUITTO_HOST") {
     None => ()

@@ -213,15 +213,32 @@ pub async fn Client::connect(
   write_packet(tcp, connect_packet)
   match read_packet(tcp) {
     @codec.ConnackPacket(response) =>
-      match response.return_code {
-        @codec.ConnectionAccepted => { tcp, keep_alive, next_packet_id: 1, }
-        @codec.UnacceptableProtocolVersion => raise ClientError::Rejected(1)
-        @codec.IdentifierRejected => raise ClientError::Rejected(2)
-        @codec.ServerUnavailable => raise ClientError::Rejected(3)
-        @codec.BadUserNameOrPassword => raise ClientError::Rejected(4)
-        @codec.NotAuthorized => raise ClientError::Rejected(5)
+      match validate_connack(response) {
+        Ok(_) => { tcp, keep_alive, next_packet_id: 1, }
+        Err(error) => raise error
       }
     _ => raise ClientError::UnexpectedPacket("expected CONNACK")
+  }
+}
+
+///|
+/// The client always requests Clean Session, so a successful CONNACK must not
+/// claim that the broker resumed a session.
+fn validate_connack(response : @codec.Connack) -> Result[Unit, ClientError] {
+  if response.session_present {
+    return Err(
+      ClientError::UnexpectedPacket(
+        "CONNACK session_present must be false for a clean session",
+      ),
+    )
+  }
+  match response.return_code {
+    @codec.ConnectionAccepted => Ok(())
+    @codec.UnacceptableProtocolVersion => Err(ClientError::Rejected(1))
+    @codec.IdentifierRejected => Err(ClientError::Rejected(2))
+    @codec.ServerUnavailable => Err(ClientError::Rejected(3))
+    @codec.BadUserNameOrPassword => Err(ClientError::Rejected(4))
+    @codec.NotAuthorized => Err(ClientError::Rejected(5))
   }
 }
 
@@ -276,12 +293,24 @@ pub async fn Client::publish_qos1(
     }),
   )
   match read_packet(self.tcp) {
-    @codec.PubackPacket(response) if response.message_id == message_id => ()
-    @codec.PubackPacket(_) =>
-      raise ClientError::UnexpectedPacket(
-        "PUBACK packet identifier did not match",
-      )
+    @codec.PubackPacket(response) =>
+      match validate_puback(response, message_id) {
+        Ok(_) => ()
+        Err(error) => raise error
+      }
     _ => raise ClientError::UnexpectedPacket("expected PUBACK")
+  }
+}
+
+///|
+fn validate_puback(
+  response : @codec.PacketId,
+  expected_message_id : Int32,
+) -> Result[Unit, ClientError] {
+  if response.message_id == expected_message_id {
+    Ok(())
+  } else {
+    Err(ClientError::UnexpectedPacket("PUBACK packet identifier did not match"))
   }
 }
 
@@ -361,12 +390,26 @@ pub async fn Client::unsubscribe(
     @codec.UnsubscribePacket({ topics: [topic], message_id, }),
   )
   match read_packet(self.tcp) {
-    @codec.UnsubackPacket(response) if response.message_id == message_id => ()
-    @codec.UnsubackPacket(_) =>
-      raise ClientError::UnexpectedPacket(
-        "UNSUBACK packet identifier did not match",
-      )
+    @codec.UnsubackPacket(response) =>
+      match validate_unsuback(response, message_id) {
+        Ok(_) => ()
+        Err(error) => raise error
+      }
     _ => raise ClientError::UnexpectedPacket("expected UNSUBACK")
+  }
+}
+
+///|
+fn validate_unsuback(
+  response : @codec.Unsuback,
+  expected_message_id : Int32,
+) -> Result[Unit, ClientError] {
+  if response.message_id == expected_message_id {
+    Ok(())
+  } else {
+    Err(
+      ClientError::UnexpectedPacket("UNSUBACK packet identifier did not match"),
+    )
   }
 }
 
@@ -457,4 +500,57 @@ test "MQTT subscription filters reject empty values" {
     Err(ClientError::InvalidConfig("subscription filter must not be empty")),
   )
   assert_eq(validate_subscription_filter("demo/+"), Ok(()))
+}
+
+///|
+test "MQTT CONNACK rejects resumed sessions when Clean Session was requested" {
+  assert_eq(
+    validate_connack({
+      session_present: false,
+      return_code: @codec.ConnectionAccepted,
+    }),
+    Ok(()),
+  )
+  assert_eq(
+    validate_connack({
+      session_present: true,
+      return_code: @codec.ConnectionAccepted,
+    }),
+    Err(
+      ClientError::UnexpectedPacket(
+        "CONNACK session_present must be false for a clean session",
+      ),
+    ),
+  )
+}
+
+///|
+test "MQTT CONNACK preserves broker rejection reason codes" {
+  assert_eq(
+    validate_connack({
+      session_present: false,
+      return_code: @codec.NotAuthorized,
+    }),
+    Err(ClientError::Rejected(5)),
+  )
+}
+
+///|
+test "MQTT PUBACK must match the request packet identifier" {
+  assert_eq(validate_puback({ message_id: 7, }, 7), Ok(()))
+  assert_eq(
+    validate_puback({ message_id: 8, }, 7),
+    Err(ClientError::UnexpectedPacket("PUBACK packet identifier did not match")),
+  )
+}
+
+///|
+test "MQTT UNSUBACK must match the request packet identifier" {
+  assert_eq(validate_unsuback({ message_id: 7, }, 7), Ok(()))
+  assert_eq(
+    validate_unsuback({ message_id: 8, }, 7),
+    Err(
+      ClientError::UnexpectedPacket("UNSUBACK packet identifier did not match"),
+    ),
+  )
 }
