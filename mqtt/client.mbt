@@ -10,6 +10,13 @@ pub(all) struct Message {
 } derive(Eq, Debug)
 
 ///|
+/// A topic filter and the maximum quality of service requested for it.
+pub(all) struct Subscription {
+  topic : String
+  qos : @codec.QoS
+}
+
+///|
 pub suberror ClientError {
   InvalidConfig(String)
   Codec(String)
@@ -375,30 +382,72 @@ fn validate_puback(
 fn validate_suback(
   response : @codec.Suback,
   expected_message_id : Int32,
-  requested_qos : @codec.QoS,
+  requested_topics : Array[Subscription],
 ) -> Result[Unit, ClientError] {
   if response.message_id != expected_message_id {
     return Err(ClientError::UnexpectedPacket("expected matching SUBACK"))
   }
-  if response.return_codes.length() != 1 {
+  if response.return_codes.length() != requested_topics.length() {
     return Err(
       ClientError::UnexpectedPacket(
-        "SUBACK must contain one result for the requested topic",
+        "SUBACK result count must match the requested topic count",
       ),
     )
   }
-  match response.return_codes[0] {
-    @codec.SuccessQoS0 => Ok(())
-    @codec.SuccessQoS1 if requested_qos == @codec.QoS1 => Ok(())
-    @codec.SuccessQoS1 =>
-      Err(
-        ClientError::UnexpectedPacket(
-          "broker granted a higher QoS than requested",
-        ),
-      )
-    @codec.Failure => Err(ClientError::Rejected(128))
-    @codec.SuccessQoS2 =>
-      Err(ClientError::UnexpectedPacket("broker granted unsupported QoS 2"))
+  for index in 0..<requested_topics.length() {
+    match response.return_codes[index] {
+      @codec.SuccessQoS0 => ()
+      @codec.SuccessQoS1 if requested_topics[index].qos == @codec.QoS1 => ()
+      @codec.SuccessQoS1 =>
+        return Err(
+          ClientError::UnexpectedPacket(
+            "broker granted a higher QoS than requested",
+          ),
+        )
+      @codec.Failure => return Err(ClientError::Rejected(128))
+      @codec.SuccessQoS2 =>
+        return Err(
+          ClientError::UnexpectedPacket("broker granted unsupported QoS 2"),
+        )
+    }
+  }
+  Ok(())
+}
+
+///|
+/// Subscribe to one or more topic filters in one MQTT request.
+pub async fn Client::subscribe_many(
+  self : Client,
+  topics~ : Array[Subscription],
+) -> Unit raise ClientError {
+  if topics.length() == 0 {
+    raise ClientError::InvalidConfig("at least one topic filter is required")
+  }
+  for subscription in topics {
+    match validate_subscription_filter(subscription.topic) {
+      Ok(_) => ()
+      Err(error) => raise error
+    }
+    if subscription.qos == @codec.QoS2 {
+      raise ClientError::InvalidConfig("QoS 2 subscription is not supported")
+    }
+  }
+  let message_id = self.allocate_packet_id()
+  let wire_topics : Array[@codec.SubscribeTopic] = topics.map(subscription => @codec.SubscribeTopic::{
+    topic: subscription.topic,
+    qos: subscription.qos,
+  })
+  write_packet(
+    self.tcp,
+    @codec.SubscribePacket({ topics: wire_topics, message_id, }),
+  )
+  match self.read_response_packet() {
+    @codec.SubackPacket(response) =>
+      match validate_suback(response, message_id, topics) {
+        Ok(_) => ()
+        Err(error) => raise error
+      }
+    _ => raise ClientError::UnexpectedPacket("expected matching SUBACK")
   }
 }
 
@@ -409,25 +458,33 @@ pub async fn Client::subscribe(
   topic~ : String,
   qos~ : @codec.QoS,
 ) -> Unit raise ClientError {
-  match validate_subscription_filter(topic) {
-    Ok(_) => ()
-    Err(error) => raise error
+  self.subscribe_many(topics=[Subscription::{ topic, qos, }])
+}
+
+///|
+/// Unsubscribe from one or more topic filters in one MQTT request.
+pub async fn Client::unsubscribe_many(
+  self : Client,
+  topics~ : Array[String],
+) -> Unit raise ClientError {
+  if topics.length() == 0 {
+    raise ClientError::InvalidConfig("at least one topic filter is required")
   }
-  if qos == @codec.QoS2 {
-    raise ClientError::InvalidConfig("QoS 2 subscription is not supported")
+  for topic in topics {
+    match validate_subscription_filter(topic) {
+      Ok(_) => ()
+      Err(error) => raise error
+    }
   }
   let message_id = self.allocate_packet_id()
-  write_packet(
-    self.tcp,
-    @codec.SubscribePacket({ topics: [{ topic, qos, }], message_id, }),
-  )
+  write_packet(self.tcp, @codec.UnsubscribePacket({ topics, message_id, }))
   match self.read_response_packet() {
-    @codec.SubackPacket(response) =>
-      match validate_suback(response, message_id, qos) {
+    @codec.UnsubackPacket(response) =>
+      match validate_unsuback(response, message_id) {
         Ok(_) => ()
         Err(error) => raise error
       }
-    _ => raise ClientError::UnexpectedPacket("expected matching SUBACK")
+    _ => raise ClientError::UnexpectedPacket("expected UNSUBACK")
   }
 }
 
@@ -437,23 +494,7 @@ pub async fn Client::unsubscribe(
   self : Client,
   topic~ : String,
 ) -> Unit raise ClientError {
-  match validate_subscription_filter(topic) {
-    Ok(_) => ()
-    Err(error) => raise error
-  }
-  let message_id = self.allocate_packet_id()
-  write_packet(
-    self.tcp,
-    @codec.UnsubscribePacket({ topics: [topic], message_id, }),
-  )
-  match self.read_response_packet() {
-    @codec.UnsubackPacket(response) =>
-      match validate_unsuback(response, message_id) {
-        Ok(_) => ()
-        Err(error) => raise error
-      }
-    _ => raise ClientError::UnexpectedPacket("expected UNSUBACK")
-  }
+  self.unsubscribe_many(topics=[topic])
 }
 
 ///|
@@ -602,6 +643,71 @@ test "MQTT PUBACK must match the request packet identifier" {
   assert_eq(
     validate_puback({ message_id: 8, }, 7),
     Err(ClientError::UnexpectedPacket("PUBACK packet identifier did not match")),
+  )
+}
+
+///|
+test "MQTT SUBACK must match every requested filter and granted QoS" {
+  let requested_topics = [
+    Subscription::{ topic: "sensors/+", qos: @codec.QoS0, },
+    Subscription::{ topic: "devices/#", qos: @codec.QoS1, },
+  ]
+  assert_eq(
+    validate_suback(
+      {
+        message_id: 42,
+        return_codes: [@codec.SuccessQoS0, @codec.SuccessQoS1],
+      },
+      42,
+      requested_topics,
+    ),
+    Ok(()),
+  )
+  assert_eq(
+    validate_suback(
+      { message_id: 42, return_codes: [@codec.SuccessQoS1], },
+      42,
+      requested_topics,
+    ),
+    Err(
+      ClientError::UnexpectedPacket(
+        "SUBACK result count must match the requested topic count",
+      ),
+    ),
+  )
+  assert_eq(
+    validate_suback(
+      {
+        message_id: 42,
+        return_codes: [@codec.SuccessQoS0, @codec.SuccessQoS1],
+      },
+      43,
+      requested_topics,
+    ),
+    Err(ClientError::UnexpectedPacket("expected matching SUBACK")),
+  )
+  assert_eq(
+    validate_suback(
+      {
+        message_id: 42,
+        return_codes: [@codec.SuccessQoS1, @codec.SuccessQoS1],
+      },
+      42,
+      requested_topics,
+    ),
+    Err(
+      ClientError::UnexpectedPacket(
+        "broker granted a higher QoS than requested",
+      ),
+    ),
+  )
+  assert_eq(
+    validate_suback(
+      { message_id: 42, return_codes: [@codec.SuccessQoS0, @codec.Failure], },
+      42,
+      requested_topics,
+    ),
+    Err(ClientError::Rejected(128)),
   )
 }
 

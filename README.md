@@ -17,8 +17,9 @@ boundaries and licenses are listed below, with feature evidence in
 ## Implemented
 
 - MQTT CONNECT/CONNACK over TCP, with Clean Session requested and checked.
-- One topic filter per SUBSCRIBE or UNSUBSCRIBE call, awaiting SUBACK or
-  UNSUBACK.
+- Single-filter and batched SUBSCRIBE/UNSUBSCRIBE calls, awaiting the matching
+  SUBACK or UNSUBACK. SUBACK results are checked against every requested
+  filter and QoS.
 - QoS 0 publish and QoS 1 publish that waits for the matching PUBACK.
 - QoS 0/1 PUBLISH receive; QoS 1 deliveries are acknowledged before the
   message is returned.
@@ -134,9 +135,9 @@ moon test --target native
 The native integration tests include a local protocol peer and an independent
 Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
 Mosquitto `2.0.22`, and runs both test targets. A successful full CI snapshot
-for repository commit [`5c21da3`](https://github.com/Wchwch777/Scantling/commit/5c21da34147ddd4a8c832d719d6d518f8bf50d9a)
+for repository commit [`039a7df`](https://github.com/Wchwch777/Scantling/commit/039a7dff53e3c11906729f17b1fb3fe89ae2949f)
 passed 14 Wasm tests and 23 Native tests, including the real-Broker path:
-[GitHub Actions run 39119781810](https://github.com/Wchwch777/Scantling/actions/runs/39119781810).
+[GitHub Actions run 39120283915](https://github.com/Wchwch777/Scantling/actions/runs/39120283915).
 See the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
 for newer commits.
 Without that environment variable, the real-Broker test is skipped. The

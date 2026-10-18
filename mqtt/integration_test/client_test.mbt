@@ -141,6 +141,75 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
 
 ///|
 #cfg(target="native")
+async test "MQTT client subscribes and unsubscribes multiple filters per request" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        let subscribe_id = match broker_read_packet(tcp) {
+          @codec.SubscribePacket(request) => {
+            assert_eq(request.topics.length(), 2)
+            assert_eq(request.topics[0].topic, "sensors/+")
+            assert_eq(request.topics[0].qos, @codec.QoS0)
+            assert_eq(request.topics[1].topic, "devices/#")
+            assert_eq(request.topics[1].qos, @codec.QoS1)
+            request.message_id
+          }
+          _ => fail("expected one SUBSCRIBE with both filters")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.SubackPacket({
+            message_id: subscribe_id,
+            return_codes: [@codec.SuccessQoS0, @codec.SuccessQoS1],
+          }),
+        )
+        let unsubscribe_id = match broker_read_packet(tcp) {
+          @codec.UnsubscribePacket(request) => {
+            assert_eq(request.topics, ["sensors/+", "devices/#"])
+            request.message_id
+          }
+          _ => fail("expected one UNSUBSCRIBE with both filters")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.UnsubackPacket({ message_id: unsubscribe_id, }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.DisconnectPacket => ()
+          _ => fail("expected DISCONNECT")
+        }
+      })
+    })
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-batch-subscriptions",
+    )
+    client.subscribe_many(topics=[
+      @client.Subscription::{ topic: "sensors/+", qos: @codec.QoS0, },
+      @client.Subscription::{ topic: "devices/#", qos: @codec.QoS1, },
+    ])
+    client.unsubscribe_many(topics=["sensors/+", "devices/#"])
+    client.disconnect()
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "MQTT client buffers an inbound PUBLISH while awaiting PUBACK" {
   @async.with_task_group <| root => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
