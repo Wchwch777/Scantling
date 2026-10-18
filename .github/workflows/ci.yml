@@ -35,7 +35,9 @@ jobs:
             --volume "$RUNNER_TEMP/scantling-mosquitto-auth:/tmp" \
             eclipse-mosquitto:2.0.22 \
             -b -c /tmp/passwd scantling-test ci-password
-          chmod 644 "$RUNNER_TEMP/scantling-mosquitto-auth/passwd"
+          docker run --rm --user 0:0 --entrypoint chmod \
+            --volume "$RUNNER_TEMP/scantling-mosquitto-auth:/tmp" \
+            eclipse-mosquitto:2.0.22 644 /tmp/passwd
           docker run --detach --rm --name scantling-mosquitto-auth \
             --publish 1884:1883 \
             --volume "$GITHUB_WORKSPACE/.github/mosquitto-auth.conf:/mosquitto/config/mosquitto.conf:ro" \
