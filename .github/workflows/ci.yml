@@ -12,7 +12,7 @@ jobs:
       SCANTLING_MOSQUITTO_HOST: 127.0.0.1
     steps:
       - name: Check out sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Start Mosquitto broker
         run: |
           docker run --detach --rm --name scantling-mosquitto \
@@ -30,7 +30,7 @@ jobs:
       - name: Install MoonBit toolchain
         shell: bash
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s latest
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s 20261012
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - name: Show toolchain
         run: moon version --all
