@@ -524,6 +524,67 @@ async test "MQTT client rejects an unexpected packet while awaiting SUBACK" {
 
 ///|
 #cfg(target="native")
+async test "MQTT client closes the connection when the pending message queue is full" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PingreqPacket => ()
+          _ => fail("expected PINGREQ")
+        }
+        for _ in 0..<65 {
+          broker_write_packet(
+            tcp,
+            @codec.PublishPacket({
+              topic: "demo/overflow",
+              payload: b"queued",
+              qos: @codec.QoS0,
+              message_id: None,
+              retain: false,
+              dup: false,
+            }),
+          )
+        }
+      })
+    })
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-pending-message-overflow",
+    )
+    let result : Result[Unit, @client.ClientError] = try {
+      client.ping()
+      Ok(())
+    } catch {
+      error => Err(error)
+    }
+    match result {
+      Err(
+        @client.ClientError::UnexpectedPacket(
+          "pending inbound message queue limit exceeded; connection closed"
+        )
+      ) => ()
+      _ => fail("expected a closed connection on inbound queue overflow")
+    }
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "MQTT client interoperates with an independent Mosquitto broker" {
   match @env.get_env_var("SCANTLING_MOSQUITTO_HOST") {
     None => ()
