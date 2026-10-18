@@ -5,6 +5,7 @@ test "MQTT frame reader rejects a truncated fixed header" {
     _ => fail("expected an incomplete-header error")
   }
 }
+
 ///|
 test "MQTT frame reader accepts one- and multi-byte Remaining Length" {
   assert_eq(packet_body_length([0x30, 0x7F]), Ok(127))
