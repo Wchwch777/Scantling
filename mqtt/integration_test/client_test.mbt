@@ -534,7 +534,13 @@ async test "MQTT client interoperates with an independent Mosquitto broker" {
         port=1883,
         client_id="scantling-mosquitto-subscriber",
       )
-      subscriber.subscribe(topic~, qos=@codec.QoS1)
+      subscriber.subscribe_many(topics=[
+        @client.Subscription::{ topic, qos: @codec.QoS1, },
+        @client.Subscription::{
+          topic: "scantling/interop/unused/#",
+          qos: @codec.QoS0,
+        },
+      ])
       let publisher = @client.Client::connect(
         host,
         port=1883,
@@ -546,7 +552,7 @@ async test "MQTT client interoperates with an independent Mosquitto broker" {
       assert_eq(message.payload, b"mosquitto-roundtrip")
       assert_eq(message.qos, @codec.QoS1)
       publisher.ping()
-      subscriber.unsubscribe(topic~)
+      subscriber.unsubscribe_many(topics=[topic, "scantling/interop/unused/#"])
       publisher.disconnect()
       subscriber.disconnect()
     }
