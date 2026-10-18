@@ -14,13 +14,13 @@ directions are historical, not part of the current maintained scope.
 
 ## October documentation update
 
-For this update, AI assisted edits to the README, use-case evidence, this
-disclosure, the owner-review record, and the project application. The user
-supplied the goals and constraints and personally reviewed the resulting
-materials. The runnable example was not edited. The three scenario payloads
-are illustrative test/demo data, not claims about customer requirements or
-deployments.
+AI has assisted with repository documentation updates, including evidence
+links and review-status wording. The current documentation refresh is pending
+review by the repository owner; historical owner approval applies only to the
+scope and snapshot recorded in [`docs/owner-review.md`](docs/owner-review.md).
+The runnable example was not edited in the October documentation refresh. The
+three scenario payloads are illustrative test/demo data, not claims about
+customer requirements or deployments.
 
-Line-by-line review and local verification of this documentation update have
-been personally completed by the repository owner (`Wchwch777`). See the signed
-status, verification scope, and checklist in [`docs/owner-review.md`](docs/owner-review.md).
+Do not treat AI-assisted edits as personally reviewed or approved until the
+repository owner records that review in [`docs/owner-review.md`](docs/owner-review.md).

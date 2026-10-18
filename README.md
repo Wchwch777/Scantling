@@ -133,10 +133,10 @@ moon test --target native
 
 The native integration tests include a local protocol peer and an independent
 Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
-Mosquitto `2.0.22`, and runs both test targets. The latest recorded run for
-repository commit [`22a6b39`](https://github.com/Wchwch777/Scantling/commit/22a6b39c207e658e03bd74fa76630366757f867d)
-passed 14 Wasm tests and 23 Native tests, including the real-Broker path:
-[GitHub Actions run 39109088054](https://github.com/Wchwch777/Scantling/actions/runs/39109088054).
+Mosquitto `2.0.22`, and runs both test targets. The latest verified run is for
+repository commit [`1a5c313`](https://github.com/Wchwch777/Scantling/commit/1a5c313ca89ba9ee309214139ed7188d919251e3)
+and passed 14 Wasm tests and 23 Native tests, including the real-Broker path:
+[GitHub Actions run 39117952786](https://github.com/Wchwch777/Scantling/actions/runs/39117952786).
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).

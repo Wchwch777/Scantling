@@ -5,10 +5,10 @@ recorded below were personally reviewed and approved by the repository owner
 (`Wchwch777`) on 2026-10-17. That sign-off applies to the scope and repository
 snapshot listed in the historical review record.
 
-**Current evidence refresh (2026-10-18): pending owner review.** AI updated the
-README's commit and CI references and added the latest verification snapshot
-below. The owner has not yet reviewed or signed off on these new edits; the
-historical review is not being presented as approval of this refresh.
+**Current documentation refresh (2026-10-18): pending owner review.** AI
+updated repository evidence links and corrected the review-status wording.
+The owner has not yet reviewed or signed off on these edits; the historical
+review is not being presented as approval of this refresh.
 
 ## Review record
 
@@ -33,8 +33,7 @@ historical review is not being presented as approval of this refresh.
 - Maps telemetry-shaped, command-shaped, and event-shaped example messages to
   actual example code, client APIs, and protocol tests. It does not present
   these sample flows as user research, customer deployments, or device tests.
-- Updates the AI disclosure and records owner sign-off.
-- Synchronizes the project application with the current repository evidence;
+- The historical update synchronized the AI disclosure and project application;
   the runnable example itself was not edited.
 
 ## Verification evidence
@@ -56,18 +55,17 @@ WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
 telemetry, command, and event output. Check the Actions result attached to each
 later commit before claiming that commit's remote CI passed.
 
-## Latest verification snapshot — pending owner review
+## Latest verified repository CI snapshot
 
-The latest full CI run before this evidence refresh is attached to repository
-commit [`22a6b39`](https://github.com/Wchwch777/Scantling/commit/22a6b39c207e658e03bd74fa76630366757f867d):
-[GitHub Actions run 39109088054](https://github.com/Wchwch777/Scantling/actions/runs/39109088054)
+The latest full CI run is attached to repository commit
+[`1a5c313`](https://github.com/Wchwch777/Scantling/commit/1a5c313ca89ba9ee309214139ed7188d919251e3):
+[GitHub Actions run 39117952786](https://github.com/Wchwch777/Scantling/actions/runs/39117952786)
 completed successfully. It passed formatting, Wasm and Native type checks,
 14 Wasm tests, and 23 Native tests with the Mosquitto `2.0.22` broker path
-enabled. This run predates the current documentation-only evidence refresh;
-the next CI run must be checked against the documentation commit before
-claiming that commit's CI passed.
+enabled. This records CI evidence for that commit; it does not sign off on the
+current documentation refresh.
 
-## Owner checklist — completed
+## Historical owner checklist — completed for the 2026-10-17 scope only
 
 - [x] Confirm the project direction and contest-facing wording.
 - [x] Review the package boundary, source references, and license statements.

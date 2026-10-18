@@ -25,11 +25,10 @@ MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包
   测试使用两个客户端验证 QoS 1 订阅、投递和发布应答：
   [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
 - CI 固定运行 Mosquitto `2.0.22` 并执行 MoonBit 格式、Wasm/Native 检查与测试。
-  最新代码基线提交
-  [`6091eee`](https://github.com/Wchwch777/Scantling/commit/6091eee22d075980ff59d618ed13d1e4dce6c445)
-  的 CI 已通过，包括 14 项 Wasm 测试、20 项 Native 测试及独立 Broker 路径：
-  [GitHub Actions run 39042172875](https://github.com/Wchwch777/Scantling/actions/runs/39042172875)。
-  本次申报说明同步属于文档变更，不在该代码基线提交中；本次提交的 CI 结果应以对应 Actions 记录为准。
+  当前仓库基线提交
+  [`1a5c313`](https://github.com/Wchwch777/Scantling/commit/1a5c313ca89ba9ee309214139ed7188d919251e3)
+  的 CI 已通过，包括 14 项 Wasm 测试、23 项 Native 测试及独立 Broker 路径：
+  [GitHub Actions run 39117952786](https://github.com/Wchwch777/Scantling/actions/runs/39117952786)。
 
 ## 代表性使用场景
 
@@ -66,6 +65,6 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 ## AI 辅助与人工复核状态
 
 AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
-[`AI_ASSISTED.md`](../AI_ASSISTED.md)。仓库创建者本人（`Wchwch777`）
-已对本轮材料完成逐项人工复核与本地真实 Broker 验证，并在
-[`docs/owner-review.md`](owner-review.md) 中签署了复核记录、日期与范围。
+[`AI_ASSISTED.md`](../AI_ASSISTED.md)。历史人工复核的范围见
+[`docs/owner-review.md`](owner-review.md)；该记录明确标注本轮更新仍待仓库创建者复核，
+不将历史签字延伸为对本次内容的认可。
