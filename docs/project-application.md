@@ -18,17 +18,19 @@ MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包
 
 - MQTT 3.1.1 TCP CONNECT/CONNACK 握手，以及顺序调用的连接 API：
   [`mqtt/client.mbt`](../mqtt/client.mbt)。
-- 单主题过滤器订阅与取消订阅，并等待对应应答；支持 QoS 0 发布、QoS 1
-  发布及 PUBACK、QoS 0/1 接收与 QoS 1 PUBACK。
-- PINGREQ/PINGRESP；入站报文体限制为 1 MiB；拒绝无效发布主题及空订阅过滤器。
+- 单主题与批量主题过滤器订阅/取消订阅，并等待对应应答；SUBACK 的数量、
+  消息标识和每个主题授予的 QoS 均逐项核对；支持 QoS 0 发布、QoS 1 发布及
+  PUBACK、QoS 0/1 接收与 QoS 1 PUBACK。
+- PINGREQ/PINGRESP；入站报文体限制为 1 MiB；等待应答期间最多缓冲 64 条入站消息，
+  超限关闭连接并返回明确错误；拒绝无效发布主题及空订阅过滤器。
 - 原生 loopback 测试覆盖客户端与协议对端的请求/应答流程；独立 Mosquitto
   测试使用两个客户端验证 QoS 1 订阅、投递和发布应答：
   [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
 - CI 固定运行 Mosquitto `2.0.22` 并执行 MoonBit 格式、Wasm/Native 检查与测试。
-  最近记录的仓库验证快照提交
-  [`5c21da3`](https://github.com/Wchwch777/Scantling/commit/5c21da34147ddd4a8c832d719d6d518f8bf50d9a)
-  的 CI 已通过，包括 14 项 Wasm 测试、23 项 Native 测试及独立 Mosquitto Broker 往返互操作测试：
-  [GitHub Actions run 39119781810](https://github.com/Wchwch777/Scantling/actions/runs/39119781810)。后续提交状态见
+  批量订阅和队列边界测试提交
+  [`2c30c01`](https://github.com/Wchwch777/Scantling/commit/2c30c0142e0ebb5ca15870940f1700beabbff6cd)
+  的 CI 已通过，包括 15 项 Wasm 测试、27 项 Native 测试及独立 Mosquitto Broker 互操作测试：
+  [GitHub Actions run 39122468377](https://github.com/Wchwch777/Scantling/actions/runs/39122468377)。后续提交状态见
   [main 分支 workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)。
 
 ## 代表性使用场景

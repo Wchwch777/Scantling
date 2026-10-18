@@ -55,17 +55,19 @@ WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
 telemetry, command, and event output. Check the Actions result attached to each
 later commit before claiming that commit's remote CI passed.
 
-## Verified repository CI snapshot before this documentation refresh
+## Verified repository CI snapshot for subscription and queue tests
 
-The full CI run for the repository snapshot immediately before this
-documentation refresh is attached to commit
-[`5c21da3`](https://github.com/Wchwch777/Scantling/commit/5c21da34147ddd4a8c832d719d6d518f8bf50d9a):
-[GitHub Actions run 39119781810](https://github.com/Wchwch777/Scantling/actions/runs/39119781810)
+The feature and test commit
+[`2c30c01`](https://github.com/Wchwch777/Scantling/commit/2c30c0142e0ebb5ca15870940f1700beabbff6cd)
+and its full CI run
+[39122468377](https://github.com/Wchwch777/Scantling/actions/runs/39122468377)
 completed successfully. It passed formatting, Wasm and Native type checks,
-14 Wasm tests, and 23 Native tests with the Mosquitto `2.0.22` broker path
-enabled. This records CI evidence for that commit; it does not sign off on the
-current documentation refresh. Check the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
-for the current commit's result.
+15 Wasm tests, and 27 Native tests with the Mosquitto `2.0.22` broker path
+enabled. The Native suite covers multi-filter SUBSCRIBE/UNSUBSCRIBE against
+Mosquitto, retained QoS 0 replay, and pending-queue overflow handling. This is
+automated verification evidence for that commit; it is not an owner review of
+the new API or tests. Check the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+for later commits.
 
 ## Historical owner checklist — completed for the 2026-10-17 scope only
 

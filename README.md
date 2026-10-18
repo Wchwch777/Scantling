@@ -23,8 +23,10 @@ boundaries and licenses are listed below, with feature evidence in
 - QoS 0 publish and QoS 1 publish that waits for the matching PUBACK.
 - QoS 0/1 PUBLISH receive; QoS 1 deliveries are acknowledged before the
   message is returned.
-- PINGREQ/PINGRESP, DISCONNECT, topic/filter validation, and a 1 MiB inbound
-  packet-body limit.
+- Retained QoS 0 messages are surfaced with the MQTT retain flag preserved.
+- PINGREQ/PINGRESP, DISCONNECT, topic/filter validation, a 1 MiB inbound
+  packet-body limit, and a 64-message pending queue that closes the connection
+  with an explicit error on overflow.
 - Sequential API calls on each connection. Do not issue concurrent operations
   on the same client.
 
@@ -36,6 +38,9 @@ deterministic coverage for malformed responses and early EOF. See the protocol
 error implementation in [`ecbda25`](https://github.com/Wchwch777/Scantling/commit/ecbda25b94f463e534e3efa9c4fa11e6bb66f2f2),
 the message-buffer fix in [`9980813`](https://github.com/Wchwch777/Scantling/commit/998081389ed13e81e8c86a1f32932792b69643d6),
 and the additional tests in [`eff2323`](https://github.com/Wchwch777/Scantling/commit/eff232335dc3f999161ade45dc52aedd7caf4527).
+The batch subscription API checks each SUBACK result, and Native integration
+tests exercise multi-filter requests with Mosquitto, retained-message replay,
+and the pending-queue overflow policy; see the verified CI evidence below.
 
 ## Boundaries
 
@@ -135,9 +140,10 @@ moon test --target native
 The native integration tests include a local protocol peer and an independent
 Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
 Mosquitto `2.0.22`, and runs both test targets. A successful full CI snapshot
-for repository commit [`039a7df`](https://github.com/Wchwch777/Scantling/commit/039a7dff53e3c11906729f17b1fb3fe89ae2949f)
-passed 14 Wasm tests and 23 Native tests, including the real-Broker path:
-[GitHub Actions run 39120283915](https://github.com/Wchwch777/Scantling/actions/runs/39120283915).
+for the batched-subscription and bounded-queue tests
+[`2c30c01`](https://github.com/Wchwch777/Scantling/commit/2c30c0142e0ebb5ca15870940f1700beabbff6cd)
+passed 15 Wasm tests and 27 Native tests, including the real-Broker path:
+[GitHub Actions run 39122468377](https://github.com/Wchwch777/Scantling/actions/runs/39122468377).
 See the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
 for newer commits.
 Without that environment variable, the real-Broker test is skipped. The
