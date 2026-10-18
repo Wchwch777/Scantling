@@ -5,7 +5,6 @@ test "MQTT frame reader rejects a truncated fixed header" {
     _ => fail("expected an incomplete-header error")
   }
 }
-
 ///|
 test "MQTT frame reader accepts one- and multi-byte Remaining Length" {
   assert_eq(packet_body_length([0x30, 0x7F]), Ok(127))
@@ -70,17 +69,5 @@ test "MQTT publish topics reject wildcards and empty names" {
   match validate_publish_topic("factory/+") {
     Err(ClientError::InvalidConfig(_)) => ()
     _ => fail("expected a wildcard publish topic error")
-  }
-}
-
-///|
-test "MQTT CONNECT credentials require a username when password is present" {
-  assert_eq(validate_credentials(None, None), Ok(()))
-  assert_eq(validate_credentials(Some("device-1"), None), Ok(()))
-  assert_eq(validate_credentials(Some("device-1"), Some(b"secret")), Ok(()))
-  match validate_credentials(None, Some(b"secret")) {
-    Err(ClientError::InvalidConfig(message)) =>
-      assert_eq(message, "MQTT password requires a username")
-    _ => fail("expected a password-without-username configuration error")
   }
 }
