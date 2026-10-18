@@ -77,6 +77,20 @@ is the separate Mosquitto `2.0.22` container described in
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml); it is a test service,
 not part of Scantling or either MoonBit dependency.
 
+## Position among MoonBit MQTT packages
+
+Scantling's scope is the MQTT client runtime: it opens TCP connections and
+drives client-side request/response and delivery flows. The existing
+[`zbhzs1/moonbit-mqtt` package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt)
+provides MQTT 3.1.1 packet encoding and decoding, while its README places
+network transport and client runtime outside its current scope. A separate
+[`ChaonanShen/moonbit-mqtt-broker` package](https://mooncakes.io/docs/ChaonanShen/moonbit-mqtt-broker%400.4.0)
+implements a Broker, which serves the opposite role in the client/Broker
+connection. These are adjacent ecosystem components, not evidence that
+Scantling is the only MQTT implementation or that user demand has been
+validated. This comparison describes scope only; package capabilities can
+change and should be rechecked against their linked sources.
+
 ## Run the example
 
 Start Mosquitto with the repository's test configuration. With Docker:
