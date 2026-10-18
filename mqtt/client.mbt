@@ -176,7 +176,7 @@ async fn Client::read_response_packet(
 }
 
 ///|
-fn Client::pending_message_count(self : Client) -> Int {
+fn Client::pending_message_count(self : Client) -> Int32 {
   self.pending_messages.length() + self.pending_qos2_messages.length()
 }
 
