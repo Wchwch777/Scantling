@@ -558,3 +558,36 @@ async test "MQTT client interoperates with an independent Mosquitto broker" {
     }
   }
 }
+
+///|
+#cfg(target="native")
+async test "MQTT client receives a retained QoS 0 message from Mosquitto" {
+  match @env.get_env_var("SCANTLING_MOSQUITTO_HOST") {
+    None => ()
+    Some(host) => {
+      let topic = "scantling/interop/retained/qos0"
+      let publisher = @client.Client::connect(
+        host,
+        port=1883,
+        client_id="scantling-mosquitto-retained-publisher",
+      )
+      publisher.publish(topic~, payload=b"retained-value", retain=true)
+      publisher.ping()
+      let subscriber = @client.Client::connect(
+        host,
+        port=1883,
+        client_id="scantling-mosquitto-retained-subscriber",
+      )
+      subscriber.subscribe(topic~, qos=@codec.QoS0)
+      let message = subscriber.receive()
+      assert_eq(message.topic, topic)
+      assert_eq(message.payload, b"retained-value")
+      assert_eq(message.qos, @codec.QoS0)
+      assert_true(message.retain)
+      publisher.publish(topic~, payload=b"", retain=true)
+      publisher.ping()
+      subscriber.disconnect()
+      publisher.disconnect()
+    }
+  }
+}
