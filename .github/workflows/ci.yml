@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       SCANTLING_MOSQUITTO_HOST: 127.0.0.1
+      SCANTLING_MOSQUITTO_AUTH_HOST: 127.0.0.1
     steps:
       - name: Check out sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,6 +27,27 @@ jobs:
             sleep 1
           done
           docker logs scantling-mosquitto
+          exit 1
+      - name: Start authenticated Mosquitto broker
+        run: |
+          mkdir -p "$RUNNER_TEMP/scantling-mosquitto-auth"
+          docker run --rm --user 0:0 --entrypoint mosquitto_passwd \
+            --volume "$RUNNER_TEMP/scantling-mosquitto-auth:/tmp" \
+            eclipse-mosquitto:2.0.22 \
+            -b -c /tmp/passwd scantling-test ci-password
+          chmod 644 "$RUNNER_TEMP/scantling-mosquitto-auth/passwd"
+          docker run --detach --rm --name scantling-mosquitto-auth \
+            --publish 1884:1883 \
+            --volume "$GITHUB_WORKSPACE/.github/mosquitto-auth.conf:/mosquitto/config/mosquitto.conf:ro" \
+            --volume "$RUNNER_TEMP/scantling-mosquitto-auth/passwd:/mosquitto/config/passwd:ro" \
+            eclipse-mosquitto:2.0.22
+          for attempt in $(seq 1 30); do
+            if (echo > /dev/tcp/127.0.0.1/1884) >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs scantling-mosquitto-auth
           exit 1
       - name: Install MoonBit toolchain
         shell: bash
@@ -48,4 +70,5 @@ jobs:
         run: moon test --target native
       - name: Stop Mosquitto broker
         if: always()
-        run: docker rm --force scantling-mosquitto 2>/dev/null || true
+        run: |
+          docker rm --force scantling-mosquitto scantling-mosquitto-auth 2>/dev/null || true

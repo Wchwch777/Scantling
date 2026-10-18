@@ -17,6 +17,9 @@ boundaries and licenses are listed below, with feature evidence in
 ## Implemented
 
 - MQTT CONNECT/CONNACK over TCP, with Clean Session requested and checked.
+- Optional MQTT 3.1.1 username/password CONNECT authentication. Credentials are
+  sent in clear text because TLS is not implemented; only use this on a
+  trusted network or with a separately secured transport.
 - Single-filter and batched SUBSCRIBE/UNSUBSCRIBE calls, awaiting the matching
   SUBACK or UNSUBACK. SUBACK results are checked against every requested
   filter and QoS.
@@ -45,7 +48,7 @@ and the pending-queue overflow policy; see the verified CI evidence below.
 ## Boundaries
 
 This is a small MQTT 3.1.1 TCP client, not a production-complete SDK or a
-conformance certification. TLS, MQTT authentication, automatic reconnection,
+conformance certification. TLS, automatic reconnection,
 automatic Keep Alive scheduling, operation timeouts, persistent sessions,
 QoS 2, MQTT 5.0, and WebSocket transport are not implemented. The application
 must schedule PINGREQ within the configured Keep Alive interval. The sample
@@ -126,6 +129,11 @@ moon run --target native examples/mqtt_client
 
 Stop the broker with `docker stop scantling-mosquitto` after the example exits.
 
+To connect to a Broker that requires MQTT username/password credentials, pass
+`username=Some("device-1")` and `password=Some(b"example-password")` to
+`Client::connect`. A password requires a username. Plain TCP does not encrypt
+these credentials; TLS is not implemented.
+
 ## Development and verification
 
 ```sh
@@ -139,7 +147,11 @@ moon test --target native
 
 The native integration tests include a local protocol peer and an independent
 Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
-Mosquitto `2.0.22`, and runs both test targets. A successful full CI snapshot
+Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
+username/password-protected Broker on port `1884` and runs authentication
+success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
+run those tests locally against an equivalently configured Broker. A successful
+full CI snapshot
 for the batched-subscription and bounded-queue tests
 [`2c30c01`](https://github.com/Wchwch777/Scantling/commit/2c30c0142e0ebb5ca15870940f1700beabbff6cd)
 passed 15 Wasm tests and 27 Native tests, including the real-Broker path:

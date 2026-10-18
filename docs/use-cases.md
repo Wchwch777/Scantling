@@ -73,9 +73,13 @@ passed with its Mosquitto service enabled.
 
 Scantling is a sequential MQTT 3.1.1 TCP client. It handles one topic filter
 per subscribe/unsubscribe call and the exercised QoS 0/1 paths. It does not
-provide TLS, MQTT authentication, automatic reconnect, automatic Keep Alive
+provide TLS, automatic reconnect, automatic Keep Alive
 scheduling, operation timeouts, persistent sessions, QoS 2, MQTT 5.0, or
 WebSocket transport. The packet codec comes from the separately licensed
 [`zbhzs1/moonbit-mqtt` package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt);
 the runtime and dependency boundary are summarized in the
 [README](../README.md#source-and-license-boundaries).
+
+Optional username/password CONNECT authentication is exercised against a
+separate authenticated Mosquitto Broker in CI. Credentials use plain TCP and
+are not encrypted because TLS is outside the current project scope.

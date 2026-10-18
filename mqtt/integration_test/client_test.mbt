@@ -652,3 +652,48 @@ async test "MQTT client receives a retained QoS 0 message from Mosquitto" {
     }
   }
 }
+
+///|
+#cfg(target="native")
+async test "MQTT client authenticates with an independent Mosquitto broker" {
+  match @env.get_env_var("SCANTLING_MOSQUITTO_AUTH_HOST") {
+    None => ()
+    Some(host) => {
+      let client = @client.Client::connect(
+        host,
+        port=1884,
+        client_id="scantling-mosquitto-authenticated",
+        username=Some("scantling-test"),
+        password=Some(b"ci-password"),
+      )
+      client.publish_qos1(topic="scantling/auth/check", payload=b"ok")
+      client.disconnect()
+    }
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client reports authentication rejection from Mosquitto" {
+  match @env.get_env_var("SCANTLING_MOSQUITTO_AUTH_HOST") {
+    None => ()
+    Some(host) => {
+      let result : Result[@client.Client, @client.ClientError] = Ok(
+        @client.Client::connect(
+          host,
+          port=1884,
+          client_id="scantling-mosquitto-bad-password",
+          username=Some("scantling-test"),
+          password=Some(b"wrong-password"),
+        ),
+      ) catch {
+        error => Err(error)
+      }
+      match result {
+        Err(@client.ClientError::Rejected(4)) => ()
+        Err(@client.ClientError::Rejected(5)) => ()
+        _ => fail("expected Mosquitto to reject invalid credentials")
+      }
+    }
+  }
+}

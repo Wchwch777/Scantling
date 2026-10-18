@@ -230,14 +230,27 @@ pub fn packet_body_length(frame : Array[Byte]) -> Result[Int32, ClientError] {
 }
 
 ///|
+fn validate_credentials(
+  username : String?,
+  password : Bytes?,
+) -> Result[Unit, ClientError] {
+  if password is Some(_) && username is None {
+    return Err(ClientError::InvalidConfig("MQTT password requires a username"))
+  }
+  Ok(())
+}
+
+///|
 /// Open a plain TCP connection and complete the MQTT 3.1.1 CONNECT handshake.
-/// TLS, reconnect, and automatic keep-alive scheduling are intentionally out
-/// of scope for this first client runtime.
+/// Credentials are sent in clear text over this plain TCP connection. TLS,
+/// reconnect, and automatic keep-alive scheduling are not implemented.
 pub async fn Client::connect(
   host : String,
   port~ : Int32,
   client_id~ : String,
   keep_alive~ : Int32 = 30,
+  username~ : String? = None,
+  password~ : Bytes? = None,
 ) -> Client raise ClientError {
   if host == "" {
     raise ClientError::InvalidConfig("host must not be empty")
@@ -251,6 +264,10 @@ pub async fn Client::connect(
   if keep_alive < 0 || keep_alive > 65535 {
     raise ClientError::InvalidConfig("keep_alive must fit in 16 bits")
   }
+  match validate_credentials(username, password) {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
   let addr = @socket.Addr::resolve(host, port~) catch {
     _ => raise ClientError::TransportFailure
   }
@@ -260,14 +277,14 @@ pub async fn Client::connect(
   errdefer tcp.close()
   let connect_packet = @codec.ConnectPacket({
     client_id,
-    username: None,
-    password: None,
+    username,
+    password,
     will_topic: None,
     will_message: None,
     keep_alive,
     flags: {
-      username: false,
-      password: false,
+      username: username is Some(_),
+      password: password is Some(_),
       will_retain: false,
       will_qos: @codec.QoS0,
       will_flag: false,

@@ -18,6 +18,8 @@ MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包
 
 - MQTT 3.1.1 TCP CONNECT/CONNACK 握手，以及顺序调用的连接 API：
   [`mqtt/client.mbt`](../mqtt/client.mbt)。
+- 可选用户名/密码认证；密码必须与用户名一起提供。当前仅为明文 TCP，
+  未实现 TLS，因此不应在不可信网络上传送凭据。
 - 单主题与批量主题过滤器订阅/取消订阅，并等待对应应答；SUBACK 的数量、
   消息标识和每个主题授予的 QoS 均逐项核对；支持 QoS 0 发布、QoS 1 发布及
   PUBACK、QoS 0/1 接收与 QoS 1 PUBACK。
@@ -52,8 +54,8 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 
 ## 能力边界
 
-当前实现是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 客户端。它不提供 TLS、身份
-认证、自动重连、自动 Keep Alive 调度、操作超时、持久会话、QoS 2、MQTT 5.0
+当前实现是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 客户端。它不提供 TLS、
+自动重连、自动 Keep Alive 调度、操作超时、持久会话、QoS 2、MQTT 5.0
 或 WebSocket，也没有真实设备接入、客户部署、性能基准或市场调研证据。应用需
 自行调度 PINGREQ，且不得并发操作同一个客户端连接。项目不声称生产级完整性或
 协议认证。
