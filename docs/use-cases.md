@@ -71,10 +71,10 @@ passed with its Mosquitto service enabled.
 
 ## Shared scope
 
-Scantling is a sequential MQTT 3.1.1 TCP client. It handles one topic filter
-per subscribe/unsubscribe call and the exercised QoS 0/1 paths. It does not
+Scantling is a sequential MQTT 3.1.1 TCP client. It handles single and batched
+topic filters, and the exercised QoS 0/1/2 paths. It does not
 provide TLS, automatic reconnect, automatic Keep Alive
-scheduling, operation timeouts, persistent sessions, QoS 2, MQTT 5.0, or
+scheduling, operation timeouts, persistent sessions, MQTT 5.0, or
 WebSocket transport. The packet codec comes from the separately licensed
 [`zbhzs1/moonbit-mqtt` package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt);
 the runtime and dependency boundary are summarized in the
@@ -83,3 +83,21 @@ the runtime and dependency boundary are summarized in the
 Optional username/password CONNECT authentication is exercised against a
 separate authenticated Mosquitto Broker in CI. Credentials use plain TCP and
 are not encrypted because TLS is outside the current project scope.
+
+## QoS 2 protocol path
+
+- **Outbound:** [`publish_qos2`](../mqtt/client.mbt) sends a QoS 2 PUBLISH,
+  validates the matching PUBREC, sends PUBREL, retransmits PUBREL if a duplicate
+  PUBREC arrives, and completes after the matching PUBCOMP.
+- **Inbound:** [`receive`](../mqtt/client.mbt) records each packet identifier,
+  sends PUBREC, and exposes the payload only after PUBREL, then sends PUBCOMP.
+  Duplicate in-flight PUBLISH packets are acknowledged without adding a second
+  delivery; unknown or repeated PUBREL packets receive PUBCOMP without
+  redelivery.
+- **Evidence:** a native local-peer test checks the full outbound handshake,
+  duplicate PUBREC handling, QoS 2 subscription grant, inbound delivery, and
+  duplicate PUBREL handling. A separate CI Mosquitto test covers a real Broker
+  QoS 2 subscribe/publish/receive round trip. Both are in
+  [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt).
+- **Boundary:** the exchange state is in memory and scoped to the current clean
+  session. Persistent session recovery after disconnect is not implemented.

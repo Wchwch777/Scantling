@@ -23,9 +23,12 @@ boundaries and licenses are listed below, with feature evidence in
 - Single-filter and batched SUBSCRIBE/UNSUBSCRIBE calls, awaiting the matching
   SUBACK or UNSUBACK. SUBACK results are checked against every requested
   filter and QoS.
-- QoS 0 publish and QoS 1 publish that waits for the matching PUBACK.
-- QoS 0/1 PUBLISH receive; QoS 1 deliveries are acknowledged before the
-  message is returned.
+- QoS 0 publish, QoS 1 publish with matching PUBACK, and QoS 2 publish with the
+  PUBREC/PUBREL/PUBCOMP handshake, including retransmitting PUBREL for a
+  duplicate PUBREC.
+- QoS 0/1/2 PUBLISH receive. QoS 1 is acknowledged before return; QoS 2 is
+  returned only after PUBREL/PUBCOMP and duplicate in-flight PUBLISH packets
+  are acknowledged without duplicate delivery.
 - Retained QoS 0 messages are surfaced with the MQTT retain flag preserved.
 - PINGREQ/PINGRESP, DISCONNECT, topic/filter validation, a 1 MiB inbound
   packet-body limit, and a 64-message pending queue that closes the connection
@@ -41,16 +44,19 @@ deterministic coverage for malformed responses and early EOF. See the protocol
 error implementation in [`ecbda25`](https://github.com/Wchwch777/Scantling/commit/ecbda25b94f463e534e3efa9c4fa11e6bb66f2f2),
 the message-buffer fix in [`9980813`](https://github.com/Wchwch777/Scantling/commit/998081389ed13e81e8c86a1f32932792b69643d6),
 and the additional tests in [`eff2323`](https://github.com/Wchwch777/Scantling/commit/eff232335dc3f999161ade45dc52aedd7caf4527).
-The batch subscription API checks each SUBACK result, and Native integration
-tests exercise multi-filter requests with Mosquitto, retained-message replay,
-and the pending-queue overflow policy; see the verified CI evidence below.
+The batch subscription API checks each SUBACK result, including QoS 2 grants.
+Native tests exercise multi-filter requests, QoS 2 handshakes with a protocol
+peer and Mosquitto, retained-message replay, and the pending-queue overflow
+policy; see the CI evidence below.
 
 ## Boundaries
 
 This is a small MQTT 3.1.1 TCP client, not a production-complete SDK or a
 conformance certification. TLS, automatic reconnection,
 automatic Keep Alive scheduling, operation timeouts, persistent sessions,
-QoS 2, MQTT 5.0, and WebSocket transport are not implemented. The application
+MQTT 5.0, and WebSocket transport are not implemented. QoS 2 exchange state is
+kept in memory for the current clean-session connection; it is not persisted
+across disconnects. The application
 must schedule PINGREQ within the configured Keep Alive interval. The sample
 topics and payloads below are protocol demonstrations; they are not evidence
 of customer deployments, physical devices, user research, or measured demand.

@@ -31,6 +31,8 @@ pub(all) struct Client {
   keep_alive : Int32
   mut next_packet_id : Int32
   mut pending_messages : Array[Message]
+  mut pending_qos2_messages : Array[(Int32, Message)]
+  mut completed_qos2_ids : Array[Int32]
 }
 
 ///|
@@ -164,35 +166,136 @@ async fn Client::read_response_packet(
 ) -> @codec.Packet raise ClientError {
   while true {
     match read_packet(self.tcp) {
-      @codec.PublishPacket(message) => {
-        if self.pending_messages.length() >= MAX_PENDING_MESSAGES {
-          self.tcp.close()
-          raise ClientError::UnexpectedPacket(
-            "pending inbound message queue limit exceeded; connection closed",
-          )
-        }
-        if message.qos == @codec.QoS2 {
-          raise ClientError::UnexpectedPacket("QoS 2 delivery is not supported")
-        }
-        self.pending_messages.push({
-          topic: message.topic,
-          payload: message.payload,
-          qos: message.qos,
-          retain: message.retain,
-        })
-        if message.qos == @codec.QoS1 {
-          let message_id = match message.message_id {
-            Some(value) => value
-            None =>
-              raise ClientError::Codec("QoS 1 PUBLISH has no packet identifier")
-          }
-          write_packet(self.tcp, @codec.PubackPacket({ message_id, }))
-        }
-      }
+      @codec.PublishPacket(message) => self.queue_inbound_publish(message)
+      @codec.PubrelPacket(packet_id) =>
+        ignore(self.finish_qos2_delivery(packet_id.message_id, queue=true))
       packet => return packet
     }
   }
   raise ClientError::UnexpectedPacket("response stream ended unexpectedly")
+}
+
+///|
+fn Client::pending_message_count(self : Client) -> Int {
+  self.pending_messages.length() + self.pending_qos2_messages.length()
+}
+
+///|
+fn Client::has_pending_qos2_message(self : Client, message_id : Int32) -> Bool {
+  for entry in self.pending_qos2_messages {
+    let (pending_id, _) = entry
+    if pending_id == message_id {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Client::has_completed_qos2_id(self : Client, message_id : Int32) -> Bool {
+  for completed_id in self.completed_qos2_ids {
+    if completed_id == message_id {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Client::forget_completed_qos2_id(self : Client, message_id : Int32) -> Unit {
+  let mut index = 0
+  while index < self.completed_qos2_ids.length() {
+    if self.completed_qos2_ids[index] == message_id {
+      let mut next = index + 1
+      while next < self.completed_qos2_ids.length() {
+        self.completed_qos2_ids[next - 1] = self.completed_qos2_ids[next]
+        next = next + 1
+      }
+      ignore(self.completed_qos2_ids.pop())
+      return
+    }
+    index = index + 1
+  }
+}
+
+///|
+fn Client::take_pending_qos2_message(
+  self : Client,
+  message_id : Int32,
+) -> Message? {
+  let mut index = 0
+  while index < self.pending_qos2_messages.length() {
+    let (pending_id, message) = self.pending_qos2_messages[index]
+    if pending_id == message_id {
+      let mut next = index + 1
+      while next < self.pending_qos2_messages.length() {
+        self.pending_qos2_messages[next - 1] = self.pending_qos2_messages[next]
+        next = next + 1
+      }
+      ignore(self.pending_qos2_messages.pop())
+      return Some(message)
+    }
+    index = index + 1
+  }
+  None
+}
+
+///|
+async fn Client::queue_inbound_publish(
+  self : Client,
+  message : @codec.Publish,
+) -> Unit raise ClientError {
+  if message.qos == @codec.QoS2 {
+    self.accept_qos2_publish(message)
+    return
+  }
+  if self.pending_message_count() >= MAX_PENDING_MESSAGES {
+    self.tcp.close()
+    raise ClientError::UnexpectedPacket(
+      "pending inbound message queue limit exceeded; connection closed",
+    )
+  }
+  self.pending_messages.push({
+    topic: message.topic,
+    payload: message.payload,
+    qos: message.qos,
+    retain: message.retain,
+  })
+  if message.qos == @codec.QoS1 {
+    let message_id = match message.message_id {
+      Some(value) => value
+      None => raise ClientError::Codec("QoS 1 PUBLISH has no packet identifier")
+    }
+    write_packet(self.tcp, @codec.PubackPacket({ message_id, }))
+  }
+}
+
+///|
+/// A receiver acknowledges PUBREL even for an unknown identifier. When this
+/// arrives during another API call, a completed delivery is queued for receive.
+async fn Client::finish_qos2_delivery(
+  self : Client,
+  message_id : Int32,
+  queue~ : Bool,
+) -> Message? raise ClientError {
+  let message = self.take_pending_qos2_message(message_id)
+  match message {
+    Some(_) =>
+      if !self.has_completed_qos2_id(message_id) {
+        self.completed_qos2_ids.push(message_id)
+      }
+    None => ()
+  }
+  write_packet(self.tcp, @codec.PubcompPacket({ message_id, }))
+  if queue {
+    match message {
+      Some(value) => self.pending_messages.push(value)
+      None => ()
+    }
+    None
+  } else {
+    message
+  }
 }
 
 ///|
@@ -295,7 +398,15 @@ pub async fn Client::connect(
   match read_packet(tcp) {
     @codec.ConnackPacket(response) =>
       match validate_connack(response) {
-        Ok(_) => { tcp, keep_alive, next_packet_id: 1, pending_messages: [], }
+        Ok(_) =>
+          {
+            tcp,
+            keep_alive,
+            next_packet_id: 1,
+            pending_messages: [],
+            pending_qos2_messages: [],
+            completed_qos2_ids: [],
+          }
         Err(error) => raise error
       }
     _ => raise ClientError::UnexpectedPacket("expected CONNACK")
@@ -384,6 +495,58 @@ pub async fn Client::publish_qos1(
 }
 
 ///|
+/// Publish one QoS 2 message and complete the PUBREC/PUBREL/PUBCOMP handshake.
+pub async fn Client::publish_qos2(
+  self : Client,
+  topic~ : String,
+  payload~ : Bytes,
+  retain~ : Bool = false,
+) -> Unit raise ClientError {
+  match validate_publish_topic(topic) {
+    Ok(_) => ()
+    Err(error) => raise error
+  }
+  let message_id = self.allocate_packet_id()
+  write_packet(
+    self.tcp,
+    @codec.PublishPacket({
+      topic,
+      payload,
+      qos: @codec.QoS2,
+      message_id: Some(message_id),
+      retain,
+      dup: false,
+    }),
+  )
+  match self.read_response_packet() {
+    @codec.PubrecPacket(response) =>
+      match validate_packet_id(response, message_id, "PUBREC") {
+        Ok(_) => ()
+        Err(error) => raise error
+      }
+    _ => raise ClientError::UnexpectedPacket("expected matching PUBREC")
+  }
+  write_packet(self.tcp, @codec.PubrelPacket({ message_id, }))
+  let mut completed = false
+  while !completed {
+    match self.read_response_packet() {
+      @codec.PubcompPacket(response) =>
+        match validate_packet_id(response, message_id, "PUBCOMP") {
+          Ok(_) => completed = true
+          Err(error) => raise error
+        }
+      @codec.PubrecPacket(response) =>
+        // A duplicate PUBREC means the broker did not observe our PUBREL.
+        match validate_packet_id(response, message_id, "PUBREC") {
+          Ok(_) => write_packet(self.tcp, @codec.PubrelPacket({ message_id, }))
+          Err(error) => raise error
+        }
+      _ => raise ClientError::UnexpectedPacket("expected matching PUBCOMP")
+    }
+  }
+}
+
+///|
 fn validate_puback(
   response : @codec.PacketId,
   expected_message_id : Int32,
@@ -392,6 +555,23 @@ fn validate_puback(
     Ok(())
   } else {
     Err(ClientError::UnexpectedPacket("PUBACK packet identifier did not match"))
+  }
+}
+
+///|
+fn validate_packet_id(
+  response : @codec.PacketId,
+  expected_message_id : Int32,
+  packet_name : String,
+) -> Result[Unit, ClientError] {
+  if response.message_id == expected_message_id {
+    Ok(())
+  } else {
+    Err(
+      ClientError::UnexpectedPacket(
+        packet_name + " packet identifier did not match",
+      ),
+    )
   }
 }
 
@@ -415,6 +595,7 @@ fn validate_suback(
     match response.return_codes[index] {
       @codec.SuccessQoS0 => ()
       @codec.SuccessQoS1 if requested_topics[index].qos == @codec.QoS1 => ()
+      @codec.SuccessQoS1 if requested_topics[index].qos == @codec.QoS2 => ()
       @codec.SuccessQoS1 =>
         return Err(
           ClientError::UnexpectedPacket(
@@ -422,9 +603,12 @@ fn validate_suback(
           ),
         )
       @codec.Failure => return Err(ClientError::Rejected(128))
+      @codec.SuccessQoS2 if requested_topics[index].qos == @codec.QoS2 => ()
       @codec.SuccessQoS2 =>
         return Err(
-          ClientError::UnexpectedPacket("broker granted unsupported QoS 2"),
+          ClientError::UnexpectedPacket(
+            "broker granted a higher QoS than requested",
+          ),
         )
     }
   }
@@ -444,9 +628,6 @@ pub async fn Client::subscribe_many(
     match validate_subscription_filter(subscription.topic) {
       Ok(_) => ()
       Err(error) => raise error
-    }
-    if subscription.qos == @codec.QoS2 {
-      raise ClientError::InvalidConfig("QoS 2 subscription is not supported")
     }
   }
   let message_id = self.allocate_packet_id()
@@ -545,34 +726,86 @@ pub async fn Client::ping(self : Client) -> Unit raise ClientError {
 }
 
 ///|
-/// Read the next published message. QoS 1 deliveries are acknowledged before
-/// returning to the caller; QoS 2 session state is not implemented.
+/// Read the next published message. QoS 1 and QoS 2 deliveries are acknowledged
+/// before returning; QoS 2 is delivered only after PUBREL.
 pub async fn Client::receive(self : Client) -> Message raise ClientError {
-  match self.take_pending_message() {
-    Some(message) => return message
-    None => ()
-  }
-  match read_packet(self.tcp) {
-    @codec.PublishPacket(message) => {
-      if message.qos == @codec.QoS1 {
-        let message_id = match message.message_id {
-          Some(value) => value
-          None =>
-            raise ClientError::Codec("QoS 1 PUBLISH has no packet identifier")
-        }
-        write_packet(self.tcp, @codec.PubackPacket({ message_id, }))
-      } else if message.qos == @codec.QoS2 {
-        raise ClientError::UnexpectedPacket("QoS 2 delivery is not supported")
-      }
-      {
-        topic: message.topic,
-        payload: message.payload,
-        qos: message.qos,
-        retain: message.retain,
-      }
+  while true {
+    match self.take_pending_message() {
+      Some(message) => return message
+      None => ()
     }
-    _ => raise ClientError::UnexpectedPacket("expected PUBLISH")
+    match read_packet(self.tcp) {
+      @codec.PublishPacket(message) =>
+        if message.qos == @codec.QoS2 {
+          self.accept_qos2_publish(message)
+        } else {
+          if message.qos == @codec.QoS1 {
+            let message_id = match message.message_id {
+              Some(value) => value
+              None =>
+                raise ClientError::Codec(
+                  "QoS 1 PUBLISH has no packet identifier",
+                )
+            }
+            write_packet(self.tcp, @codec.PubackPacket({ message_id, }))
+          }
+          return {
+            topic: message.topic,
+            payload: message.payload,
+            qos: message.qos,
+            retain: message.retain,
+          }
+        }
+      @codec.PubrelPacket(packet_id) =>
+        match self.finish_qos2_delivery(packet_id.message_id, queue=false) {
+          Some(message) => return message
+          None => ()
+        }
+      _ => raise ClientError::UnexpectedPacket("expected PUBLISH or PUBREL")
+    }
   }
+  raise ClientError::UnexpectedPacket("message stream ended unexpectedly")
+}
+
+///|
+/// Record a new QoS 2 delivery once and acknowledge duplicates without
+/// creating duplicate application messages.
+async fn Client::accept_qos2_publish(
+  self : Client,
+  message : @codec.Publish,
+) -> Unit raise ClientError {
+  let message_id = match message.message_id {
+    Some(value) => value
+    None => raise ClientError::Codec("QoS 2 PUBLISH has no packet identifier")
+  }
+  if !self.has_pending_qos2_message(message_id) {
+    if self.has_completed_qos2_id(message_id) {
+      if message.dup {
+        write_packet(self.tcp, @codec.PubrecPacket({ message_id, }))
+        return
+      }
+      // A non-DUP PUBLISH may legally reuse an identifier after completion.
+      self.forget_completed_qos2_id(message_id)
+    }
+    if self.pending_message_count() >= MAX_PENDING_MESSAGES {
+      self.tcp.close()
+      raise ClientError::UnexpectedPacket(
+        "pending inbound message queue limit exceeded; connection closed",
+      )
+    }
+    self.pending_qos2_messages.push(
+      (
+        message_id,
+        {
+          topic: message.topic,
+          payload: message.payload,
+          qos: message.qos,
+          retain: message.retain,
+        },
+      ),
+    )
+  }
+  write_packet(self.tcp, @codec.PubrecPacket({ message_id, }))
 }
 
 ///|
@@ -664,6 +897,17 @@ test "MQTT PUBACK must match the request packet identifier" {
 }
 
 ///|
+test "MQTT PUBREC and PUBCOMP must match the outgoing QoS 2 identifier" {
+  assert_eq(validate_packet_id({ message_id: 19, }, 19, "PUBREC"), Ok(()))
+  assert_eq(
+    validate_packet_id({ message_id: 20, }, 19, "PUBCOMP"),
+    Err(
+      ClientError::UnexpectedPacket("PUBCOMP packet identifier did not match"),
+    ),
+  )
+}
+
+///|
 test "MQTT SUBACK must match every requested filter and granted QoS" {
   let requested_topics = [
     Subscription::{ topic: "sensors/+", qos: @codec.QoS0, },
@@ -725,6 +969,27 @@ test "MQTT SUBACK must match every requested filter and granted QoS" {
       requested_topics,
     ),
     Err(ClientError::Rejected(128)),
+  )
+}
+
+///|
+test "MQTT SUBACK accepts QoS 2 grants only when QoS 2 was requested" {
+  let qos2_topic = [Subscription::{ topic: "devices/#", qos: @codec.QoS2, }]
+  assert_eq(
+    validate_suback(
+      { message_id: 7, return_codes: [@codec.SuccessQoS2], },
+      7,
+      qos2_topic,
+    ),
+    Ok(()),
+  )
+  assert_eq(
+    validate_suback(
+      { message_id: 7, return_codes: [@codec.SuccessQoS1], },
+      7,
+      qos2_topic,
+    ),
+    Ok(()),
   )
 }
 

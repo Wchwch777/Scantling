@@ -141,6 +141,157 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
 
 ///|
 #cfg(target="native")
+async test "MQTT client completes QoS2 publish and inbound delivery handshakes" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        let subscription_id = match broker_read_packet(tcp) {
+          @codec.SubscribePacket(request) => {
+            assert_eq(request.topics[0].qos, @codec.QoS2)
+            request.message_id
+          }
+          _ => fail("expected QoS 2 SUBSCRIBE")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.SubackPacket({
+            message_id: subscription_id,
+            return_codes: [@codec.SuccessQoS2],
+          }),
+        )
+
+        let outgoing_id = match broker_read_packet(tcp) {
+          @codec.PublishPacket(message) => {
+            assert_eq(message.topic, "demo/qos2/out")
+            assert_eq(message.payload, b"client-qos2")
+            assert_eq(message.qos, @codec.QoS2)
+            message.message_id.unwrap()
+          }
+          _ => fail("expected QoS 2 PUBLISH")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PubrecPacket({ message_id: outgoing_id, }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PubrelPacket(packet_id) =>
+            assert_eq(packet_id.message_id, outgoing_id)
+          _ => fail("expected PUBREL")
+        }
+        // A duplicate PUBREC requires the sender to retransmit PUBREL.
+        broker_write_packet(
+          tcp,
+          @codec.PubrecPacket({ message_id: outgoing_id, }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PubrelPacket(packet_id) =>
+            assert_eq(packet_id.message_id, outgoing_id)
+          _ => fail("expected retransmitted PUBREL")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PubcompPacket({ message_id: outgoing_id, }),
+        )
+
+        broker_write_packet(
+          tcp,
+          @codec.PublishPacket({
+            topic: "demo/qos2/in",
+            payload: b"broker-qos2",
+            qos: @codec.QoS2,
+            message_id: Some(81),
+            retain: false,
+            dup: false,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PubrecPacket(packet_id) => assert_eq(packet_id.message_id, 81)
+          _ => fail("expected PUBREC for inbound QoS 2 PUBLISH")
+        }
+        broker_write_packet(tcp, @codec.PubrelPacket({ message_id: 81, }))
+        match broker_read_packet(tcp) {
+          @codec.PubcompPacket(packet_id) => assert_eq(packet_id.message_id, 81)
+          _ => fail("expected PUBCOMP")
+        }
+
+        // A duplicate completed PUBLISH/PUBREL pair is acknowledged without
+        // queueing a second application delivery.
+        match broker_read_packet(tcp) {
+          @codec.PingreqPacket => ()
+          _ => fail("expected PINGREQ")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PublishPacket({
+            topic: "demo/qos2/in",
+            payload: b"broker-qos2",
+            qos: @codec.QoS2,
+            message_id: Some(81),
+            retain: false,
+            dup: true,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PubrecPacket(packet_id) => assert_eq(packet_id.message_id, 81)
+          _ => fail("expected PUBREC for duplicate QoS 2 PUBLISH")
+        }
+        broker_write_packet(tcp, @codec.PubrelPacket({ message_id: 81, }))
+        match broker_read_packet(tcp) {
+          @codec.PubcompPacket(packet_id) => assert_eq(packet_id.message_id, 81)
+          _ => fail("expected PUBCOMP for duplicate PUBREL")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.PublishPacket({
+            topic: "demo/qos2/control",
+            payload: b"control",
+            qos: @codec.QoS0,
+            message_id: None,
+            retain: false,
+            dup: false,
+          }),
+        )
+        broker_write_packet(tcp, @codec.PingrespPacket)
+        match broker_read_packet(tcp) {
+          @codec.DisconnectPacket => ()
+          _ => fail("expected DISCONNECT")
+        }
+      })
+    })
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-qos2-handshake",
+    )
+    client.subscribe(topic="demo/qos2/#", qos=@codec.QoS2)
+    client.publish_qos2(topic="demo/qos2/out", payload=b"client-qos2")
+    let received = client.receive()
+    assert_eq(received.topic, "demo/qos2/in")
+    assert_eq(received.payload, b"broker-qos2")
+    assert_eq(received.qos, @codec.QoS2)
+    client.ping()
+    let next_message = client.receive()
+    assert_eq(next_message.topic, "demo/qos2/control")
+    client.disconnect()
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "MQTT client subscribes and unsubscribes multiple filters per request" {
   @async.with_task_group <| root => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
@@ -614,6 +765,35 @@ async test "MQTT client interoperates with an independent Mosquitto broker" {
       assert_eq(message.qos, @codec.QoS1)
       publisher.ping()
       subscriber.unsubscribe_many(topics=[topic, "scantling/interop/unused/#"])
+      publisher.disconnect()
+      subscriber.disconnect()
+    }
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client completes QoS2 round trip with Mosquitto" {
+  match @env.get_env_var("SCANTLING_MOSQUITTO_HOST") {
+    None => ()
+    Some(host) => {
+      let topic = "scantling/interop/qos2/roundtrip"
+      let subscriber = @client.Client::connect(
+        host,
+        port=1883,
+        client_id="scantling-mosquitto-qos2-subscriber",
+      )
+      subscriber.subscribe(topic~, qos=@codec.QoS2)
+      let publisher = @client.Client::connect(
+        host,
+        port=1883,
+        client_id="scantling-mosquitto-qos2-publisher",
+      )
+      publisher.publish_qos2(topic~, payload=b"mosquitto-qos2-roundtrip")
+      let message = subscriber.receive()
+      assert_eq(message.topic, topic)
+      assert_eq(message.payload, b"mosquitto-qos2-roundtrip")
+      assert_eq(message.qos, @codec.QoS2)
       publisher.disconnect()
       subscriber.disconnect()
     }

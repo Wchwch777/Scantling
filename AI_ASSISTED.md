@@ -22,5 +22,10 @@ The runnable example was not edited in the October documentation refresh. The
 three scenario payloads are illustrative test/demo data, not claims about
 customer requirements or deployments.
 
+AI also assisted with the October MQTT QoS 2 implementation, its protocol-peer
+and Mosquitto integration tests, and the corresponding feature documentation.
+That newer source/test/documentation update is pending owner review as recorded
+in [`docs/owner-review.md`](docs/owner-review.md).
+
 Do not treat AI-assisted edits as personally reviewed or approved until the
 repository owner records that review in [`docs/owner-review.md`](docs/owner-review.md).

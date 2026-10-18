@@ -10,6 +10,13 @@ updated repository evidence links and corrected the review-status wording.
 The owner has not yet reviewed or signed off on these edits; the historical
 review is not being presented as approval of this refresh.
 
+**QoS 2 implementation and documentation update (2026-10-19): pending owner
+review.** AI assisted with the MQTT QoS 2 client implementation, protocol-peer
+and Mosquitto integration tests, and the corresponding README/use-case/project
+overview updates. The repository owner has not yet reviewed this feature or
+its test results. The historical owner review above does not approve this
+newer work.
+
 ## Review record
 
 - **Reviewer:** Wchwch777 (Repository Owner)
