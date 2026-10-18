@@ -25,10 +25,11 @@ MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包
   测试使用两个客户端验证 QoS 1 订阅、投递和发布应答：
   [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
 - CI 固定运行 Mosquitto `2.0.22` 并执行 MoonBit 格式、Wasm/Native 检查与测试。
-  当前仓库基线提交
-  [`1a5c313`](https://github.com/Wchwch777/Scantling/commit/1a5c313ca89ba9ee309214139ed7188d919251e3)
-  的 CI 已通过，包括 14 项 Wasm 测试、23 项 Native 测试及独立 Broker 路径：
-  [GitHub Actions run 39117952786](https://github.com/Wchwch777/Scantling/actions/runs/39117952786)。
+  最近记录的仓库验证快照提交
+  [`5c21da3`](https://github.com/Wchwch777/Scantling/commit/5c21da34147ddd4a8c832d719d6d518f8bf50d9a)
+  的 CI 已通过，包括 14 项 Wasm 测试、23 项 Native 测试及独立 Mosquitto Broker 往返互操作测试：
+  [GitHub Actions run 39119781810](https://github.com/Wchwch777/Scantling/actions/runs/39119781810)。后续提交状态见
+  [main 分支 workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)。
 
 ## 代表性使用场景
 

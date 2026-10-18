@@ -55,15 +55,17 @@ WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
 telemetry, command, and event output. Check the Actions result attached to each
 later commit before claiming that commit's remote CI passed.
 
-## Latest verified repository CI snapshot
+## Verified repository CI snapshot before this documentation refresh
 
-The latest full CI run is attached to repository commit
-[`1a5c313`](https://github.com/Wchwch777/Scantling/commit/1a5c313ca89ba9ee309214139ed7188d919251e3):
-[GitHub Actions run 39117952786](https://github.com/Wchwch777/Scantling/actions/runs/39117952786)
+The full CI run for the repository snapshot immediately before this
+documentation refresh is attached to commit
+[`5c21da3`](https://github.com/Wchwch777/Scantling/commit/5c21da34147ddd4a8c832d719d6d518f8bf50d9a):
+[GitHub Actions run 39119781810](https://github.com/Wchwch777/Scantling/actions/runs/39119781810)
 completed successfully. It passed formatting, Wasm and Native type checks,
 14 Wasm tests, and 23 Native tests with the Mosquitto `2.0.22` broker path
 enabled. This records CI evidence for that commit; it does not sign off on the
-current documentation refresh.
+current documentation refresh. Check the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+for the current commit's result.
 
 ## Historical owner checklist — completed for the 2026-10-17 scope only
 
