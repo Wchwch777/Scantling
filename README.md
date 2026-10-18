@@ -29,9 +29,12 @@ boundaries and licenses are listed below, with feature evidence in
 
 October code work added an independent Mosquitto interoperability path and
 explicit protocol-error handling for broker rejection, invalid Clean Session
-state, mismatched acknowledgements, and truncated frames. The implementation
-and tests are visible in [`ecbda25`](https://github.com/Wchwch777/Scantling/commit/ecbda25b94f463e534e3efa9c4fa11e6bb66f2f2) and
-[`84538b8`](https://github.com/Wchwch777/Scantling/commit/84538b8).
+state, mismatched acknowledgements, and truncated frames. Later changes buffer
+inbound PUBLISH packets while a request awaits its acknowledgement and add
+deterministic coverage for malformed responses and early EOF. See the protocol
+error implementation in [`ecbda25`](https://github.com/Wchwch777/Scantling/commit/ecbda25b94f463e534e3efa9c4fa11e6bb66f2f2),
+the message-buffer fix in [`9980813`](https://github.com/Wchwch777/Scantling/commit/998081389ed13e81e8c86a1f32932792b69643d6),
+and the additional tests in [`eff2323`](https://github.com/Wchwch777/Scantling/commit/eff232335dc3f999161ade45dc52aedd7caf4527).
 
 ## Boundaries
 
@@ -116,10 +119,13 @@ moon test --target native
 
 The native integration tests include a local protocol peer and an independent
 Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
-Mosquitto `2.0.22`, and runs both test targets. Without that environment
-variable, the real-Broker test is skipped. The protocol checks are not a full
-MQTT conformance suite. Code-baseline CI evidence is recorded in
-[`docs/owner-review.md`](docs/owner-review.md).
+Mosquitto `2.0.22`, and runs both test targets. The latest recorded run for
+repository commit [`22a6b39`](https://github.com/Wchwch777/Scantling/commit/22a6b39c207e658e03bd74fa76630366757f867d)
+passed 14 Wasm tests and 23 Native tests, including the real-Broker path:
+[GitHub Actions run 39109088054](https://github.com/Wchwch777/Scantling/actions/runs/39109088054).
+Without that environment variable, the real-Broker test is skipped. The
+protocol checks are not a full MQTT conformance suite. Review and verification
+records are in [`docs/owner-review.md`](docs/owner-review.md).
 
 ## Project records
 

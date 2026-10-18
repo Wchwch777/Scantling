@@ -1,8 +1,14 @@
 # Owner review status
 
-**Status: reviewed by repository owner.** This documentation update and
-verification baseline have been personally reviewed, confirmed, and approved by
-the repository owner (`Wchwch777`).
+**Historical owner review:** The documentation and verification baseline
+recorded below were personally reviewed and approved by the repository owner
+(`Wchwch777`) on 2026-10-17. That sign-off applies to the scope and repository
+snapshot listed in the historical review record.
+
+**Current evidence refresh (2026-10-18): pending owner review.** AI updated the
+README's commit and CI references and added the latest verification snapshot
+below. The owner has not yet reviewed or signed off on these new edits; the
+historical review is not being presented as approval of this refresh.
 
 ## Review record
 
@@ -49,6 +55,17 @@ WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
 `examples/mqtt_client` against the local Broker succeeded with the expected
 telemetry, command, and event output. Check the Actions result attached to each
 later commit before claiming that commit's remote CI passed.
+
+## Latest verification snapshot — pending owner review
+
+The latest full CI run before this evidence refresh is attached to repository
+commit [`22a6b39`](https://github.com/Wchwch777/Scantling/commit/22a6b39c207e658e03bd74fa76630366757f867d):
+[GitHub Actions run 39109088054](https://github.com/Wchwch777/Scantling/actions/runs/39109088054)
+completed successfully. It passed formatting, Wasm and Native type checks,
+14 Wasm tests, and 23 Native tests with the Mosquitto `2.0.22` broker path
+enabled. This run predates the current documentation-only evidence refresh;
+the next CI run must be checked against the documentation commit before
+claiming that commit's CI passed.
 
 ## Owner checklist — completed
 
