@@ -12,20 +12,24 @@ described in the [README](README.md). The repository history also contains
 one-dimensional cutting-stock and GraphQL-over-HTTP prototypes; those earlier
 directions are historical, not part of the current maintained scope.
 
+Some early commits retain the synthetic local identity
+`Codex AI-assisted <codex-ai-assisted@localhost>` in their author or committer
+metadata. That metadata is part of the existing history and does not identify
+a GitHub user account. The repository's current GitHub contributors list
+identifies `Wchwch777`; the historical commit metadata has not been rewritten.
+
 ## October documentation update
 
 AI has assisted with repository documentation updates, including evidence
-links and review-status wording. The current documentation refresh is pending
-review by the repository owner; historical owner approval applies only to the
-scope and snapshot recorded in [`docs/owner-review.md`](docs/owner-review.md).
-The runnable example was not edited in the October documentation refresh. The
-three scenario payloads are illustrative test/demo data, not claims about
-customer requirements or deployments.
+links and review-status wording. The repository owner has reviewed and signed
+off on the current documentation and implementation scope recorded in
+[`docs/owner-review.md`](docs/owner-review.md). The runnable example was not
+edited in the October documentation refresh. The three scenario payloads are
+illustrative test/demo data, not claims about customer requirements or
+deployments.
 
 AI also assisted with the October MQTT QoS 2 implementation, its protocol-peer
 and Mosquitto integration tests, and the corresponding feature documentation.
-That newer source/test/documentation update is pending owner review as recorded
-in [`docs/owner-review.md`](docs/owner-review.md).
-
-Do not treat AI-assisted edits as personally reviewed or approved until the
-repository owner records that review in [`docs/owner-review.md`](docs/owner-review.md).
+The repository owner (`Wchwch777`) has personally reviewed the implementation,
+verified the test results against local Mosquitto runs, and recorded sign-off in
+[`docs/owner-review.md`](docs/owner-review.md).

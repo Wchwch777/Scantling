@@ -157,11 +157,10 @@ Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
 run those tests locally against an equivalently configured Broker. A successful
-full CI snapshot
-for the batched-subscription and bounded-queue tests
-[`2c30c01`](https://github.com/Wchwch777/Scantling/commit/2c30c0142e0ebb5ca15870940f1700beabbff6cd)
-passed 15 Wasm tests and 27 Native tests, including the real-Broker path:
-[GitHub Actions run 39122468377](https://github.com/Wchwch777/Scantling/actions/runs/39122468377).
+full CI snapshot for the QoS 2 and protocol extension commit
+[`344076f`](https://github.com/Wchwch777/Scantling/commit/344076f8511814b956da0232b0cd3d15c4f7bed8)
+passed 18 Wasm tests and 34 Native tests, including the real-Broker path:
+[GitHub Actions run 39145118457](https://github.com/Wchwch777/Scantling/actions/runs/39145118457).
 See the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
 for newer commits.
 Without that environment variable, the real-Broker test is skipped. The

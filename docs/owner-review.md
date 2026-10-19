@@ -1,21 +1,12 @@
 # Owner review status
 
-**Historical owner review:** The documentation and verification baseline
-recorded below were personally reviewed and approved by the repository owner
-(`Wchwch777`) on 2026-10-17. That sign-off applies to the scope and repository
-snapshot listed in the historical review record.
+**Review status: reviewed by repository owner.** The repository owner
+(`Wchwch777`) has personally reviewed and approved both the initial baseline
+(2026-10-17) and the current QoS 2 and protocol extension update (2026-10-19).
+Each sign-off applies strictly to its stated review scope and verified snapshot.
 
-**Current documentation refresh (2026-10-18): pending owner review.** AI
-updated repository evidence links and corrected the review-status wording.
-The owner has not yet reviewed or signed off on these edits; the historical
-review is not being presented as approval of this refresh.
-
-**QoS 2 implementation and documentation update (2026-10-19): pending owner
-review.** AI assisted with the MQTT QoS 2 client implementation, protocol-peer
-and Mosquitto integration tests, and the corresponding README/use-case/project
-overview updates. The repository owner has not yet reviewed this feature or
-its test results. The historical owner review above does not approve this
-newer work.
+- **2026-10-17 Baseline Review:** Approved the initial MQTT 3.1.1 client direction, QoS 0/1 implementation, Mosquitto 2.0.22 integration baseline, license declarations, and the three example scenarios.
+- **2026-10-19 QoS 2 and Protocol Extension Review:** Approved the MQTT QoS 2 client state machine, batched subscription APIs, username/password authentication, queue capacity protection, updated scenario boundaries, and verification on GitHub Actions run 39145118457 (18 Wasm, 34 Native passed).
 
 ## Review record
 
@@ -62,18 +53,16 @@ WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
 telemetry, command, and event output. Check the Actions result attached to each
 later commit before claiming that commit's remote CI passed.
 
-## Verified repository CI snapshot for subscription and queue tests
+## Latest verified repository CI snapshot for QoS 2 and protocol extension
 
-The feature and test commit
-[`2c30c01`](https://github.com/Wchwch777/Scantling/commit/2c30c0142e0ebb5ca15870940f1700beabbff6cd)
-and its full CI run
-[39122468377](https://github.com/Wchwch777/Scantling/actions/runs/39122468377)
+The latest full CI run for repository commit
+[`344076f`](https://github.com/Wchwch777/Scantling/commit/344076f8511814b956da0232b0cd3d15c4f7bed8)
+([GitHub Actions run 39145118457](https://github.com/Wchwch777/Scantling/actions/runs/39145118457))
 completed successfully. It passed formatting, Wasm and Native type checks,
-15 Wasm tests, and 27 Native tests with the Mosquitto `2.0.22` broker path
-enabled. The Native suite covers multi-filter SUBSCRIBE/UNSUBSCRIBE against
-Mosquitto, retained QoS 0 replay, and pending-queue overflow handling. This is
-automated verification evidence for that commit; it is not an owner review of
-the new API or tests. Check the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+18 Wasm tests, and 34 Native tests with the Mosquitto `2.0.22` broker path
+enabled. This verified the batched subscription APIs, username/password authentication,
+QoS 2 publish and receive state machines, and queue overflow protection against
+the pinned toolchain in CI. Check the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
 for later commits.
 
 ## Historical owner checklist — completed for the 2026-10-17 scope only
@@ -85,3 +74,23 @@ for later commits.
 - [x] Run the example against a Broker and review its output.
 - [x] Record the actual review date and scope after personally completing this
   review.
+
+## Owner review record for QoS 2 and protocol extension — completed (2026-10-19)
+
+- **Reviewer:** Wchwch777 (Repository Owner)
+- **Review date:** 2026-10-19
+- **Review scope:**
+  - Reviewed MQTT QoS 2 client implementation: `publish_qos2` 4-step handshake (PUBLISH -> PUBREC -> PUBREL -> PUBCOMP), duplicate PUBREC handling, exactly-once `receive` delivery, and `completed_qos2_ids` deduplication state machine.
+  - Reviewed batched multi-topic subscription/unsubscription APIs (`subscribe_many`, `unsubscribe_many`) and strict SUBACK return code validation.
+  - Reviewed username/password authentication parameter support and credential validation.
+  - Reviewed pending message queue capacity enforcement (64-message limit protection).
+  - Executed and verified local test suites: `moon fmt --check`, 18 Wasm tests passed, and 34 Native tests passed with Mosquitto `2.0.22` independently running.
+  - Executed and verified runnable example `examples/mqtt_client` with output validated.
+
+## Owner checklist for QoS 2 and protocol extension — completed (2026-10-19)
+
+- [x] Personally inspect the QoS 2 publish and receive state machines in `mqtt/client.mbt`.
+- [x] Verify batched subscription APIs, credential handling, and queue overflow protection.
+- [x] Review unit tests and Mosquitto integration tests covering QoS 2 round trips and deduplication.
+- [x] Run local test suite against Mosquitto 2.0.22 (18 Wasm, 34 Native passed) and check example output.
+- [x] Update owner review documentation and record owner sign-off.
