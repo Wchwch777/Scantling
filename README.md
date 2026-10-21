@@ -137,7 +137,7 @@ Then, in another terminal with `mosquitto_pub` installed:
 mosquitto_pub -h 127.0.0.1 -p 1885 -t scantling/smoke -m hello -q 1
 ```
 
-The peer logs its selected scenario and exits after the client disconnects.
+The peer logs its selected scenario and exits after one publish exchange.
 Other scenarios can be selected with `SCANTLING_FAULT_SCENARIO`; see the
 [scenario table](docs/fault-peer.md). Bind only to loopback: this one-shot test
 server has no authentication or production hardening.

@@ -81,11 +81,12 @@ jobs:
             local qos="$2"
             local port="$3"
             local log="$RUNNER_TEMP/scantling-${scenario}.log"
-            SCANTLING_FAULT_SCENARIO="$scenario" \
+            timeout --signal=TERM --kill-after=2s 30s \
+              env SCANTLING_FAULT_SCENARIO="$scenario" \
               SCANTLING_FAULT_PORT="$port" \
               moon run --target native examples/mqtt_fault_peer >"$log" 2>&1 &
             local peer_pid=$!
-            for attempt in $(seq 1 60); do
+            for attempt in $(seq 1 30); do
               if grep -q 'listening on 127.0.0.1:' "$log"; then
                 break
               fi
@@ -101,7 +102,8 @@ jobs:
               wait "$peer_pid" 2>/dev/null || true
               return 1
             fi
-            if ! mosquitto_pub -h 127.0.0.1 -p "$port" \
+            if ! timeout --signal=TERM --kill-after=2s 15s \
+              mosquitto_pub -h 127.0.0.1 -p "$port" \
               -t scantling/ci/interop -m "qos-${qos}" -q "$qos"; then
               cat "$log"
               kill "$peer_pid" 2>/dev/null || true

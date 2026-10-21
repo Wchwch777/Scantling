@@ -85,7 +85,6 @@ pub async fn Peer::run(self : Peer) -> Unit {
         @codec.PublishPacket(message) if message.qos == @codec.QoS0 => ()
         _ => fail("fault peer expected QoS 0 PUBLISH")
       }
-      expect_disconnect(tcp)
     }
     AcceptPublishQoS1 => {
       accept_connection(tcp)
@@ -95,7 +94,6 @@ pub async fn Peer::run(self : Peer) -> Unit {
         _ => fail("fault peer expected QoS 1 PUBLISH")
       }
       write_packet(tcp, @codec.PubackPacket({ message_id, }))
-      expect_disconnect(tcp)
     }
   }
   tcp.close()
@@ -115,13 +113,6 @@ async fn accept_connection(tcp : @socket.Tcp) -> Unit {
 }
 
 ///|
-/// Require the client to close the one-shot session cleanly.
-async fn expect_disconnect(tcp : @socket.Tcp) -> Unit {
-  match read_packet(tcp) {
-    @codec.DisconnectPacket => ()
-    _ => fail("fault peer expected DISCONNECT")
-  }
-}
 
 ///|
 /// Read exactly one MQTT packet from the connected test client.

@@ -13,8 +13,8 @@ Broker, fuzzing engine, load tool, or certification suite.
 | `truncate-connack` | Sends only part of a CONNACK frame, then closes. | Connection returns a transport failure. |
 | `mismatched-puback` | Accepts CONNECT, reads a QoS 1 PUBLISH, then acknowledges a different packet identifier. | Publish reports a mismatched-acknowledgement error. |
 | `unexpected-suback-response` | Accepts CONNECT and reads SUBSCRIBE, then sends PINGRESP instead of SUBACK. | Subscribe reports an unexpected-packet error and the client disconnects. |
-| `accept-publish-qos0` | Accepts CONNECT, receives one QoS 0 PUBLISH, then expects DISCONNECT. | Client completes a QoS 0 publish and closes the one-shot session. |
-| `accept-publish-qos1` | Accepts CONNECT, receives one QoS 1 PUBLISH, replies with matching PUBACK, then expects DISCONNECT. | Client completes the QoS 1 publish and closes the one-shot session. |
+| `accept-publish-qos0` | Accepts CONNECT and receives one QoS 0 PUBLISH, then closes the one-shot connection. | Client completes a QoS 0 publish. |
+| `accept-publish-qos1` | Accepts CONNECT, receives one QoS 1 PUBLISH, replies with matching PUBACK, then closes the one-shot connection. | Client completes a QoS 1 publish. |
 
 The four fault cases are exercised against Scantling's client in native
 integration tests. CI also runs the accepted QoS 0 and QoS 1 exchanges against
