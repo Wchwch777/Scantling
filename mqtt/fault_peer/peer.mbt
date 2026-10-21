@@ -35,70 +35,70 @@ pub fn Peer::port(self : Peer) -> Int32 {
 ///|
 /// Accept one MQTT client connection and perform the selected behavior.
 pub async fn Peer::run(self : Peer) -> Unit {
-  self.server.run_forever(max_connections=1) <| ((tcp, _) => {
-    match read_packet(tcp) {
-      @codec.ConnectPacket(_) => ()
-      _ => fail("fault peer expected CONNECT as the first packet")
+  let (tcp, _) = self.server.accept()
+  match read_packet(tcp) {
+    @codec.ConnectPacket(_) => ()
+    _ => fail("fault peer expected CONNECT as the first packet")
+  }
+  match self.scenario {
+    RejectConnect =>
+      write_packet(
+        tcp,
+        @codec.ConnackPacket({
+          session_present: false,
+          return_code: @codec.NotAuthorized,
+        }),
+      )
+    TruncateConnack => {
+      let truncated : Bytes = [0x20, 0x02, 0x00]
+      tcp.write(truncated)
     }
-    match self.scenario {
-      RejectConnect =>
-        write_packet(
-          tcp,
-          @codec.ConnackPacket({
-            session_present: false,
-            return_code: @codec.NotAuthorized,
-          }),
-        )
-      TruncateConnack => {
-        let truncated : Bytes = [0x20, 0x02, 0x00]
-        tcp.write(truncated)
-      }
-      MismatchedPuback => {
-        accept_connection(tcp)
-        let message_id = match read_packet(tcp) {
-          @codec.PublishPacket(message) => {
-            if message.qos != @codec.QoS1 {
-              fail("fault peer expected a QoS 1 PUBLISH")
-            }
-            message.message_id.unwrap()
+    MismatchedPuback => {
+      accept_connection(tcp)
+      let message_id = match read_packet(tcp) {
+        @codec.PublishPacket(message) => {
+          if message.qos != @codec.QoS1 {
+            fail("fault peer expected a QoS 1 PUBLISH")
           }
-          _ => fail("fault peer expected PUBLISH after CONNECT")
+          message.message_id.unwrap()
         }
-        let wrong_id = if message_id == 65535 { 1 } else { message_id + 1 }
-        write_packet(tcp, @codec.PubackPacket({ message_id: wrong_id, }))
+        _ => fail("fault peer expected PUBLISH after CONNECT")
       }
-      UnexpectedSubackResponse => {
-        accept_connection(tcp)
-        match read_packet(tcp) {
-          @codec.SubscribePacket(_) => ()
-          _ => fail("fault peer expected SUBSCRIBE after CONNECT")
-        }
-        write_packet(tcp, @codec.PingrespPacket)
-        match read_packet(tcp) {
-          @codec.DisconnectPacket => ()
-          _ => fail("fault peer expected DISCONNECT after unexpected response")
-        }
+      let wrong_id = if message_id == 65535 { 1 } else { message_id + 1 }
+      write_packet(tcp, @codec.PubackPacket({ message_id: wrong_id, }))
+    }
+    UnexpectedSubackResponse => {
+      accept_connection(tcp)
+      match read_packet(tcp) {
+        @codec.SubscribePacket(_) => ()
+        _ => fail("fault peer expected SUBSCRIBE after CONNECT")
       }
-      AcceptPublishQoS0 => {
-        accept_connection(tcp)
-        match read_packet(tcp) {
-          @codec.PublishPacket(message) if message.qos == @codec.QoS0 => ()
-          _ => fail("fault peer expected QoS 0 PUBLISH")
-        }
-        expect_disconnect(tcp)
-      }
-      AcceptPublishQoS1 => {
-        accept_connection(tcp)
-        let message_id = match read_packet(tcp) {
-          @codec.PublishPacket(message) if message.qos == @codec.QoS1 =>
-            message.message_id.unwrap()
-          _ => fail("fault peer expected QoS 1 PUBLISH")
-        }
-        write_packet(tcp, @codec.PubackPacket({ message_id, }))
-        expect_disconnect(tcp)
+      write_packet(tcp, @codec.PingrespPacket)
+      match read_packet(tcp) {
+        @codec.DisconnectPacket => ()
+        _ => fail("fault peer expected DISCONNECT after unexpected response")
       }
     }
-  })
+    AcceptPublishQoS0 => {
+      accept_connection(tcp)
+      match read_packet(tcp) {
+        @codec.PublishPacket(message) if message.qos == @codec.QoS0 => ()
+        _ => fail("fault peer expected QoS 0 PUBLISH")
+      }
+      expect_disconnect(tcp)
+    }
+    AcceptPublishQoS1 => {
+      accept_connection(tcp)
+      let message_id = match read_packet(tcp) {
+        @codec.PublishPacket(message) if message.qos == @codec.QoS1 =>
+          message.message_id.unwrap()
+        _ => fail("fault peer expected QoS 1 PUBLISH")
+      }
+      write_packet(tcp, @codec.PubackPacket({ message_id, }))
+      expect_disconnect(tcp)
+    }
+  }
+  tcp.close()
   self.server.close()
 }
 
