@@ -7,6 +7,8 @@ pub(all) enum Scenario {
   TruncateConnack
   MismatchedPuback
   UnexpectedSubackResponse
+  AcceptPublishQoS0
+  AcceptPublishQoS1
 }
 
 /// One-shot peer bound to a loopback ephemeral port.
@@ -19,8 +21,8 @@ pub struct Peer {
 
 ///|
 /// Bind a one-shot peer to an available loopback port.
-pub async fn Peer::new(scenario : Scenario) -> Peer {
-  let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+pub async fn Peer::new(scenario : Scenario, port~ : Int32 = 0) -> Peer {
+  let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:\{port}"))
   { server, scenario, }
 }
 
@@ -77,6 +79,24 @@ pub async fn Peer::run(self : Peer) -> Unit {
           _ => fail("fault peer expected DISCONNECT after unexpected response")
         }
       }
+      AcceptPublishQoS0 => {
+        accept_connection(tcp)
+        match read_packet(tcp) {
+          @codec.PublishPacket(message) if message.qos == @codec.QoS0 => ()
+          _ => fail("fault peer expected QoS 0 PUBLISH")
+        }
+        expect_disconnect(tcp)
+      }
+      AcceptPublishQoS1 => {
+        accept_connection(tcp)
+        let message_id = match read_packet(tcp) {
+          @codec.PublishPacket(message) if message.qos == @codec.QoS1 =>
+            message.message_id.unwrap()
+          _ => fail("fault peer expected QoS 1 PUBLISH")
+        }
+        write_packet(tcp, @codec.PubackPacket({ message_id, }))
+        expect_disconnect(tcp)
+      }
     }
   })
   self.server.close()
@@ -92,6 +112,15 @@ async fn accept_connection(tcp : @socket.Tcp) -> Unit {
       return_code: @codec.ConnectionAccepted,
     }),
   )
+}
+
+///|
+/// Require the client to close the one-shot session cleanly.
+async fn expect_disconnect(tcp : @socket.Tcp) -> Unit {
+  match read_packet(tcp) {
+    @codec.DisconnectPacket => ()
+    _ => fail("fault peer expected DISCONNECT")
+  }
 }
 
 ///|

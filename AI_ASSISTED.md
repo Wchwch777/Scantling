@@ -7,10 +7,12 @@ for reviewing, maintaining, and releasing the project.
 
 ## Current project direction
 
-The maintained project is the MoonBit MQTT 3.1.1 asynchronous TCP client
-described in the [README](README.md). The repository history also contains
-one-dimensional cutting-stock and GraphQL-over-HTTP prototypes; those earlier
-directions are historical, not part of the current maintained scope.
+The maintained project includes the MoonBit MQTT 3.1.1 asynchronous TCP client
+and a focused native protocol fault-injection peer described in the
+[README](README.md). The peer is not a full broker or conformance suite. The
+repository history also contains one-dimensional cutting-stock and
+GraphQL-over-HTTP prototypes; those earlier directions are historical, not
+part of the current maintained scope.
 
 Some early commits retain the synthetic local identity
 `Codex AI-assisted <codex-ai-assisted@localhost>` in their author or committer
@@ -33,3 +35,11 @@ and Mosquitto integration tests, and the corresponding feature documentation.
 The repository owner (`Wchwch777`) has personally reviewed the implementation,
 verified the test results against local Mosquitto runs, and recorded sign-off in
 [`docs/owner-review.md`](docs/owner-review.md).
+
+## October 21 fault-peer implementation
+
+AI assisted with the native fault-injection peer, its MQTT protocol scenarios,
+integration tests, CI path, README, and scenario documentation. The repository
+owner has not yet reviewed or signed off on these changes. The completed
+October 19 owner review above applies only to its recorded QoS 2 and protocol
+extension scope.

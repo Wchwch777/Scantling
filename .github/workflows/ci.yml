@@ -1,4 +1,4 @@
-name: MoonBit MQTT Client CI
+name: MoonBit MQTT Client and Test Peer CI
 
 on:
   push:
@@ -70,6 +70,51 @@ jobs:
         run: moon check --target native
       - name: Run native integration tests
         run: moon test --target native
+      - name: Install independent MQTT client
+        run: sudo apt-get update && sudo apt-get install --yes mosquitto-clients
+      - name: Verify the fault peer with Mosquitto clients
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_peer_case() {
+            local scenario="$1"
+            local qos="$2"
+            local port="$3"
+            local log="$RUNNER_TEMP/scantling-${scenario}.log"
+            SCANTLING_FAULT_SCENARIO="$scenario" \
+              SCANTLING_FAULT_PORT="$port" \
+              moon run --target native examples/mqtt_fault_peer >"$log" 2>&1 &
+            local peer_pid=$!
+            for attempt in $(seq 1 60); do
+              if grep -q 'listening on 127.0.0.1:' "$log"; then
+                break
+              fi
+              if ! kill -0 "$peer_pid" 2>/dev/null; then
+                cat "$log"
+                return 1
+              fi
+              sleep 1
+            done
+            if ! grep -q 'listening on 127.0.0.1:' "$log"; then
+              cat "$log"
+              kill "$peer_pid" 2>/dev/null || true
+              wait "$peer_pid" 2>/dev/null || true
+              return 1
+            fi
+            if ! mosquitto_pub -h 127.0.0.1 -p "$port" \
+              -t scantling/ci/interop -m "qos-${qos}" -q "$qos"; then
+              cat "$log"
+              kill "$peer_pid" 2>/dev/null || true
+              wait "$peer_pid" 2>/dev/null || true
+              return 1
+            fi
+            if ! wait "$peer_pid"; then
+              cat "$log"
+              return 1
+            fi
+          }
+          run_peer_case accept-publish-qos0 0 1885
+          run_peer_case accept-publish-qos1 1 1886
       - name: Stop Mosquitto broker
         if: always()
         run: |

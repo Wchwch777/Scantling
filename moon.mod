@@ -8,9 +8,15 @@ license = "Apache-2.0"
 
 preferred_target = "wasm"
 
-keywords = [ "mqtt", "async-client", "iot", "pubsub", "moonbit" ]
+keywords = [
+  "mqtt",
+  "async-client",
+  "protocol-testing",
+  "fault-injection",
+  "moonbit",
+]
 
-description = "An asynchronous MQTT 3.1.1 TCP client runtime for MoonBit"
+description = "MoonBit MQTT 3.1.1 TCP client and native protocol fault-injection peer"
 
 import {
   "moonbitlang/async@0.21.3",

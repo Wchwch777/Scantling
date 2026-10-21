@@ -1,12 +1,11 @@
-# Scantling — MoonBit MQTT 3.1.1 Client
+# Scantling — MoonBit MQTT 3.1.1 Client and Test Peer
 
-Scantling is an asynchronous MQTT 3.1.1 client runtime over TCP for MoonBit.
-The current project direction is a protocol client: the repository's earlier
-history includes a one-dimensional cutting-stock optimizer/visualizer and an
-intervening GraphQL-over-HTTP prototype; neither is the maintained project.
-The MQTT runtime starts at [`679c721`](https://github.com/Wchwch777/Scantling/commit/679c721),
-after the [GraphQL pivot](https://github.com/Wchwch777/Scantling/commit/d424a6f)
-and the earlier [cutting-stock work](https://github.com/Wchwch777/Scantling/commit/458215b).
+Scantling combines an asynchronous MQTT 3.1.1 client runtime over TCP with a
+native, deterministic peer for exercising client protocol behavior. The peer
+can accept a client, reject its CONNECT, truncate a CONNACK, or return selected
+unexpected acknowledgements. This gives MoonBit developers a runnable way to
+probe client error handling; it is a focused test tool, not a full broker or
+MQTT conformance certification.
 
 Scantling builds on the `zbhzs1/moonbit-mqtt` packet codec and the
 `moonbitlang/async` runtime. It implements the client-side TCP connection and
@@ -36,6 +35,12 @@ boundaries and licenses are listed below, with feature evidence in
 - Sequential API calls on each connection. Do not issue concurrent operations
   on the same client.
 
+The native [fault-injection peer](docs/fault-peer.md) is a separate tool in the
+same repository. Its one-shot scenarios include CONNECT rejection and truncated
+CONNACK, mismatched PUBACK, unexpected SUBACK response, and accepted QoS 0/1
+PUBLISH exchanges. The accepted QoS 0/1 path is also exercised with the
+independent Mosquitto command-line client in CI.
+
 October code work added an independent Mosquitto interoperability path and
 explicit protocol-error handling for broker rejection, invalid Clean Session
 state, mismatched acknowledgements, and truncated frames. Later changes buffer
@@ -51,8 +56,8 @@ policy; see the CI evidence below.
 
 ## Boundaries
 
-This is a small MQTT 3.1.1 TCP client, not a production-complete SDK or a
-conformance certification. TLS, automatic reconnection,
+The client is a small MQTT 3.1.1 TCP implementation, not a production-complete
+SDK; the peer is not a conformance certification. TLS, automatic reconnection,
 automatic Keep Alive scheduling, operation timeouts, persistent sessions,
 MQTT 5.0, and WebSocket transport are not implemented. QoS 2 exchange state is
 kept in memory for the current clean-session connection; it is not persisted
@@ -94,8 +99,9 @@ not part of Scantling or either MoonBit dependency.
 
 ## Position among MoonBit MQTT packages
 
-Scantling's scope is the MQTT client runtime: it opens TCP connections and
-drives client-side request/response and delivery flows. The existing
+Scantling includes an MQTT client runtime that opens TCP connections and
+drives client-side request/response and delivery flows, plus a test peer that
+controls broker-side responses. The existing
 [`zbhzs1/moonbit-mqtt` package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt)
 provides MQTT 3.1.1 packet encoding and decoding, while its README places
 network transport and client runtime outside its current scope. A separate
@@ -105,6 +111,36 @@ connection. These are adjacent ecosystem components, not evidence that
 Scantling is the only MQTT implementation or that user demand has been
 validated. This comparison describes scope only; package capabilities can
 change and should be rechecked against their linked sources.
+
+Scantling does not claim to be the only MoonBit MQTT client. Its additional
+test peer has a different role: it controls broker-side responses so client
+implementations can be exercised against repeatable protocol failures as well
+as accepted QoS 0/1 publish flows. The peer handles one TCP connection and a
+small fixed scenario set; it is not a general-purpose Broker, load tester, or
+complete protocol suite. Its scenarios and expected outcomes are listed in
+[`docs/fault-peer.md`](docs/fault-peer.md).
+
+## Run the fault-injection peer
+
+The peer listens on loopback port `1885` by default and accepts one connection.
+For a successful QoS 1 publish exchange, start it in one terminal:
+
+```powershell
+$env:SCANTLING_FAULT_SCENARIO = "accept-publish-qos1"
+$env:SCANTLING_FAULT_PORT = "1885"
+moon run --target native examples/mqtt_fault_peer
+```
+
+Then, in another terminal with `mosquitto_pub` installed:
+
+```sh
+mosquitto_pub -h 127.0.0.1 -p 1885 -t scantling/smoke -m hello -q 1
+```
+
+The peer logs its selected scenario and exits after the client disconnects.
+Other scenarios can be selected with `SCANTLING_FAULT_SCENARIO`; see the
+[scenario table](docs/fault-peer.md). Bind only to loopback: this one-shot test
+server has no authentication or production hardening.
 
 ## Run the example
 
@@ -151,8 +187,10 @@ moon check --target native
 moon test --target native
 ```
 
-The native integration tests include a local protocol peer and an independent
-Mosquitto round trip. CI sets `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
+The native integration tests include the fault peer and an independent
+Mosquitto Broker round trip. CI also connects Mosquitto's independent
+`mosquitto_pub` client to Scantling's accepted QoS 0/1 peer scenarios. CI sets
+`SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
 Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to

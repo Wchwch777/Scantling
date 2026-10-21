@@ -94,3 +94,10 @@ for later commits.
 - [x] Review unit tests and Mosquitto integration tests covering QoS 2 round trips and deduplication.
 - [x] Run local test suite against Mosquitto 2.0.22 (18 Wasm, 34 Native passed) and check example output.
 - [x] Update owner review documentation and record owner sign-off.
+
+## Owner review status for the fault-injection peer — pending
+
+The native MQTT fault-injection peer, its accepted QoS 0/1 scenarios, the
+Mosquitto client interoperability workflow, and the related README and scenario
+documentation have not yet been reviewed or signed off by the repository
+owner. The October 19 review above does not cover these changes.

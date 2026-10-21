@@ -1,7 +1,10 @@
 import {
   "moonbitlang/async",
   "moonbitlang/core/env",
+  "moonbitlang/core/string",
   "scantling_mqtt_client/mqtt/fault_peer" @peer,
 }
 
 pkgtype(kind: "executable")
+
+supported_targets = "+native"

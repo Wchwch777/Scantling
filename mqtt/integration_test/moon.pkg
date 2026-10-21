@@ -9,3 +9,5 @@ import {
 import {
   "moonbitlang/core/env",
 } for "test"
+
+supported_targets = "+native"
