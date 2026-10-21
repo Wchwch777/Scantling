@@ -27,7 +27,9 @@ async fn main {
     fail("SCANTLING_FAULT_PORT must be between 0 and 65535")
   }
   let server = @peer.Peer::new(scenario, port~)
-  println("Scantling MQTT fault peer listening on 127.0.0.1:\{server.port()}")
-  println("Scenario: \{scenario_name}")
+  @stdio.stdout.write(
+    "Scantling MQTT fault peer listening on 127.0.0.1:\{server.port()}\n",
+  )
+  @stdio.stdout.write("Scenario: \{scenario_name}\n")
   server.run()
 }

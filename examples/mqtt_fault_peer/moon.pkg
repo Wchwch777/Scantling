@@ -1,5 +1,6 @@
 import {
   "moonbitlang/async",
+  "moonbitlang/async/stdio",
   "moonbitlang/core/env",
   "moonbitlang/core/string",
   "scantling_mqtt_client/mqtt/fault_peer" @peer,
