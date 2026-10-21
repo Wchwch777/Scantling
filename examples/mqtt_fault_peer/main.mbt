@@ -6,6 +6,10 @@ async fn main {
     Some("reject-connect") => ("reject-connect", @peer.Scenario::RejectConnect)
     Some("truncate-connack") =>
       ("truncate-connack", @peer.Scenario::TruncateConnack)
+    Some("mismatched-puback") =>
+      ("mismatched-puback", @peer.Scenario::MismatchedPuback)
+    Some("unexpected-suback-response") =>
+      ("unexpected-suback-response", @peer.Scenario::UnexpectedSubackResponse)
     Some(value) => fail("unknown SCANTLING_FAULT_SCENARIO: \{value}")
   }
   let server = @peer.Peer::new(scenario)

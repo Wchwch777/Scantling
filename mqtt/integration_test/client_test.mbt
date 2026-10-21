@@ -490,34 +490,11 @@ async test "MQTT client reports broker rejection from CONNACK" {
 #cfg(target="native")
 async test "MQTT client rejects a PUBACK with a different packet identifier" {
   @async.with_task_group <| root => {
-    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
-    let address = server.addr
-    root.spawn_bg(no_wait=true, () => {
-      server.run_forever(max_connections=1) <| ((tcp, _) => {
-        match broker_read_packet(tcp) {
-          @codec.ConnectPacket(_) => ()
-          _ => fail("expected CONNECT")
-        }
-        broker_write_packet(
-          tcp,
-          @codec.ConnackPacket({
-            session_present: false,
-            return_code: @codec.ConnectionAccepted,
-          }),
-        )
-        let message_id = match broker_read_packet(tcp) {
-          @codec.PublishPacket(message) => message.message_id.unwrap()
-          _ => fail("expected QoS 1 PUBLISH")
-        }
-        broker_write_packet(
-          tcp,
-          @codec.PubackPacket({ message_id: message_id + 1, }),
-        )
-      })
-    })
+    let peer = @fault_peer.Peer::new(@fault_peer.Scenario::MismatchedPuback)
+    root.spawn_bg(no_wait=true, () => peer.run())
     let client = @client.Client::connect(
       "127.0.0.1",
-      port=address.port(),
+      port=peer.port(),
       client_id="scantling-mismatched-ack",
     )
     let result : Result[Unit, @client.ClientError] = try {
@@ -535,7 +512,6 @@ async test "MQTT client rejects a PUBACK with a different packet identifier" {
       _ => fail("expected mismatched PUBACK to be rejected")
     }
     client.disconnect()
-    server.close()
   }
 }
 
@@ -599,35 +575,13 @@ async test "MQTT client reports EOF when a CONNACK body is truncated" {
 #cfg(target="native")
 async test "MQTT client rejects an unexpected packet while awaiting SUBACK" {
   @async.with_task_group <| root => {
-    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
-    let address = server.addr
-    root.spawn_bg(no_wait=true, () => {
-      server.run_forever(max_connections=1) <| ((tcp, _) => {
-        match broker_read_packet(tcp) {
-          @codec.ConnectPacket(_) => ()
-          _ => fail("expected CONNECT")
-        }
-        broker_write_packet(
-          tcp,
-          @codec.ConnackPacket({
-            session_present: false,
-            return_code: @codec.ConnectionAccepted,
-          }),
-        )
-        match broker_read_packet(tcp) {
-          @codec.SubscribePacket(_) => ()
-          _ => fail("expected SUBSCRIBE")
-        }
-        broker_write_packet(tcp, @codec.PingrespPacket)
-        match broker_read_packet(tcp) {
-          @codec.DisconnectPacket => ()
-          _ => fail("expected DISCONNECT")
-        }
-      })
-    })
+    let peer = @fault_peer.Peer::new(
+      @fault_peer.Scenario::UnexpectedSubackResponse,
+    )
+    root.spawn_bg(no_wait=true, () => peer.run())
     let client = @client.Client::connect(
       "127.0.0.1",
-      port=address.port(),
+      port=peer.port(),
       client_id="scantling-unexpected-suback-response",
     )
     let result : Result[Unit, @client.ClientError] = try {
@@ -642,7 +596,6 @@ async test "MQTT client rejects an unexpected packet while awaiting SUBACK" {
       _ => fail("expected an unexpected-packet error for SUBACK")
     }
     client.disconnect()
-    server.close()
   }
 }
 
