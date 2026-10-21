@@ -2,6 +2,7 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/socket",
   "scantling_mqtt_client/mqtt" @client,
+  "scantling_mqtt_client/mqtt/fault_peer",
   "zbhzs1/moonbit-mqtt" @codec,
 }
 

@@ -1,0 +1,7 @@
+import {
+  "moonbitlang/async",
+  "moonbitlang/core/env",
+  "scantling_mqtt_client/mqtt/fault_peer" @peer,
+}
+
+pkgtype(kind: "executable")

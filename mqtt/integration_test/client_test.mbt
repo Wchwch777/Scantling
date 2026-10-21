@@ -468,27 +468,12 @@ async test "MQTT client rejects CONNACK session state for Clean Session" {
 #cfg(target="native")
 async test "MQTT client reports broker rejection from CONNACK" {
   @async.with_task_group <| root => {
-    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
-    let address = server.addr
-    root.spawn_bg(no_wait=true, () => {
-      server.run_forever(max_connections=1) <| ((tcp, _) => {
-        match broker_read_packet(tcp) {
-          @codec.ConnectPacket(_) => ()
-          _ => fail("expected CONNECT")
-        }
-        broker_write_packet(
-          tcp,
-          @codec.ConnackPacket({
-            session_present: false,
-            return_code: @codec.NotAuthorized,
-          }),
-        )
-      })
-    })
+    let peer = @fault_peer.Peer::new(@fault_peer.Scenario::RejectConnect)
+    root.spawn_bg(no_wait=true, () => peer.run())
     let result : Result[@client.Client, @client.ClientError] = Ok(
       @client.Client::connect(
         "127.0.0.1",
-        port=address.port(),
+        port=peer.port(),
         client_id="scantling-rejected-client",
       ),
     ) catch {
@@ -498,7 +483,6 @@ async test "MQTT client reports broker rejection from CONNACK" {
       Err(@client.ClientError::Rejected(5)) => ()
       _ => fail("expected broker rejection code 5")
     }
-    server.close()
   }
 }
 
@@ -593,22 +577,12 @@ async test "MQTT client maps a truncated CONNACK frame to transport failure" {
 #cfg(target="native")
 async test "MQTT client reports EOF when a CONNACK body is truncated" {
   @async.with_task_group <| root => {
-    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
-    let address = server.addr
-    root.spawn_bg(no_wait=true, () => {
-      server.run_forever(max_connections=1) <| ((tcp, _) => {
-        match broker_read_packet(tcp) {
-          @codec.ConnectPacket(_) => ()
-          _ => fail("expected CONNECT")
-        }
-        let truncated_body : Bytes = [0x20, 0x02, 0x00]
-        tcp.write(truncated_body)
-      })
-    })
+    let peer = @fault_peer.Peer::new(@fault_peer.Scenario::TruncateConnack)
+    root.spawn_bg(no_wait=true, () => peer.run())
     let result : Result[@client.Client, @client.ClientError] = Ok(
       @client.Client::connect(
         "127.0.0.1",
-        port=address.port(),
+        port=peer.port(),
         client_id="scantling-truncated-connack-body",
       ),
     ) catch {
@@ -618,7 +592,6 @@ async test "MQTT client reports EOF when a CONNACK body is truncated" {
       Err(@client.ClientError::TransportFailure) => ()
       _ => fail("expected a transport failure for truncated CONNACK body")
     }
-    server.close()
   }
 }
 
