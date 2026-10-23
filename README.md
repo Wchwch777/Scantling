@@ -32,6 +32,9 @@ boundaries and licenses are listed below, with feature evidence in
 - PINGREQ/PINGRESP, DISCONNECT, topic/filter validation, a 1 MiB inbound
   packet-body limit, and a 64-message pending queue that closes the connection
   with an explicit error on overflow.
+- `receive_with_keep_alive()` sends PINGREQ while waiting for an inbound
+  message, processes PINGRESP before returning a message received during the
+  ping exchange, and closes with an explicit error if PINGRESP is missing.
 - Sequential API calls on each connection. Do not issue concurrent operations
   on the same client.
 
@@ -58,13 +61,17 @@ policy; see the CI evidence below.
 
 The client is a small MQTT 3.1.1 TCP implementation, not a production-complete
 SDK; the peer is not a conformance certification. TLS, automatic reconnection,
-automatic Keep Alive scheduling, operation timeouts, persistent sessions,
-MQTT 5.0, and WebSocket transport are not implemented. QoS 2 exchange state is
-kept in memory for the current clean-session connection; it is not persisted
-across disconnects. The application
-must schedule PINGREQ within the configured Keep Alive interval. The sample
-topics and payloads below are protocol demonstrations; they are not evidence
-of customer deployments, physical devices, user research, or measured demand.
+operation timeouts, persistent sessions, MQTT 5.0, and WebSocket transport are
+not implemented. QoS 2 exchange state is kept in memory for the current
+clean-session connection; it is not persisted across disconnects.
+`receive_with_keep_alive()` sends and checks pings only while that call is
+waiting for a message. The caller must enter it before the configured Keep
+Alive deadline and must not run another operation on the same client
+concurrently. The ordinary `receive()` remains an indefinite blocking read
+without automatic pings; even the keep-alive variant has no message-arrival
+timeout while the broker continues to answer pings. The sample topics and
+payloads below are protocol demonstrations; they are not evidence of customer
+deployments, physical devices, user research, or measured demand.
 This repository does not claim a Scantling Mooncakes release.
 
 ## Three protocol demonstrations
@@ -75,11 +82,17 @@ three representative message flows:
 1. **Telemetry-shaped message:** `demo/sensor/temperature` carries `21.5`.
 2. **Command-shaped message:** `demo/device/device-7/cmd` carries
    `SET_TEMP=22.0`.
-3. **Event-shaped message:** `demo/service/orders/created` carries
-   `order_id=demo-1`.
+3. **Delayed event after idle:** `demo/service/orders/created` carries
+   `order_id=demo-1` after the subscriber has waited idle for five seconds.
 
-In each case the subscriber receives the opaque payload; the example does not
-simulate a sensor, execute a device command, or parse a business event. See the
+The subscriber first receives the command, then waits for the delayed event on
+the same connection with `receive_with_keep_alive()`. Its four-second MQTT
+Keep Alive causes PINGREQ/PINGRESP exchanges while the five-second publisher
+delay runs. A deterministic local peer test also splits the delayed event
+across that idle interval, checks two keep-alive exchanges, and verifies that a
+following event can still be received. In each case payloads remain opaque;
+the example does not simulate a sensor, execute a device command, or parse a
+business event. See the
 [scenario-by-scenario evidence and limits](docs/use-cases.md).
 
 ## Source and license boundaries

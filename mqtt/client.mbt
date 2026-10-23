@@ -22,6 +22,7 @@ pub suberror ClientError {
   Codec(String)
   Rejected(Int32)
   TransportFailure
+  KeepAliveTimeout
   UnexpectedPacket(String)
 } derive(Eq, Debug)
 
@@ -33,6 +34,7 @@ pub(all) struct Client {
   mut pending_messages : Array[Message]
   mut pending_qos2_messages : Array[(Int32, Message)]
   mut completed_qos2_ids : Array[Int32]
+  mut inbound_bytes : Array[Byte]
 }
 
 ///|
@@ -165,7 +167,7 @@ async fn Client::read_response_packet(
   self : Client,
 ) -> @codec.Packet raise ClientError {
   while true {
-    match read_packet(self.tcp) {
+    match self.read_packet() {
       @codec.PublishPacket(message) => self.queue_inbound_publish(message)
       @codec.PubrelPacket(packet_id) =>
         ignore(self.finish_qos2_delivery(packet_id.message_id, queue=true))
@@ -333,6 +335,121 @@ pub fn packet_body_length(frame : Array[Byte]) -> Result[Int32, ClientError] {
 }
 
 ///|
+///+
+/// Return the complete MQTT frame length once its Remaining Length header is
+/// available. A missing value means that more header bytes are needed.
+fn buffered_frame_length(buffer : Array[Byte]) -> Int32? raise ClientError {
+  if buffer.length() < 2 {
+    return None
+  }
+  let mut index = 1
+  let mut header_complete = false
+  while index < buffer.length() && index <= 4 {
+    let byte = buffer[index].to_int()
+    if (byte & 0x80) == 0 {
+      header_complete = true
+      break
+    }
+    if index == 4 {
+      raise ClientError::Codec(
+        "packet remaining-length header exceeds four bytes",
+      )
+    }
+    index += 1
+  }
+  if !header_complete {
+    return None
+  }
+  let header = [ for i in 0..<=index => buffer[i] ]
+  let body_length = match packet_body_length(header) {
+    Ok(value) => value
+    Err(error) => raise error
+  }
+  Some(index + 1 + body_length)
+}
+
+///|
+///+
+/// Take one complete MQTT frame from the connection buffer, if available.
+fn Client::take_buffered_packet(
+  self : Client,
+) -> @codec.Packet? raise ClientError {
+  match buffered_frame_length(self.inbound_bytes) {
+    None => None
+    Some(frame_length) if self.inbound_bytes.length() < frame_length => None
+    Some(frame_length) => {
+      let frame = [ for i in 0..<frame_length => self.inbound_bytes[i] ]
+      self.inbound_bytes = [
+        for i in frame_length..<self.inbound_bytes.length() => {
+          self.inbound_bytes[i]
+        }
+      ]
+      match @codec.decode_packet(frame) {
+        Ok(packet) => Some(packet)
+        Err(message) => raise ClientError::Codec(message)
+      }
+    }
+  }
+}
+
+///|
+///+
+/// Read one packet while preserving any bytes belonging to later packets.
+async fn Client::read_packet(self : Client) -> @codec.Packet raise ClientError {
+  while true {
+    match self.take_buffered_packet() {
+      Some(packet) => return packet
+      None => ()
+    }
+    let bytes = self.tcp.read_some(max_len=4096) catch {
+      _ => raise ClientError::TransportFailure
+    }
+    match bytes {
+      Some(chunk) =>
+        for byte in chunk {
+          self.inbound_bytes.push(byte)
+        }
+      None => raise ClientError::TransportFailure
+    }
+  }
+  raise ClientError::TransportFailure
+}
+
+///|
+///+
+/// Read one packet until an absolute deadline, retaining partial frames across
+/// timeout boundaries so a later read resumes at the correct MQTT byte.
+async fn Client::read_packet_until(
+  self : Client,
+  deadline : Int64,
+) -> @codec.Packet? raise ClientError {
+  while true {
+    match self.take_buffered_packet() {
+      Some(packet) => return Some(packet)
+      None => ()
+    }
+    let remaining = deadline - @async.now()
+    if remaining <= 0L {
+      return None
+    }
+    let chunk = @async.with_timeout_opt(remaining.to_int(), () => {
+      self.tcp.read_some(max_len=4096)
+    }) catch {
+      _ => raise ClientError::TransportFailure
+    }
+    match chunk {
+      None => return None
+      Some(Some(bytes)) =>
+        for byte in bytes {
+          self.inbound_bytes.push(byte)
+        }
+      Some(None) => raise ClientError::TransportFailure
+    }
+  }
+  None
+}
+
+///|
 fn validate_credentials(
   username : String?,
   password : Bytes?,
@@ -406,6 +523,7 @@ pub async fn Client::connect(
             pending_messages: [],
             pending_qos2_messages: [],
             completed_qos2_ids: [],
+            inbound_bytes: [],
           }
         Err(error) => raise error
       }
@@ -711,7 +829,8 @@ fn validate_unsuback(
 
 ///|
 /// Send one keep-alive ping and wait for the broker's PINGRESP.
-/// The caller is responsible for scheduling pings within the configured interval.
+/// For an idle message wait that schedules pings, use
+/// `receive_with_keep_alive()` instead.
 pub async fn Client::ping(self : Client) -> Unit raise ClientError {
   if self.keep_alive == 0 {
     raise ClientError::InvalidConfig(
@@ -729,15 +848,78 @@ pub async fn Client::ping(self : Client) -> Unit raise ClientError {
 /// Read the next published message. QoS 1 and QoS 2 deliveries are acknowledged
 /// before returning; QoS 2 is delivered only after PUBREL.
 pub async fn Client::receive(self : Client) -> Message raise ClientError {
+  self.receive_loop(keep_alive_pings=false)
+}
+
+///|
+/// Wait for the next message while sending MQTT PINGREQ packets during idle
+/// periods. Pings are sent every half of the configured Keep Alive interval;
+/// a missing PINGRESP within the next half interval closes the connection.
+///
+/// This method only keeps the connection alive while it is waiting here. Call
+/// it before the configured deadline and do not run another operation on the
+/// same client concurrently. A Keep Alive value of zero disables MQTT pings.
+pub async fn Client::receive_with_keep_alive(
+  self : Client,
+) -> Message raise ClientError {
+  self.receive_loop(keep_alive_pings=self.keep_alive > 0)
+}
+
+///|
+async fn Client::receive_loop(
+  self : Client,
+  keep_alive_pings~ : Bool,
+) -> Message raise ClientError {
+  let ping_interval_ms = if keep_alive_pings {
+    self.keep_alive * 500
+  } else {
+    0
+  }
+  let mut next_ping_deadline = @async.now() + ping_interval_ms.to_int64()
+  let mut ping_outstanding = false
+  let mut pong_deadline = 0L
   while true {
-    match self.take_pending_message() {
-      Some(message) => return message
-      None => ()
+    // A delivery received between PINGREQ and PINGRESP must stay queued until
+    // the response is consumed. Returning it early would leave a stale
+    // PINGRESP for the next receive call.
+    if !ping_outstanding {
+      match self.take_pending_message() {
+        Some(message) => return message
+        None => ()
+      }
     }
-    match read_packet(self.tcp) {
+    let packet = if keep_alive_pings {
+      let deadline = if ping_outstanding {
+        pong_deadline
+      } else {
+        next_ping_deadline
+      }
+      match self.read_packet_until(deadline) {
+        Some(packet) => packet
+        None if ping_outstanding => {
+          self.tcp.close()
+          raise ClientError::KeepAliveTimeout
+        }
+        None => {
+          write_packet(self.tcp, @codec.PingreqPacket)
+          ping_outstanding = true
+          pong_deadline = @async.now() + ping_interval_ms.to_int64()
+          continue
+        }
+      }
+    } else {
+      self.read_packet()
+    }
+    match packet {
+      @codec.PingrespPacket if keep_alive_pings && ping_outstanding => {
+        ping_outstanding = false
+        next_ping_deadline = @async.now() + ping_interval_ms.to_int64()
+      }
       @codec.PublishPacket(message) =>
         if message.qos == @codec.QoS2 {
           self.accept_qos2_publish(message)
+        } else if ping_outstanding {
+          self.queue_inbound_publish(message)
         } else {
           if message.qos == @codec.QoS1 {
             let message_id = match message.message_id {
@@ -757,11 +939,18 @@ pub async fn Client::receive(self : Client) -> Message raise ClientError {
           }
         }
       @codec.PubrelPacket(packet_id) =>
-        match self.finish_qos2_delivery(packet_id.message_id, queue=false) {
+        match
+          self.finish_qos2_delivery(
+            packet_id.message_id,
+            queue=ping_outstanding,
+          ) {
           Some(message) => return message
           None => ()
         }
-      _ => raise ClientError::UnexpectedPacket("expected PUBLISH or PUBREL")
+      _ =>
+        raise ClientError::UnexpectedPacket(
+          "expected PUBLISH, PUBREL, or PINGRESP",
+        )
     }
   }
   raise ClientError::UnexpectedPacket("message stream ended unexpectedly")

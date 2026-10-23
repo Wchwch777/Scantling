@@ -30,6 +30,13 @@ async fn broker_write_packet(tcp : @socket.Tcp, packet : @codec.Packet) -> Unit 
 
 ///|
 #cfg(target="native")
+async fn broker_write_bytes(tcp : @socket.Tcp, bytes : Array[Byte]) -> Unit {
+  let data : Bytes = [ for byte in bytes => byte ]
+  tcp.write(data)
+}
+
+///|
+#cfg(target="native")
 async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" {
   @async.with_task_group <| root => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
@@ -135,6 +142,188 @@ async test "MQTT TCP client completes CONNECT, SUBSCRIBE, publish and QoS1 ACK" 
     client.unsubscribe(topic="demo/temperature")
     client.ping()
     client.disconnect()
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client keeps alive through idle time and delivers later events" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(connect) => assert_eq(connect.keep_alive, 1)
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        let subscription_id = match broker_read_packet(tcp) {
+          @codec.SubscribePacket(request) => {
+            assert_eq(request.topics.length(), 2)
+            request.message_id
+          }
+          _ => fail("expected command and event SUBSCRIBE")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.SubackPacket({
+            message_id: subscription_id,
+            return_codes: [@codec.SuccessQoS1, @codec.SuccessQoS1],
+          }),
+        )
+
+        broker_write_packet(
+          tcp,
+          @codec.PublishPacket({
+            topic: "demo/device/device-7/cmd",
+            payload: b"SET_TEMP=22.0",
+            qos: @codec.QoS1,
+            message_id: Some(70),
+            retain: false,
+            dup: false,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PubackPacket(packet_id) => assert_eq(packet_id.message_id, 70)
+          _ => fail("expected command PUBACK")
+        }
+
+        // Deliver only the first header byte before the long idle interval. This
+        // makes the client retain a partial frame while it sends two pings.
+        let delayed_event = @codec.encode_packet(
+          @codec.PublishPacket({
+            topic: "demo/service/orders/created",
+            payload: b"order_id=delayed-1",
+            qos: @codec.QoS1,
+            message_id: Some(71),
+            retain: false,
+            dup: false,
+          }),
+        ).unwrap()
+        broker_write_bytes(tcp, [delayed_event[0]])
+        match broker_read_packet(tcp) {
+          @codec.PingreqPacket =>
+            broker_write_packet(tcp, @codec.PingrespPacket)
+          _ => fail("expected first keep-alive PINGREQ")
+        }
+        match broker_read_packet(tcp) {
+          @codec.PingreqPacket => ()
+          _ => fail("expected second keep-alive PINGREQ")
+        }
+        broker_write_bytes(
+          tcp,
+          [
+            for index in 1..<delayed_event.length() => delayed_event[index]
+          ],
+        )
+        broker_write_packet(tcp, @codec.PingrespPacket)
+        match broker_read_packet(tcp) {
+          @codec.PubackPacket(packet_id) => assert_eq(packet_id.message_id, 71)
+          _ => fail("expected delayed event PUBACK")
+        }
+
+        // A subsequent call must not see the PINGRESP as an unexpected
+        // packet; the delayed event was returned only after it was consumed.
+        broker_write_packet(
+          tcp,
+          @codec.PublishPacket({
+            topic: "demo/service/orders/created",
+            payload: b"order_id=delayed-2",
+            qos: @codec.QoS0,
+            message_id: None,
+            retain: false,
+            dup: false,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.DisconnectPacket => ()
+          _ => fail("expected DISCONNECT")
+        }
+      })
+    })
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-idle-keep-alive",
+      keep_alive=1,
+    )
+    client.subscribe_many(topics=[
+      @client.Subscription::{
+        topic: "demo/device/device-7/cmd",
+        qos: @codec.QoS1,
+      },
+      @client.Subscription::{
+        topic: "demo/service/orders/created",
+        qos: @codec.QoS1,
+      },
+    ])
+    let command = client.receive()
+    assert_eq(command.topic, "demo/device/device-7/cmd")
+    assert_eq(command.payload, b"SET_TEMP=22.0")
+
+    let event = client.receive_with_keep_alive()
+    assert_eq(event.topic, "demo/service/orders/created")
+    assert_eq(event.payload, b"order_id=delayed-1")
+    assert_eq(event.qos, @codec.QoS1)
+    let next_event = client.receive()
+    assert_eq(next_event.payload, b"order_id=delayed-2")
+    client.disconnect()
+    server.close()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "MQTT client closes after a keep-alive PINGRESP deadline expires" {
+  @async.with_task_group <| root => {
+    let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
+    let address = server.addr
+    root.spawn_bg(no_wait=true, () => {
+      server.run_forever(max_connections=1) <| ((tcp, _) => {
+        match broker_read_packet(tcp) {
+          @codec.ConnectPacket(_) => ()
+          _ => fail("expected CONNECT")
+        }
+        broker_write_packet(
+          tcp,
+          @codec.ConnackPacket({
+            session_present: false,
+            return_code: @codec.ConnectionAccepted,
+          }),
+        )
+        match broker_read_packet(tcp) {
+          @codec.PingreqPacket => ()
+          _ => fail("expected PINGREQ")
+        }
+        match tcp.read_some(max_len=1) {
+          None => ()
+          Some(_) => fail("expected the client to close after missing PINGRESP")
+        }
+      })
+    })
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=address.port(),
+      client_id="scantling-keep-alive-timeout",
+      keep_alive=1,
+    )
+    let result : Result[@client.Message, @client.ClientError] = Ok(
+      client.receive_with_keep_alive(),
+    ) catch {
+      error => Err(error)
+    }
+    match result {
+      Err(@client.ClientError::KeepAliveTimeout) => ()
+      _ => fail("expected a keep-alive timeout")
+    }
     server.close()
   }
 }

@@ -23,12 +23,12 @@ identifies `Wchwch777`; the historical commit metadata has not been rewritten.
 ## October documentation update
 
 AI has assisted with repository documentation updates, including evidence
-links and review-status wording. The repository owner has reviewed and signed
-off on the current documentation and implementation scope recorded in
-[`docs/owner-review.md`](docs/owner-review.md). The runnable example was not
-edited in the October documentation refresh. The three scenario payloads are
-illustrative test/demo data, not claims about customer requirements or
-deployments.
+links and review-status wording. The repository owner reviewed and signed off
+on the historical scopes recorded in [`docs/owner-review.md`](docs/owner-review.md);
+those approvals do not cover later AI-assisted changes. The runnable example
+was not edited in the October documentation refresh. The three scenario
+payloads are illustrative test/demo data, not claims about customer
+requirements or deployments.
 
 AI also assisted with the October MQTT QoS 2 implementation, its protocol-peer
 and Mosquitto integration tests, and the corresponding feature documentation.
@@ -43,3 +43,12 @@ integration tests, CI path, README, and scenario documentation. The repository
 owner has not yet reviewed or signed off on these changes. The completed
 October 19 owner review above applies only to its recorded QoS 2 and protocol
 extension scope.
+
+## October 23 coordinated Keep Alive update
+
+AI assisted with the `receive_with_keep_alive()` client API, its deterministic
+native protocol tests, the delayed-event example, and the related README and
+use-case updates. This local update has not been run through the native test
+suite in this Windows environment and has not been reviewed or signed off by
+the repository owner. The tests and example must be validated before the
+project claims this behavior as verified.

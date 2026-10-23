@@ -5,6 +5,11 @@
 (2026-10-17) and the current QoS 2 and protocol extension update (2026-10-19).
 Each sign-off applies strictly to its stated review scope and verified snapshot.
 
+The local Keep Alive receive API, delayed-event example, and tests described
+below are a later AI-assisted update and remain **pending repository-owner
+review** until Wchwch777 personally inspects and validates them. The historical
+sign-offs above do not cover this update.
+
 - **2026-10-17 Baseline Review:** Approved the initial MQTT 3.1.1 client direction, QoS 0/1 implementation, Mosquitto 2.0.22 integration baseline, license declarations, and the three example scenarios.
 - **2026-10-19 QoS 2 and Protocol Extension Review:** Approved the MQTT QoS 2 client state machine, batched subscription APIs, username/password authentication, queue capacity protection, updated scenario boundaries, and verification on GitHub Actions run 39145118457 (18 Wasm, 34 Native passed).
 
@@ -101,3 +106,12 @@ The native MQTT fault-injection peer, its accepted QoS 0/1 scenarios, the
 Mosquitto client interoperability workflow, and the related README and scenario
 documentation have not yet been reviewed or signed off by the repository
 owner. The October 19 review above does not cover these changes.
+
+## Owner review status for coordinated Keep Alive receive — pending
+
+The local `receive_with_keep_alive()` behavior, including PINGRESP handling
+while a delayed PUBLISH is buffered, the missing-PINGRESP timeout path, the
+delayed event example, and its documentation have not yet been reviewed or
+signed off by the repository owner. This record deliberately does not claim
+that the new tests have passed CI or that the example has been run against a
+Broker.
