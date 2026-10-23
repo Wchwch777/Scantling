@@ -54,13 +54,15 @@ which uses one subscriber connection and one publisher connection.
 - **Implementation evidence:** `receive_with_keep_alive()` schedules a ping
   during its own message wait, consumes PINGRESP, and returns a later delivery.
   The native [idle Keep Alive integration test](../mqtt/integration_test/client_test.mbt#L151)
-  verifies two ping exchanges, a PUBLISH frame split across the idle interval,
-  QoS 1 acknowledgement, and receipt of a subsequent event. A second local
-  [peer test](../mqtt/integration_test/client_test.mbt#L285) checks that a
+  verifies two ping exchanges, receipt and QoS 1 acknowledgement of a complete
+  delayed event, and receipt of a subsequent event. A second native
+  [peer test](../mqtt/integration_test/client_test.mbt#L277) checks that a
   missing PINGRESP closes the connection and reports a keep-alive timeout.
-  These deterministic peer cases specify the expected behavior; they have not
-  been run in this local Windows environment. The runnable example uses
-  Mosquitto but is not itself run by the CI workflow.
+  Both deterministic peer tests passed in the latest baseline CI run. The CI
+  workflow now also runs the complete example against Mosquitto and checks the
+  three printed topic/payload pairs and that the example spans the five-second
+  idle interval; see the [current workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+  for the current commit's result.
 - **Not established:** there is no event schema, decoder, ordering guarantee
   across reconnects, durable delivery, or business processing in this project.
 
@@ -78,8 +80,12 @@ truncated CONNACK bodies in
 [truncated CONNACK body](../mqtt/integration_test/client_test.mbt#L743). The
 frame-reader unit tests cover truncated Remaining Length and the configured
 1 MiB packet-body cap in [`client_test.mbt`](../mqtt/client_test.mbt#L2).
-The [CI run for code commit `ecbda25`](https://github.com/Wchwch777/Scantling/actions/runs/39027210274)
-passed with its Mosquitto service enabled.
+The earlier [CI run for code commit `ecbda25`](https://github.com/Wchwch777/Scantling/actions/runs/39027210274)
+passed with its Mosquitto service enabled. The latest baseline for the Keep
+Alive changes is [commit `27a8ab6` and CI run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022),
+which passed 18 Wasm and 36 Native tests. The updated workflow additionally runs
+the example against Mosquitto; its result is linked from the current workflow
+runs above.
 
 ## Shared scope
 

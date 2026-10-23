@@ -26,14 +26,19 @@ MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包
   并对重复 PUBLISH/PUBREL 按协议应答而不重复交付。
 - PINGREQ/PINGRESP；入站报文体限制为 1 MiB；等待应答期间最多缓冲 64 条入站消息，
   超限关闭连接并返回明确错误；拒绝无效发布主题及空订阅过滤器。
+- 可选 `receive_with_keep_alive()` 在等待下一条消息时按 Keep Alive 周期发送
+  PINGREQ 并校验 PINGRESP；缺少 PINGRESP 会关闭连接并返回超时错误。该保活只在
+  此方法等待期间运行，不是后台任务；普通 `receive()` 仍可能无限等待且不发送 ping。
 - 原生 loopback 测试覆盖客户端与协议对端的请求/应答流程；独立 Mosquitto
   测试使用两个客户端验证 QoS 1 与 QoS 2 订阅、投递和发布应答：
   [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
-- CI 固定运行 Mosquitto `2.0.22` 并执行 MoonBit 格式、Wasm/Native 检查与测试。
-  最新 QoS 2 与协议扩展提交
-  [`344076f`](https://github.com/Wchwch777/Scantling/commit/344076f8511814b956da0232b0cd3d15c4f7bed8)
-  的 CI 已通过，包括 18 项 Wasm 测试、34 项 Native 测试及独立 Mosquitto Broker 互操作测试：
-  [GitHub Actions run 39145118457](https://github.com/Wchwch777/Scantling/actions/runs/39145118457)。后续提交状态见
+- CI 固定运行 MoonBit `0.10.15+943464bfa` 与 Mosquitto `2.0.22`，执行格式检查、
+  Wasm/Native 类型检查与测试、独立 Broker 路径和 Mosquitto 客户端故障对端检查。
+  在加入完整示例运行步骤前，基线提交
+  [`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa)
+  的 [CI run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
+  通过 18 项 Wasm 与 36 项 Native 测试。当前工作流另运行 `examples/mqtt_client`
+  连接 Mosquitto，并核对三个消息输出和至少五秒的等待间隔；当前提交的结果见
   [main 分支 workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)。
 
 ## 代表性使用场景
@@ -56,10 +61,10 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 ## 能力边界
 
 当前实现是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 客户端。它不提供 TLS、
-自动重连、自动 Keep Alive 调度、操作超时、持久会话、MQTT 5.0
+自动重连、后台 Keep Alive 任务、操作超时、持久会话、MQTT 5.0
 或 WebSocket。QoS 2 状态只保存在当前 Clean Session 连接的内存中，不支持断线恢复。
-项目也没有真实设备接入、客户部署、性能基准或市场调研证据。应用需
-自行调度 PINGREQ，且不得并发操作同一个客户端连接。项目不声称生产级完整性或
+项目也没有真实设备接入、客户部署、性能基准或市场调研证据。无期限等待时，应用需
+使用 `receive_with_keep_alive()` 或自行安排 PINGREQ，且不得并发操作同一个客户端连接。项目不声称生产级完整性或
 协议认证。
 
 ## 赛事与申报材料

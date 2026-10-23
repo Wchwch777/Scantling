@@ -58,9 +58,9 @@ WSL) completed successfully. Local Native testing with Mosquitto `2.0.22` and
 telemetry, command, and event output. Check the Actions result attached to each
 later commit before claiming that commit's remote CI passed.
 
-## Latest verified repository CI snapshot for QoS 2 and protocol extension
+## Historical CI snapshot for QoS 2 and protocol extension (2026-10-19)
 
-The latest full CI run for repository commit
+The full CI run for repository commit
 [`344076f`](https://github.com/Wchwch777/Scantling/commit/344076f8511814b956da0232b0cd3d15c4f7bed8)
 ([GitHub Actions run 39145118457](https://github.com/Wchwch777/Scantling/actions/runs/39145118457))
 completed successfully. It passed formatting, Wasm and Native type checks,
@@ -113,5 +113,11 @@ The local `receive_with_keep_alive()` behavior, including PINGRESP handling
 while a delayed PUBLISH is buffered, the missing-PINGRESP timeout path, the
 delayed event example, and its documentation have not yet been reviewed or
 signed off by the repository owner. This record deliberately does not claim
-that the new tests have passed CI or that the example has been run against a
-Broker.
+that the repository owner has approved these changes. The deterministic tests
+passed on baseline commit
+[`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa)
+in [GitHub Actions run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
+(18 Wasm, 36 Native). That run did not execute the runnable example. The current
+CI workflow now runs `examples/mqtt_client` against Mosquitto and checks the
+printed messages and idle interval; its status is available in the
+[main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml).

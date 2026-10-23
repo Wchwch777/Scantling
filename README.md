@@ -88,9 +88,12 @@ three representative message flows:
 The subscriber first receives the command, then waits for the delayed event on
 the same connection with `receive_with_keep_alive()`. Its four-second MQTT
 Keep Alive causes PINGREQ/PINGRESP exchanges while the five-second publisher
-delay runs. A deterministic local peer test also splits the delayed event
-across that idle interval, checks two keep-alive exchanges, and verifies that a
-following event can still be received. In each case payloads remain opaque;
+delay runs. A deterministic local peer test checks two keep-alive exchanges,
+then sends the complete delayed QoS 1 event and verifies that a following event
+can still be received. CI runs this example against Mosquitto and checks all
+three printed topic/payload pairs and the five-second idle interval. The
+separate deterministic peer test verifies the PINGREQ/PINGRESP sequence. In
+each case payloads remain opaque;
 the example does not simulate a sensor, execute a device command, or parse a
 business event. See the
 [scenario-by-scenario evidence and limits](docs/use-cases.md).
@@ -207,13 +210,15 @@ Mosquitto Broker round trip. CI also connects Mosquitto's independent
 Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
-run those tests locally against an equivalently configured Broker. A successful
-full CI snapshot for the QoS 2 and protocol extension commit
-[`344076f`](https://github.com/Wchwch777/Scantling/commit/344076f8511814b956da0232b0cd3d15c4f7bed8)
-passed 18 Wasm tests and 34 Native tests, including the real-Broker path:
-[GitHub Actions run 39145118457](https://github.com/Wchwch777/Scantling/actions/runs/39145118457).
-See the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
-for newer commits.
+run those tests locally against an equivalently configured Broker. The latest
+verified baseline before the example-run step was commit
+[`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa).
+Its [GitHub Actions run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
+passed formatting, Wasm and Native type checks, 18 Wasm tests, 36 Native tests,
+the Mosquitto Broker paths, and independent `mosquitto_pub` checks against the
+fault peer. The workflow now also runs the example against Mosquitto and checks
+its output and idle duration. See the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+for the result on the current commit.
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).

@@ -48,7 +48,11 @@ extension scope.
 
 AI assisted with the `receive_with_keep_alive()` client API, its deterministic
 native protocol tests, the delayed-event example, and the related README and
-use-case updates. This local update has not been run through the native test
-suite in this Windows environment and has not been reviewed or signed off by
-the repository owner. The tests and example must be validated before the
-project claims this behavior as verified.
+use-case updates. Native tests were run in GitHub Actions for baseline commit
+[`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa):
+18 Wasm and 36 Native tests passed in [run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022).
+That run did not execute the runnable example. The CI workflow now includes an
+actual Mosquitto-backed example run and checks its three topic/payload outputs
+and five-second idle interval; see the [current workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+for that commit's result. These AI-assisted changes remain pending personal
+review and sign-off by the repository owner.

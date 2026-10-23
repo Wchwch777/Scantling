@@ -70,6 +70,22 @@ jobs:
         run: moon check --target native
       - name: Run native integration tests
         run: moon test --target native
+      - name: Run MQTT client example against Mosquitto
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_file="$RUNNER_TEMP/scantling-mqtt-client-example.log"
+          started_at="$(date +%s)"
+          timeout --signal=TERM --kill-after=2s 30s \
+            moon run --target native examples/mqtt_client 2>&1 | tee "$output_file"
+          elapsed="$(( $(date +%s) - started_at ))"
+          test "$elapsed" -ge 5
+          grep -Fq 'demo/sensor/temperature' "$output_file"
+          grep -Fq '21.5' "$output_file"
+          grep -Fq 'demo/device/device-7/cmd' "$output_file"
+          grep -Fq 'SET_TEMP=22.0' "$output_file"
+          grep -Fq 'demo/service/orders/created' "$output_file"
+          grep -Fq 'order_id=demo-1' "$output_file"
       - name: Install independent MQTT client
         run: sudo apt-get update && sudo apt-get install --yes mosquitto-clients
       - name: Verify the fault peer with Mosquitto clients
