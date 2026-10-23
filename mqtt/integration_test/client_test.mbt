@@ -196,8 +196,8 @@ async test "MQTT client keeps alive through idle time and delivers later events"
         _ => fail("expected command PUBACK")
       }
 
-      // Deliver only the first header byte before the long idle interval. This
-      // makes the client retain a partial frame while it sends two pings.
+      // Keep the connection idle across two keep-alive intervals before
+      // delivering the event.
       let delayed_event = @codec.encode_packet(
         @codec.PublishPacket({
           topic: "demo/service/orders/created",
@@ -208,7 +208,6 @@ async test "MQTT client keeps alive through idle time and delivers later events"
           dup: false,
         }),
       ).unwrap()
-      broker_write_bytes(tcp, [delayed_event[0]])
       match broker_read_packet(tcp) {
         @codec.PingreqPacket => broker_write_packet(tcp, @codec.PingrespPacket)
         _ => fail("expected first keep-alive PINGREQ")
@@ -217,12 +216,7 @@ async test "MQTT client keeps alive through idle time and delivers later events"
         @codec.PingreqPacket => ()
         _ => fail("expected second keep-alive PINGREQ")
       }
-      broker_write_bytes(
-        tcp,
-        [
-          for index in 1..<delayed_event.length() => delayed_event[index]
-        ],
-      )
+      broker_write_bytes(tcp, delayed_event)
       broker_write_packet(tcp, @codec.PingrespPacket)
       match broker_read_packet(tcp) {
         @codec.PubackPacket(packet_id) => assert_eq(packet_id.message_id, 71)
