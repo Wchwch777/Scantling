@@ -80,10 +80,10 @@ jobs:
             moon run --target native examples/mqtt_client 2>&1 | tee "$output_file"
           elapsed="$(( $(date +%s) - started_at ))"
           test "$elapsed" -ge 10
-          grep -Fq 'telemetry demo/sensor/temperature: 21.5' "$output_file"
-          grep -Fq 'device applied command: SET_TEMP=22.0' "$output_file"
-          grep -Fq 'reported state demo/device/device-7/reported: temperature=22.0' "$output_file"
-          grep -Fq 'event demo/service/orders/created: order_id=demo-1' "$output_file"
+          grep -Fq 'telemetry demo/sensor/temperature: b"21.5"' "$output_file"
+          grep -Fq 'device applied command: b"SET_TEMP=22.0"' "$output_file"
+          grep -Fq 'reported state demo/device/device-7/reported: b"temperature=22.0"' "$output_file"
+          grep -Fq 'event demo/service/orders/created: b"order_id=demo-1"' "$output_file"
       - name: Install independent MQTT client
         run: sudo apt-get update && sudo apt-get install --yes mosquitto-clients
       - name: Verify the fault peer with Mosquitto clients
