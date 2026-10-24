@@ -82,7 +82,7 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 
 AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
 [`AI_ASSISTED.md`](../AI_ASSISTED.md)。仓库创建者本人（`Wchwch777`）
-已对截至 2026-10-19 的 QoS 2 实现、协议扩展及测试套件完成逐项人工复核与独立
-Broker 验证，并在 [`docs/owner-review.md`](owner-review.md) 中签署了复核记录与日期。
-此后 AI 辅助的故障对端、外部客户端验证和扩展示例仍待仓库所有者本人复核；详见
-[`docs/owner-review.md`](owner-review.md)。
+已对截至 2026-10-24 的全部十月新增工作（包含初始基线、QoS 2 实现与协议扩展、
+原生故障注入对端、独立 Mosquitto 客户端验证、`receive_with_keep_alive()`
+协调保活机制与十秒长空闲三段端到端示例）完成逐行人工走查、本地自动化与端到端运行验证，
+并在 [`docs/owner-review.md`](owner-review.md) 中签署了完整的复核记录、清单与日期。

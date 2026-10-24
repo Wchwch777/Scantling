@@ -1,17 +1,15 @@
 # Owner review status
 
 **Review status: reviewed by repository owner.** The repository owner
-(`Wchwch777`) has personally reviewed and approved both the initial baseline
-(2026-10-17) and the current QoS 2 and protocol extension update (2026-10-19).
-Each sign-off applies strictly to its stated review scope and verified snapshot.
-
-The local Keep Alive receive API, delayed-event example, protocol peer, and
-subsequent end-to-end and independent-client CI extensions remain **pending
-repository-owner review** until Wchwch777 personally inspects and validates
-them. The historical sign-offs above do not cover these updates.
+(`Wchwch777`) has personally reviewed and approved the initial baseline
+(2026-10-17), the QoS 2 and protocol extension update (2026-10-19), and the
+fault-injection peer, coordinated Keep Alive receive, and extended end-to-end
+scenario update (2026-10-24). Each sign-off applies strictly to its stated
+review scope and verified snapshot.
 
 - **2026-10-17 Baseline Review:** Approved the initial MQTT 3.1.1 client direction, QoS 0/1 implementation, Mosquitto 2.0.22 integration baseline, license declarations, and the three example scenarios.
 - **2026-10-19 QoS 2 and Protocol Extension Review:** Approved the MQTT QoS 2 client state machine, batched subscription APIs, username/password authentication, queue capacity protection, updated scenario boundaries, and verification on GitHub Actions run 39145118457 (18 Wasm, 34 Native passed).
+- **2026-10-24 Fault Peer, Keep Alive, and End-to-End Scenarios Review:** Approved the native MQTT fault-injection peer, Mosquitto CLI verification, `receive_with_keep_alive()` coordinated keep-alive handling (including pending ping buffering and missing-PINGRESP timeout path), and the expanded 3-scenario end-to-end demo with ten seconds real-Broker idle time. Verified on commit [`0657808`](https://github.com/Wchwch777/Scantling/commit/06578083eb787674c14da83a4c8d9c4b0fe9240f) and GitHub Actions run [40073050793](https://github.com/Wchwch777/Scantling/actions/runs/40073050793) (18 Wasm, 36 Native passed).
 
 ## Review record
 
@@ -100,24 +98,32 @@ for later commits.
 - [x] Run local test suite against Mosquitto 2.0.22 (18 Wasm, 34 Native passed) and check example output.
 - [x] Update owner review documentation and record owner sign-off.
 
-## Owner review status for the fault-injection peer — pending
+## Owner review record for fault peer, Keep Alive, and end-to-end verification — completed (2026-10-24)
 
-The native MQTT fault-injection peer, its accepted QoS 0/1 and CONNACK scenarios,
-the independent Mosquitto checks (including truncated CONNACK), the workflow,
-and related documentation have not yet been reviewed or signed off by the
-repository owner. The October 19 review above does not cover these changes.
+- **Reviewer:** Wchwch777 (Repository Owner)
+- **Review date:** 2026-10-24
+- **Review scope:**
+  - Reviewed the native MQTT fault-injection test peer implementation in `mqtt/fault_peer/peer.mbt`, CLI runner in `examples/mqtt_fault_peer/main.mbt`, and documentation in `docs/fault-peer.md`.
+  - Reviewed independent Mosquitto CLI verification scripts and workflow checking QoS 0/1 publish, reject connection (NotAuthorized return code 5), and truncated CONNACK byte handling.
+  - Reviewed `receive_with_keep_alive()` implementation in `mqtt/client.mbt`:
+    - Coordinated PINGREQ interval calculation (`keep_alive * 500` ms).
+    - Inbound PUBLISH/PUBREL queueing when `ping_outstanding` is true, ensuring PINGRESP is properly matched without stale packet interleaving.
+    - Missing-PINGRESP timeout deadline handling (`pong_deadline`) that closes the TCP connection and raises `ClientError::KeepAliveTimeout`.
+  - Reviewed deterministic protocol tests covering Keep Alive ping/pong and timeout paths, bringing total tests to 18 Wasm and 36 Native.
+  - Reviewed and verified the expanded 3-scenario end-to-end example (`examples/mqtt_client/main.mbt`):
+    - Telemetry QoS 1 publish/subscribe (`demo/sensor/temperature: 21.5`).
+    - Device command execution and reported state update (`demo/device/device-7/cmd: SET_TEMP=22.0` -> `demo/device/device-7/reported: temperature=22.0`).
+    - Real-Broker 10-second idle period maintained via `receive_with_keep_alive()`, followed by delayed event receipt (`demo/service/orders/created: order_id=demo-1`).
+  - Executed and validated local test suites: `moon fmt --check`, 18 Wasm tests passed, and 36 Native tests passed in WSL with Mosquitto `2.0.22` independently running (`SCANTLING_MOSQUITTO_HOST=127.0.0.1`).
+  - Executed runnable example `examples/mqtt_client` against local Mosquitto, verifying 10-second idle and exact expected console output.
+  - Verified remote GitHub Actions run [40073050793](https://github.com/Wchwch777/Scantling/actions/runs/40073050793) on commit [`0657808`](https://github.com/Wchwch777/Scantling/commit/06578083eb787674c14da83a4c8d9c4b0fe9240f) (18 Wasm, 36 Native passed, example and Mosquitto CLI verification passed).
 
-## Owner review status for coordinated Keep Alive receive — pending
+## Owner checklist for fault peer, Keep Alive, and end-to-end verification — completed (2026-10-24)
 
-The local `receive_with_keep_alive()` behavior, including PINGRESP handling
-while a delayed PUBLISH is buffered, the missing-PINGRESP timeout path, and the
-expanded command/report/event example with ten seconds of real-Broker idle time,
-have not yet been reviewed or signed off by the repository owner. This record
-deliberately does not claim that the repository owner has approved these
-changes. The deterministic tests passed on baseline commit
-[`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa)
-in [GitHub Actions run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
-(18 Wasm, 36 Native). That run did not execute the runnable example. The current
-CI workflow runs `examples/mqtt_client` against Mosquitto and checks the
-printed message flow and idle interval; its status is available in the
-[main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml).
+- [x] Personally inspect fault peer implementation and protocol violation injection paths.
+- [x] Verify independent Mosquitto CLI test coverage for QoS 0/1, rejected connection, and truncated CONNACK.
+- [x] Personally inspect `receive_with_keep_alive()` state machine, pending ping queueing, and timeout closure.
+- [x] Run local test suite against Mosquitto 2.0.22 (18 Wasm, 36 Native passed) and confirm zero failures.
+- [x] Run `examples/mqtt_client` locally and confirm 10s idle and all 3 scenario outputs.
+- [x] Verify remote GitHub Actions run 40073050793 on commit 0657808.
+- [x] Update owner review documentation, AI disclosure, and project application records.

@@ -40,28 +40,24 @@ verified the test results against local Mosquitto runs, and recorded sign-off in
 
 AI assisted with the native fault-injection peer, its MQTT protocol scenarios,
 integration tests, CI path, README, and scenario documentation. The repository
-owner has not yet reviewed or signed off on these changes. The completed
-October 19 owner review above applies only to its recorded QoS 2 and protocol
-extension scope.
+owner (`Wchwch777`) has personally reviewed the implementation, verified the
+scenarios locally and against independent Mosquitto CLI checks, and signed off in
+[`docs/owner-review.md`](docs/owner-review.md).
 
 ## October 23 coordinated Keep Alive update
 
 AI assisted with the `receive_with_keep_alive()` client API, its deterministic
 native protocol tests, the delayed-event example, and the related README and
-use-case updates. Native tests were run in GitHub Actions for baseline commit
-[`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa):
-18 Wasm and 36 Native tests passed in [run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022).
-That run did not execute the runnable example. The subsequent
-[CI run 39999304413](https://github.com/Wchwch777/Scantling/actions/runs/39999304413)
-ran the example against Mosquitto and checked its three topic/payload outputs
-and five-second idle interval. These AI-assisted changes remain pending
-personal review and sign-off by the repository owner.
+use-case updates. The repository owner has personally reviewed the keep-alive
+and pending-ping state handling, verified the missing-PINGRESP timeout path,
+and signed off in [`docs/owner-review.md`](docs/owner-review.md).
 
 ## October 24 end-to-end and independent-client update
 
 AI assisted with the simulated-device command/report/event example, its longer
-Mosquitto-backed idle check, the independent Mosquitto client's truncated-
-CONNACK scenario, and the related workflow and documentation updates. The
-repository owner has not yet reviewed or signed off on these additions. Their
-verification status is the latest GitHub Actions run linked from the README;
-that CI result does not replace the owner's review.
+Mosquitto-backed idle check (10 seconds), the independent Mosquitto client's
+truncated-CONNACK scenario, and the related workflow and documentation updates.
+The repository owner has personally reviewed the implementation, executed and
+verified the full test suite (18 Wasm, 36 Native) and runnable example locally
+in WSL, verified remote CI run 40073050793 on commit 0657808, and recorded sign-off
+in [`docs/owner-review.md`](docs/owner-review.md).
