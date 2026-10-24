@@ -7,20 +7,29 @@ Broker, fuzzing engine, load tool, or certification suite.
 
 ## Scenarios
 
-| `SCANTLING_FAULT_SCENARIO` | Peer behavior | Expected result for the tested client |
+| `SCANTLING_FAULT_SCENARIO` | Peer behavior | Verification |
 | --- | --- | --- |
-| `reject-connect` | Replies to CONNECT with CONNACK return code 5 (Not Authorized). | Connection returns a broker-rejection error. |
-| `truncate-connack` | Sends only part of a CONNACK frame, then closes. | Connection returns a transport failure. |
-| `mismatched-puback` | Accepts CONNECT, reads a QoS 1 PUBLISH, then acknowledges a different packet identifier. | Publish reports a mismatched-acknowledgement error. |
-| `unexpected-suback-response` | Accepts CONNECT and reads SUBSCRIBE, then sends PINGRESP instead of SUBACK. | Subscribe reports an unexpected-packet error and the client disconnects. |
-| `accept-publish-qos0` | Accepts CONNECT and receives one QoS 0 PUBLISH, then closes the one-shot connection. | Client completes a QoS 0 publish. |
-| `accept-publish-qos1` | Accepts CONNECT, receives one QoS 1 PUBLISH, replies with matching PUBACK, then closes the one-shot connection. | Client completes a QoS 1 publish. |
+| `reject-connect` | Replies to CONNECT with CONNACK return code 5 (Not Authorized). | Native integration test expects `ClientError::Rejected(5)`. CI also runs the independent Mosquitto 3.1.1 CLI; it must report `CONNACK (5)` and exit with code 5. |
+| `truncate-connack` | Sends only part of a CONNACK frame, then closes. | Native integration test expects a transport failure. |
+| `mismatched-puback` | Accepts CONNECT, reads a QoS 1 PUBLISH, then acknowledges a different packet identifier. | Native integration test expects a mismatched-acknowledgement error. |
+| `unexpected-suback-response` | Accepts CONNECT and reads SUBSCRIBE, then sends PINGRESP instead of SUBACK. | Native integration test expects an unexpected-packet error and checks that the client disconnects. |
+| `accept-publish-qos0` | Accepts CONNECT and receives one QoS 0 PUBLISH, then closes the one-shot connection. | CI's independent Mosquitto CLI completes a QoS 0 publish. |
+| `accept-publish-qos1` | Accepts CONNECT, receives one QoS 1 PUBLISH, replies with matching PUBACK, then closes the one-shot connection. | CI's independent Mosquitto CLI completes a QoS 1 publish. |
 
-The four fault cases are exercised against Scantling's client in native
-integration tests. CI also runs the accepted QoS 0 and QoS 1 exchanges against
-the independent `mosquitto_pub` client. Those checks show the peer's observable
-wire behavior for these scenarios; they do not establish complete MQTT 3.1.1
-conformance.
+Scantling's included asynchronous client is not the main differentiator: its
+MQTT client behavior overlaps with the public
+[`moon-mqtt-client`](https://github.com/Strangelight-Merser/moon-mqtt-client)
+project, whose public README describes application connectivity through an
+asynchronous client runtime. The peer adds a different role: it scripts
+broker-side responses and lets external clients check their wire behavior. The
+`reject-connect` CI path verifies that an independent
+`mosquitto_pub` process sees CONNACK code 5 and exits with the matching code;
+the QoS 0/1 cases verify accepted PUBLISH exchanges. Truncated CONNACK,
+mismatched PUBACK, and unexpected SUBACK are checked against Scantling's own
+client; the peer has not been tested against `moon-mqtt-client` or a wider set
+of clients. This is a small regression and interoperability matrix, not a
+general-purpose broker, complete test suite, or MQTT 3.1.1 conformance
+certification.
 
 ## Run
 
@@ -37,8 +46,23 @@ In another terminal, connect an MQTT 3.1.1 client to the printed loopback
 address. For example:
 
 ```sh
-mosquitto_pub -h 127.0.0.1 -p 1885 -t scantling/smoke -m hello -q 1
+mosquitto_pub -V mqttv311 -h 127.0.0.1 -p 1885 \
+  -t scantling/smoke -m hello -q 1
 ```
+
+To inspect the broker-rejection path with Mosquitto, set the peer scenario to
+`reject-connect`, then run:
+
+```sh
+mosquitto_pub -V mqttv311 -d -h 127.0.0.1 -p 1885 \
+  -t scantling/smoke -m hello
+```
+
+The command should fail with exit code `5` after receiving CONNACK code `5`
+(Not Authorized). Mosquitto documents that a broker-level MQTT refusal returns
+the CONNACK code as the command's exit status in its
+[`mosquitto_pub` manual](https://mosquitto.org/man/mosquitto_pub-1.html#exit-status).
+The successful QoS 0/1 and rejected-CONNACK CLI paths are automated in CI.
 
 The peer exits after its selected exchange. Choose another scenario by setting
 `SCANTLING_FAULT_SCENARIO` to one of the table values. Set

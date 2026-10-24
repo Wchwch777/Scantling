@@ -92,16 +92,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          peer_pid=""
+          cleanup_peer() {
+            if [[ -n "$peer_pid" ]]; then
+              kill "$peer_pid" 2>/dev/null || true
+              wait "$peer_pid" 2>/dev/null || true
+            fi
+          }
+          trap cleanup_peer EXIT
           run_peer_case() {
             local scenario="$1"
             local qos="$2"
             local port="$3"
+            local mode="$4"
             local log="$RUNNER_TEMP/scantling-${scenario}.log"
+            local client_log="$RUNNER_TEMP/scantling-${scenario}-mosquitto-pub.log"
             timeout --signal=TERM --kill-after=2s 30s \
               env SCANTLING_FAULT_SCENARIO="$scenario" \
               SCANTLING_FAULT_PORT="$port" \
               moon run --target native examples/mqtt_fault_peer >"$log" 2>&1 &
-            local peer_pid=$!
+            peer_pid=$!
             for attempt in $(seq 1 30); do
               if grep -q 'listening on 127.0.0.1:' "$log"; then
                 break
@@ -116,23 +126,44 @@ jobs:
               cat "$log"
               kill "$peer_pid" 2>/dev/null || true
               wait "$peer_pid" 2>/dev/null || true
+              peer_pid=""
               return 1
             fi
-            if ! timeout --signal=TERM --kill-after=2s 15s \
-              mosquitto_pub -h 127.0.0.1 -p "$port" \
-              -t scantling/ci/interop -m "qos-${qos}" -q "$qos"; then
-              cat "$log"
-              kill "$peer_pid" 2>/dev/null || true
-              wait "$peer_pid" 2>/dev/null || true
-              return 1
+            if [[ "$mode" == "reject-connect" ]]; then
+              local client_status=0
+              if timeout --signal=TERM --kill-after=2s 15s \
+                mosquitto_pub -V mqttv311 -d -h 127.0.0.1 -p "$port" \
+                -t scantling/ci/rejected -m rejected >"$client_log" 2>&1; then
+                cat "$client_log"
+                echo "mosquitto_pub unexpectedly accepted a Not Authorized CONNACK"
+                return 1
+              else
+                client_status="$?"
+              fi
+              cat "$client_log"
+              test "$client_status" -eq 5
+              grep -Fq 'received CONNACK (5)' "$client_log"
+            else
+              if ! timeout --signal=TERM --kill-after=2s 15s \
+                mosquitto_pub -V mqttv311 -h 127.0.0.1 -p "$port" \
+                -t scantling/ci/interop -m "qos-${qos}" -q "$qos"; then
+                cat "$log"
+                kill "$peer_pid" 2>/dev/null || true
+                wait "$peer_pid" 2>/dev/null || true
+                peer_pid=""
+                return 1
+              fi
             fi
             if ! wait "$peer_pid"; then
               cat "$log"
+              peer_pid=""
               return 1
             fi
+            peer_pid=""
           }
-          run_peer_case accept-publish-qos0 0 1885
-          run_peer_case accept-publish-qos1 1 1886
+          run_peer_case accept-publish-qos0 0 1885 publish
+          run_peer_case accept-publish-qos1 1 1886 publish
+          run_peer_case reject-connect 0 1887 reject-connect
       - name: Stop Mosquitto broker
         if: always()
         run: |
