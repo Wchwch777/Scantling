@@ -5,10 +5,10 @@
 (2026-10-17) and the current QoS 2 and protocol extension update (2026-10-19).
 Each sign-off applies strictly to its stated review scope and verified snapshot.
 
-The local Keep Alive receive API, delayed-event example, and tests described
-below are a later AI-assisted update and remain **pending repository-owner
-review** until Wchwch777 personally inspects and validates them. The historical
-sign-offs above do not cover this update.
+The local Keep Alive receive API, delayed-event example, protocol peer, and
+subsequent end-to-end and independent-client CI extensions remain **pending
+repository-owner review** until Wchwch777 personally inspects and validates
+them. The historical sign-offs above do not cover these updates.
 
 - **2026-10-17 Baseline Review:** Approved the initial MQTT 3.1.1 client direction, QoS 0/1 implementation, Mosquitto 2.0.22 integration baseline, license declarations, and the three example scenarios.
 - **2026-10-19 QoS 2 and Protocol Extension Review:** Approved the MQTT QoS 2 client state machine, batched subscription APIs, username/password authentication, queue capacity protection, updated scenario boundaries, and verification on GitHub Actions run 39145118457 (18 Wasm, 34 Native passed).
@@ -102,22 +102,22 @@ for later commits.
 
 ## Owner review status for the fault-injection peer — pending
 
-The native MQTT fault-injection peer, its accepted QoS 0/1 scenarios, the
-Mosquitto client interoperability workflow, and the related README and scenario
-documentation have not yet been reviewed or signed off by the repository
-owner. The October 19 review above does not cover these changes.
+The native MQTT fault-injection peer, its accepted QoS 0/1 and CONNACK scenarios,
+the independent Mosquitto checks (including truncated CONNACK), the workflow,
+and related documentation have not yet been reviewed or signed off by the
+repository owner. The October 19 review above does not cover these changes.
 
 ## Owner review status for coordinated Keep Alive receive — pending
 
 The local `receive_with_keep_alive()` behavior, including PINGRESP handling
-while a delayed PUBLISH is buffered, the missing-PINGRESP timeout path, the
-delayed event example, and its documentation have not yet been reviewed or
-signed off by the repository owner. This record deliberately does not claim
-that the repository owner has approved these changes. The deterministic tests
-passed on baseline commit
+while a delayed PUBLISH is buffered, the missing-PINGRESP timeout path, and the
+expanded command/report/event example with ten seconds of real-Broker idle time,
+have not yet been reviewed or signed off by the repository owner. This record
+deliberately does not claim that the repository owner has approved these
+changes. The deterministic tests passed on baseline commit
 [`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa)
 in [GitHub Actions run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
 (18 Wasm, 36 Native). That run did not execute the runnable example. The current
-CI workflow now runs `examples/mqtt_client` against Mosquitto and checks the
-printed messages and idle interval; its status is available in the
+CI workflow runs `examples/mqtt_client` against Mosquitto and checks the
+printed message flow and idle interval; its status is available in the
 [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml).

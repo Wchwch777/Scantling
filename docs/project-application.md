@@ -1,6 +1,6 @@
-# Scantling：MoonBit MQTT 3.1.1 异步 TCP 客户端
+# Scantling：MoonBit MQTT 3.1.1 客户端与协议互操作测试对端
 
-**项目方向：** MoonBit 网络协议客户端与消息运行时
+**项目方向：** MoonBit MQTT 协议互操作与客户端行为验证
 
 **仓库：** <https://github.com/Wchwch777/Scantling>
 
@@ -8,11 +8,11 @@
 
 ## 项目简介
 
-Scantling 为 MoonBit 程序提供 MQTT 3.1.1 原生 TCP 客户端能力。它复用
-[`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt) 的报文编解码，
-在其上实现连接、订阅、发布、消息接收和连接控制流程。项目希望补充
-MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包的功能边界，
-不是用户调研、客户需求或生产部署的结论。
+Scantling 包含一个 MoonBit MQTT 3.1.1 TCP 客户端和一个脚本化 Broker 协议对端。
+本轮重点是让该对端能被独立客户端重复调用，以检查接受连接、协议拒绝和
+截断响应等行为；客户端实现是被测对象之一，不据此声称填补了通用客户端空白。
+客户端复用 [`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt)
+的报文编解码。项目不声称唯一性、已验证用户需求或真实部署。
 
 ## 已实现功能与可核查证据
 
@@ -32,19 +32,22 @@ MoonBit 应用侧的 MQTT 客户端运行时；这项生态定位来自公开包
 - 原生 loopback 测试覆盖客户端与协议对端的请求/应答流程；独立 Mosquitto
   测试使用两个客户端验证 QoS 1 与 QoS 2 订阅、投递和发布应答：
   [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
+- 可执行故障对端提供固定 MQTT 3.1.1 场景；CI 使用 Mosquitto 客户端验证
+  QoS 0/1 发布、CONNACK 拒绝和截断 CONNACK 的外部客户端结果。
 - CI 固定运行 MoonBit `0.10.15+943464bfa` 与 Mosquitto `2.0.22`，执行格式检查、
   Wasm/Native 类型检查与测试、独立 Broker 路径和 Mosquitto 客户端故障对端检查。
   在加入完整示例运行步骤前，基线提交
   [`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa)
   的 [CI run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
   通过 18 项 Wasm 与 36 项 Native 测试。当前工作流另运行 `examples/mqtt_client`
-  连接 Mosquitto，并核对三个消息输出和至少五秒的等待间隔；当前提交的结果见
+  连接 Mosquitto，并核对遥测、命令、状态回报和事件输出，以及至少十秒的
+  空闲间隔；当前提交的结果见
   [main 分支 workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)。
 
 ## 代表性使用场景
 
-仓库展示三种使用同一 MQTT 客户端接口的消息流：传感器遥测接收、设备命令
-发布、应用事件消费。它们是协议层示例，不是已部署客户案例。场景与代码、测试
+仓库展示三种使用同一 MQTT 客户端接口的消息流：遥测接收、应用发布命令并接收设备
+状态回报、空闲保活后接收事件。它们是协议层示例，不是已部署客户案例。场景与代码、测试
 之间的对应关系及未覆盖部分见 [`docs/use-cases.md`](use-cases.md)。可运行演示位于
 [`examples/mqtt_client`](../examples/mqtt_client/main.mbt)。
 
@@ -60,7 +63,7 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 
 ## 能力边界
 
-当前实现是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 客户端。它不提供 TLS、
+当前客户端是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 实现。它不提供 TLS、
 自动重连、后台 Keep Alive 任务、操作超时、持久会话、MQTT 5.0
 或 WebSocket。QoS 2 状态只保存在当前 Clean Session 连接的内存中，不支持断线恢复。
 项目也没有真实设备接入、客户部署、性能基准或市场调研证据。无期限等待时，应用需
@@ -69,7 +72,8 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 
 ## 赛事与申报材料
 
-本项目申报面向 MoonBit 开源生态中的网络协议客户端方向。适用范围和验收要求
+本项目申报面向 MoonBit 开源生态中的 MQTT 协议互操作与客户端行为验证方向。
+适用范围和验收要求
 应以当届官方材料为准：[比赛章程](https://bxup9uklfcb.feishu.cn/wiki/Dx4Bwd6D1i3GfHkajQCcF7SznEd)、
 [比赛官网](https://moonbitlang.github.io/Hackathon2026/#process)。官网/章程的方向匹配
 只说明选题背景，不替代对实际需求、用户采用或项目完成度的证明。
@@ -78,5 +82,7 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 
 AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
 [`AI_ASSISTED.md`](../AI_ASSISTED.md)。仓库创建者本人（`Wchwch777`）
-已对本轮 QoS 2 实现、协议扩展及测试套件完成逐项人工复核与独立 Broker 验证，
-并在 [`docs/owner-review.md`](owner-review.md) 中签署了复核记录与日期（2026-10-19）。
+已对截至 2026-10-19 的 QoS 2 实现、协议扩展及测试套件完成逐项人工复核与独立
+Broker 验证，并在 [`docs/owner-review.md`](owner-review.md) 中签署了复核记录与日期。
+此后 AI 辅助的故障对端、外部客户端验证和扩展示例仍待仓库所有者本人复核；详见
+[`docs/owner-review.md`](owner-review.md)。

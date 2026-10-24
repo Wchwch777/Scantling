@@ -85,28 +85,33 @@ payloads below are protocol demonstrations; they are not evidence of customer
 deployments, physical devices, user research, or measured demand.
 This repository does not claim a Scantling Mooncakes release.
 
-## Three protocol demonstrations
+## End-to-end command, report, and event example
 
-The runnable example uses separate publisher and subscriber connections for
-three representative message flows:
+The runnable example uses separate application and simulated-device
+connections for three message flows:
 
-1. **Telemetry-shaped message:** `demo/sensor/temperature` carries `21.5`.
-2. **Command-shaped message:** `demo/device/device-7/cmd` carries
-   `SET_TEMP=22.0`.
-3. **Delayed event after idle:** `demo/service/orders/created` carries
-   `order_id=demo-1` after the subscriber has waited idle for five seconds.
+1. **Telemetry:** the device publishes `21.5` to
+   `demo/sensor/temperature`, and the application receives it.
+2. **Command and reported state:** the application publishes `SET_TEMP=22.0`
+   to `demo/device/device-7/cmd`; the simulated device receives it and returns
+   `temperature=22.0` on `demo/device/device-7/reported`.
+3. **Delayed event after idle:** the device publishes
+   `order_id=demo-1` to `demo/service/orders/created` after the application has
+   waited idle for ten seconds.
 
-The subscriber first receives the command, then waits for the delayed event on
-the same connection with `receive_with_keep_alive()`. Its four-second MQTT
-Keep Alive causes PINGREQ/PINGRESP exchanges while the five-second publisher
-delay runs. A deterministic local peer test checks two keep-alive exchanges,
-then sends the complete delayed QoS 1 event and verifies that a following event
-can still be received. CI runs this example against Mosquitto and checks all
-three printed topic/payload pairs and the five-second idle interval. The
-separate deterministic peer test verifies the PINGREQ/PINGRESP sequence. In
-each case payloads remain opaque;
-the example does not simulate a sensor, execute a device command, or parse a
-business event. See the
+The application sends the command, receives the device's reported state, then
+waits for the delayed event on that same connection with
+`receive_with_keep_alive()`. Its four-second MQTT Keep Alive means a Broker
+would disconnect it after roughly six seconds without a client control packet;
+the ten-second idle interval therefore requires successful PINGREQ/PINGRESP
+traffic before the event is delivered. A deterministic local peer test also
+checks two keep-alive exchanges, delivery of a complete delayed QoS 1 event,
+and receipt of a following event. CI runs the complete example against
+Mosquitto, checks the telemetry, command, reported-state, and event outputs,
+and requires at least ten seconds of runtime. The peer test separately checks
+the ping sequence and missing-PINGRESP timeout. The device is simulated by a
+second client in the same process; payloads are opaque demonstrations, not
+hardware control or business-protocol implementations. See the
 [scenario-by-scenario evidence and limits](docs/use-cases.md).
 
 ## Source and license boundaries
@@ -217,21 +222,26 @@ moon test --target native
 
 The native integration tests include the fault peer and an independent
 Mosquitto Broker round trip. CI also runs the independent `mosquitto_pub`
-client against the peer's accepted QoS 0/1 scenarios and its CONNACK code 5
-rejection scenario. CI sets
+client against the peer's accepted QoS 0/1 scenarios, its CONNACK code 5
+rejection, and its truncated-CONNACK response. For the truncated frame, the
+client must exit with an error before the timeout; the peer must complete its
+one-shot exchange. CI sets
 `SCANTLING_MOSQUITTO_HOST=127.0.0.1`, starts
 Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
 run those tests locally against an equivalently configured Broker. The latest
-verified baseline before the example-run step was commit
-[`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa).
-Its [GitHub Actions run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
+verified baseline immediately before this update was commit
+[`25e430f`](https://github.com/Wchwch777/Scantling/commit/25e430f6d5acfca62945e1f418f7f7d8e566b6b5).
+Its [GitHub Actions run 40058539939](https://github.com/Wchwch777/Scantling/actions/runs/40058539939)
 passed formatting, Wasm and Native type checks, 18 Wasm tests, 36 Native tests,
-the Mosquitto Broker paths, and independent `mosquitto_pub` checks against the
-fault peer. The workflow now also runs the example against Mosquitto and checks
-its output and idle duration. See the [main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
-for the result on the current commit.
+the Mosquitto Broker paths, and the previous example and independent
+`mosquitto_pub` fault-peer checks. This update extends the example from a
+five-second idle event flow to the full telemetry/command/report/event flow
+with ten seconds of idle Keep Alive, and adds the independent truncated-CONNACK
+check. The current commit's result will appear in the
+[main-branch workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
+after the workflow completes.
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).

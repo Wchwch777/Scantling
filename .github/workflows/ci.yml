@@ -79,13 +79,11 @@ jobs:
           timeout --signal=TERM --kill-after=2s 30s \
             moon run --target native examples/mqtt_client 2>&1 | tee "$output_file"
           elapsed="$(( $(date +%s) - started_at ))"
-          test "$elapsed" -ge 5
-          grep -Fq 'demo/sensor/temperature' "$output_file"
-          grep -Fq '21.5' "$output_file"
-          grep -Fq 'demo/device/device-7/cmd' "$output_file"
-          grep -Fq 'SET_TEMP=22.0' "$output_file"
-          grep -Fq 'demo/service/orders/created' "$output_file"
-          grep -Fq 'order_id=demo-1' "$output_file"
+          test "$elapsed" -ge 10
+          grep -Fq 'telemetry demo/sensor/temperature: 21.5' "$output_file"
+          grep -Fq 'device applied command: SET_TEMP=22.0' "$output_file"
+          grep -Fq 'reported state demo/device/device-7/reported: temperature=22.0' "$output_file"
+          grep -Fq 'event demo/service/orders/created: order_id=demo-1' "$output_file"
       - name: Install independent MQTT client
         run: sudo apt-get update && sudo apt-get install --yes mosquitto-clients
       - name: Verify the fault peer with Mosquitto clients
@@ -143,6 +141,22 @@ jobs:
               cat "$client_log"
               test "$client_status" -eq 5
               grep -Fq 'received CONNACK (5)' "$client_log"
+            elif [[ "$mode" == "truncate-connack" ]]; then
+              local client_status=0
+              if timeout --signal=TERM --kill-after=2s 15s \
+                mosquitto_pub -V mqttv311 -d -h 127.0.0.1 -p "$port" \
+                -t scantling/ci/truncated -m truncated >"$client_log" 2>&1; then
+                cat "$client_log"
+                echo "mosquitto_pub unexpectedly accepted a truncated CONNACK"
+                return 1
+              else
+                client_status="$?"
+              fi
+              cat "$client_log"
+              if [[ "$client_status" -eq 124 || "$client_status" -eq 137 ]]; then
+                echo "mosquitto_pub timed out waiting for the truncated-CONNACK result"
+                return 1
+              fi
             else
               if ! timeout --signal=TERM --kill-after=2s 15s \
                 mosquitto_pub -V mqttv311 -h 127.0.0.1 -p "$port" \
@@ -164,6 +178,7 @@ jobs:
           run_peer_case accept-publish-qos0 0 1885 publish
           run_peer_case accept-publish-qos1 1 1886 publish
           run_peer_case reject-connect 0 1887 reject-connect
+          run_peer_case truncate-connack 0 1888 truncate-connack
       - name: Stop Mosquitto broker
         if: always()
         run: |

@@ -51,8 +51,17 @@ native protocol tests, the delayed-event example, and the related README and
 use-case updates. Native tests were run in GitHub Actions for baseline commit
 [`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa):
 18 Wasm and 36 Native tests passed in [run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022).
-That run did not execute the runnable example. The CI workflow now includes an
-actual Mosquitto-backed example run and checks its three topic/payload outputs
-and five-second idle interval; see the [current workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)
-for that commit's result. These AI-assisted changes remain pending personal
-review and sign-off by the repository owner.
+That run did not execute the runnable example. The subsequent
+[CI run 39999304413](https://github.com/Wchwch777/Scantling/actions/runs/39999304413)
+ran the example against Mosquitto and checked its three topic/payload outputs
+and five-second idle interval. These AI-assisted changes remain pending
+personal review and sign-off by the repository owner.
+
+## October 24 end-to-end and independent-client update
+
+AI assisted with the simulated-device command/report/event example, its longer
+Mosquitto-backed idle check, the independent Mosquitto client's truncated-
+CONNACK scenario, and the related workflow and documentation updates. The
+repository owner has not yet reviewed or signed off on these additions. Their
+verification status is the latest GitHub Actions run linked from the README;
+that CI result does not replace the owner's review.
