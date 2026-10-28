@@ -67,10 +67,9 @@ in [`docs/owner-review.md`](docs/owner-review.md).
 
 AI assisted with the public `Script`/`Exchange` API, its ordered packet matcher
 and response runner, custom SUBACK and QoS 2 integration tests, protocol
-coverage documentation, and README/package metadata updates. Code commit
-[`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22)
-passed GitHub Actions run
-[`40636347859`](https://github.com/Wchwch777/Scantling/actions/runs/40636347859),
-including 18 Wasm and 38 Native tests. These checks do not substitute for
-owner review. The repository owner has not yet personally reviewed this
-October 28 work; it remains pending in [`docs/owner-review.md`](docs/owner-review.md).
+coverage documentation, and README/package metadata updates. The repository owner
+(`Wchwch777`) has personally reviewed the implementation, executed and verified
+the full test suite (18 Wasm, 38 Native) and runnable example locally in WSL,
+verified remote CI run [40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
+on commit [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22),
+and recorded sign-off in [`docs/owner-review.md`](docs/owner-review.md).

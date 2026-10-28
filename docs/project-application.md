@@ -83,8 +83,8 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 ## AI 辅助与人工复核状态
 
 AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
-[`AI_ASSISTED.md`](../AI_ASSISTED.md)。仓库创建者本人（`Wchwch777`）
-已对截至 2026-10-24 的全部十月新增工作（包含初始基线、QoS 2 实现与协议扩展、
+[`AI_ASSISTED.md`](../AI_ASSISTED.md)。我（韦昌豪，GitHub: `Wchwch777`）
+已对截至 2026-10-28 的全部十月新增工作（包含初始基线、QoS 2 实现与协议扩展、
 原生故障注入对端、独立 Mosquitto 客户端验证、`receive_with_keep_alive()`
-协调保活机制与十秒长空闲三段端到端示例）完成逐行人工走查、本地自动化与端到端运行验证，
+协调保活机制、十秒长空闲三段端到端示例，以及可编程 Script/Exchange 测试 API 与 38 项 Native 测试）完成逐行人工走查、本地自动化与端到端运行验证，
 并在 [`docs/owner-review.md`](owner-review.md) 中签署了完整的复核记录、清单与日期。
