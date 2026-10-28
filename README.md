@@ -1,12 +1,14 @@
-# Scantling — MoonBit MQTT 3.1.1 Client and Test Peer
+# Scantling — Scriptable MQTT 3.1.1 Protocol Test Peer
 
-Scantling provides a small asynchronous MQTT 3.1.1 client and a reusable,
-scriptable broker-side peer. A caller can compose ordered packet matchers and
-response functions, send any encoded MQTT packet or raw wire bytes, and close
-the connection at a chosen point. The command-line example also keeps common
-scenarios as ready-to-run presets. Selected wire behavior is checked with an
-independent Mosquitto client. This is a focused protocol-testing tool, not a
-full broker or MQTT conformance certification.
+Scantling's primary reusable component is a native, one-connection,
+scriptable broker-side peer for testing MQTT 3.1.1 clients. The repository also
+contains a small asynchronous MoonBit client used as a deterministic test
+subject and in runnable interoperability examples. A caller can compose
+ordered packet matchers and response functions, send any encoded MQTT packet
+or raw wire bytes, and close the connection at a chosen point. The command-line
+example keeps common scenarios as ready-to-run presets. Selected wire behavior
+is checked with an independent Mosquitto client. This is a focused
+protocol-testing tool, not a full broker or MQTT conformance certification.
 
 Scantling builds on the `zbhzs1/moonbit-mqtt` packet codec and the
 `moonbitlang/async` runtime. It implements the client-side TCP connection and

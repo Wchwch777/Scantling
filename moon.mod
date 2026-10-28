@@ -10,13 +10,13 @@ preferred_target = "wasm"
 
 keywords = [
   "mqtt",
-  "async-client",
   "protocol-testing",
   "fault-injection",
+  "interoperability",
   "moonbit",
 ]
 
-description = "MoonBit MQTT 3.1.1 TCP client and native protocol fault-injection peer"
+description = "MoonBit MQTT 3.1.1 scriptable protocol test peer and client interoperability suite"
 
 import {
   "moonbitlang/async@0.21.3",

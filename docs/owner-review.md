@@ -1,11 +1,15 @@
 # Owner review status
 
-**Review status: reviewed by repository owner.** The repository owner
+**Historical review status: reviewed by repository owner.** The repository owner
 (`Wchwch777`) has personally reviewed and approved the initial baseline
 (2026-10-17), the QoS 2 and protocol extension update (2026-10-19), and the
 fault-injection peer, coordinated Keep Alive receive, and extended end-to-end
 scenario update (2026-10-24). Each sign-off applies strictly to its stated
 review scope and verified snapshot.
+
+**Current status:** The 2026-10-28 Script/Exchange API, its new integration
+tests, and related documentation have passed GitHub Actions but are **pending
+the repository owner's personal review**. CI success is not an owner sign-off.
 
 - **2026-10-17 Baseline Review:** Approved the initial MQTT 3.1.1 client direction, QoS 0/1 implementation, Mosquitto 2.0.22 integration baseline, license declarations, and the three example scenarios.
 - **2026-10-19 QoS 2 and Protocol Extension Review:** Approved the MQTT QoS 2 client state machine, batched subscription APIs, username/password authentication, queue capacity protection, updated scenario boundaries, and verification on GitHub Actions run 39145118457 (18 Wasm, 34 Native passed).

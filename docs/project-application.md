@@ -1,6 +1,6 @@
-# Scantling：MoonBit MQTT 3.1.1 客户端与协议互操作测试对端
+# Scantling：MoonBit MQTT 3.1.1 脚本化协议测试对端
 
-**项目方向：** MoonBit MQTT 协议互操作与客户端行为验证
+**项目方向：** MoonBit MQTT 协议测试与互操作工具
 
 **仓库：** <https://github.com/Wchwch777/Scantling>
 
@@ -8,9 +8,10 @@
 
 ## 项目简介
 
-Scantling 包含一个 MoonBit MQTT 3.1.1 TCP 客户端和一个脚本化 Broker 协议对端。
-本轮重点是让该对端能被独立客户端重复调用，以检查接受连接、协议拒绝和
-截断响应等行为；客户端实现是被测对象之一，不据此声称填补了通用客户端空白。
+Scantling 的主要可复用组件是一个 MoonBit MQTT 3.1.1 脚本化 Broker 对端。
+调用者可以按顺序匹配客户端报文，并选择发送编码报文、原始字节或关闭连接；
+仓库同时包含一个小型异步客户端，作为协议测试对象和可运行示例的客户端。
+项目不据此声称填补了通用客户端空白。
 客户端复用 [`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt)
 的报文编解码。项目不声称唯一性、已验证用户需求或真实部署。
 
@@ -32,17 +33,18 @@ Scantling 包含一个 MoonBit MQTT 3.1.1 TCP 客户端和一个脚本化 Broker
 - 原生 loopback 测试覆盖客户端与协议对端的请求/应答流程；独立 Mosquitto
   测试使用两个客户端验证 QoS 1 与 QoS 2 订阅、投递和发布应答：
   [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
-- 可执行故障对端提供固定 MQTT 3.1.1 场景；CI 使用 Mosquitto 客户端验证
-  QoS 0/1 发布、CONNACK 拒绝和截断 CONNACK 的外部客户端结果。
+- 可执行故障对端提供六个命令行预设；MoonBit 调用者还可通过公开的
+  `Script`/`Exchange` API 组合报文匹配、响应、原始字节注入和断连行为。
+  集成测试覆盖自定义无效 SUBACK、QoS 2 重复 PUBREC/PUBREL 和截断 CONNACK。
+  CI 用独立 Mosquitto 客户端验证四个预设路径；自定义脚本目前没有由外部客户端执行。
 - CI 固定运行 MoonBit `0.10.15+943464bfa` 与 Mosquitto `2.0.22`，执行格式检查、
   Wasm/Native 类型检查与测试、独立 Broker 路径和 Mosquitto 客户端故障对端检查。
-  在加入完整示例运行步骤前，基线提交
-  [`27a8ab6`](https://github.com/Wchwch777/Scantling/commit/27a8ab67300bcd14c2bf48c3bf43eba96c76ddaa)
-  的 [CI run 39993827022](https://github.com/Wchwch777/Scantling/actions/runs/39993827022)
-  通过 18 项 Wasm 与 36 项 Native 测试。当前工作流另运行 `examples/mqtt_client`
-  连接 Mosquitto，并核对遥测、命令、状态回报和事件输出，以及至少十秒的
-  空闲间隔；当前提交的结果见
-  [main 分支 workflow runs](https://github.com/Wchwch777/Scantling/actions/workflows/ci.yml)。
+  代码提交 [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22)
+  的 [CI run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
+  通过格式检查、Wasm/Native 类型检查、18 项 Wasm 与 38 项 Native 测试、
+  认证和非认证 Mosquitto Broker 路径、十秒客户端示例及四条独立 Mosquitto CLI
+  对端路径。该结果覆盖上述 Script/Exchange API 和新增集成测试；它不是完整
+  MQTT 3.1.1 一致性认证，也不代表自定义脚本已由外部客户端验证。
 
 ## 代表性使用场景
 
@@ -72,7 +74,7 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 
 ## 赛事与申报材料
 
-本项目申报面向 MoonBit 开源生态中的 MQTT 协议互操作与客户端行为验证方向。
+本项目面向 MoonBit 开源生态中的 MQTT 协议测试与互操作工具方向。
 适用范围和验收要求
 应以当届官方材料为准：[比赛章程](https://bxup9uklfcb.feishu.cn/wiki/Dx4Bwd6D1i3GfHkajQCcF7SznEd)、
 [比赛官网](https://moonbitlang.github.io/Hackathon2026/#process)。官网/章程的方向匹配
