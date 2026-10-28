@@ -697,6 +697,200 @@ async test "MQTT client rejects a PUBACK with a different packet identifier" {
 
 ///|
 #cfg(target="native")
+async test "fault peer executes a caller-defined SUBACK fault script" {
+  @async.with_task_group <| root => {
+    let script = @fault_peer.Script::new([
+      @fault_peer.Exchange::new(
+        "CONNECT",
+        packet => {
+          match packet {
+            @codec.ConnectPacket(_) => true
+            _ => false
+          }
+        },
+        _packet => {
+          [
+            @fault_peer.Action::SendPacket(
+              @codec.ConnackPacket({
+                session_present: false,
+                return_code: @codec.ConnectionAccepted,
+              }),
+            ),
+          ]
+        },
+      ),
+      @fault_peer.Exchange::new(
+        "SUBSCRIBE",
+        packet => {
+          match packet {
+            @codec.SubscribePacket(_) => true
+            _ => false
+          }
+        },
+        packet => {
+          match packet {
+            @codec.SubscribePacket(request) =>
+              [
+                @fault_peer.Action::SendPacket(
+                  @codec.SubackPacket({
+                    message_id: request.message_id,
+                    return_codes: [@codec.SuccessQoS2],
+                  }),
+                ),
+              ]
+            _ => []
+          }
+        },
+      ),
+      @fault_peer.Exchange::new(
+        "DISCONNECT",
+        packet => {
+          match packet {
+            @codec.DisconnectPacket => true
+            _ => false
+          }
+        },
+        _packet => [],
+      ),
+    ])
+    let peer = @fault_peer.Peer::with_script(script)
+    root.spawn_bg(no_wait=true, () => peer.run())
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=peer.port(),
+      client_id="scantling-custom-suback-script",
+    )
+    let result : Result[Unit, @client.ClientError] = try {
+      client.subscribe(topic="demo/custom-suback", qos=@codec.QoS0)
+      Ok(())
+    } catch {
+      error => Err(error)
+    }
+    match result {
+      Err(
+        @client.ClientError::UnexpectedPacket(
+          "broker granted a higher QoS than requested"
+        )
+      ) => ()
+      _ => fail("custom script did not inject the invalid SUBACK grant")
+    }
+    client.disconnect()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "fault peer scripts a QoS 2 exchange with duplicate PUBREC" {
+  @async.with_task_group <| root => {
+    let script = @fault_peer.Script::new([
+      @fault_peer.Exchange::new(
+        "CONNECT",
+        packet => {
+          match packet {
+            @codec.ConnectPacket(_) => true
+            _ => false
+          }
+        },
+        _packet => {
+          [
+            @fault_peer.Action::SendPacket(
+              @codec.ConnackPacket({
+                session_present: false,
+                return_code: @codec.ConnectionAccepted,
+              }),
+            ),
+          ]
+        },
+      ),
+      @fault_peer.Exchange::new(
+        "QoS 2 PUBLISH",
+        packet => {
+          match packet {
+            @codec.PublishPacket(message) if message.qos == @codec.QoS2 => true
+            _ => false
+          }
+        },
+        packet => {
+          match packet {
+            @codec.PublishPacket(message) =>
+              match message.message_id {
+                Some(message_id) =>
+                  [
+                    @fault_peer.Action::SendPacket(
+                      @codec.PubrecPacket({ message_id, }),
+                    ),
+                  ]
+                None => [@fault_peer.Action::Close]
+              }
+            _ => [@fault_peer.Action::Close]
+          }
+        },
+      ),
+      @fault_peer.Exchange::new(
+        "PUBREL before duplicate PUBREC",
+        packet => {
+          match packet {
+            @codec.PubrelPacket(_) => true
+            _ => false
+          }
+        },
+        packet => {
+          match packet {
+            @codec.PubrelPacket(packet_id) =>
+              [
+                @fault_peer.Action::SendPacket(
+                  @codec.PubrecPacket({ message_id: packet_id.message_id, }),
+                ),
+              ]
+            _ => []
+          }
+        },
+      ),
+      @fault_peer.Exchange::new(
+        "retransmitted PUBREL",
+        packet => {
+          match packet {
+            @codec.PubrelPacket(_) => true
+            _ => false
+          }
+        },
+        packet => {
+          match packet {
+            @codec.PubrelPacket(packet_id) =>
+              [
+                @fault_peer.Action::SendPacket(
+                  @codec.PubcompPacket({ message_id: packet_id.message_id, }),
+                ),
+              ]
+            _ => []
+          }
+        },
+      ),
+      @fault_peer.Exchange::new(
+        "DISCONNECT",
+        packet => {
+          match packet {
+            @codec.DisconnectPacket => true
+            _ => false
+          }
+        },
+        _packet => [],
+      ),
+    ])
+    let peer = @fault_peer.Peer::with_script(script)
+    root.spawn_bg(no_wait=true, () => peer.run())
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=peer.port(),
+      client_id="scantling-custom-qos2-script",
+    )
+    client.publish_qos2(topic="demo/custom-qos2", payload=b"scripted")
+    client.disconnect()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "MQTT client maps a truncated CONNACK frame to transport failure" {
   @async.with_task_group <| root => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
@@ -733,7 +927,24 @@ async test "MQTT client maps a truncated CONNACK frame to transport failure" {
 #cfg(target="native")
 async test "MQTT client reports EOF when a CONNACK body is truncated" {
   @async.with_task_group <| root => {
-    let peer = @fault_peer.Peer::new(@fault_peer.Scenario::TruncateConnack)
+    let script = @fault_peer.Script::new([
+      @fault_peer.Exchange::new(
+        "CONNECT",
+        packet => {
+          match packet {
+            @codec.ConnectPacket(_) => true
+            _ => false
+          }
+        },
+        _packet => {
+          [
+            @fault_peer.Action::SendRaw([0x20, 0x02, 0x00]),
+            @fault_peer.Action::Close,
+          ]
+        },
+      ),
+    ])
+    let peer = @fault_peer.Peer::with_script(script)
     root.spawn_bg(no_wait=true, () => peer.run())
     let result : Result[@client.Client, @client.ClientError] = Ok(
       @client.Client::connect(

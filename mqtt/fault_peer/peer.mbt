@@ -1,4 +1,4 @@
-/// Deterministic MQTT 3.1.1 broker-side behaviors for exercising clients.
+/// Deterministic MQTT 3.1.1 broker-side behavior for exercising clients.
 /// This is a focused test peer, not a complete MQTT broker or conformance suite.
 
 ///|
@@ -11,108 +11,270 @@ pub(all) enum Scenario {
   AcceptPublishQoS1
 }
 
+/// A response emitted by one scripted exchange.
+///
+/// SendRaw allows tests to produce malformed or truncated wire data that
+/// cannot be represented by a valid MQTT packet value.
+
+///|
+pub(all) enum Action {
+  SendPacket(@codec.Packet)
+  SendRaw(Bytes)
+  Close
+}
+
+/// One scripted protocol state transition.
+///
+/// The matcher receives the full decoded packet. The responder can inspect
+/// packet fields such as packet identifiers and return zero or more actions.
+
+///|
+pub(all) struct Exchange {
+  name : String
+  matches : (@codec.Packet) -> Bool
+  respond : (@codec.Packet) -> Array[Action]
+}
+
+/// An ordered, one-connection broker-side test script.
+///
+/// Each exchange consumes exactly one client packet. The peer closes after
+/// the final exchange unless an earlier response includes Action::Close.
+
+///|
+pub(all) struct Script {
+  exchanges : Array[Exchange]
+}
+
+/// Build a named exchange from a packet matcher and response function.
+
+///|
+pub fn Exchange::new(
+  name : String,
+  matches : (@codec.Packet) -> Bool,
+  respond : (@codec.Packet) -> Array[Action],
+) -> Exchange {
+  { name, matches, respond, }
+}
+
+/// Build a non-empty scripted sequence.
+
+///|
+pub fn Script::new(exchanges : Array[Exchange]) -> Script {
+  { exchanges, }
+}
+
 /// One-shot peer bound to a loopback ephemeral port.
 
 ///|
 pub struct Peer {
   server : @socket.TcpServer
-  scenario : Scenario
+  script : Script
 }
 
+/// Bind a one-shot peer that runs one of the common protocol scenarios.
+
 ///|
-/// Bind a one-shot peer to an available loopback port.
 pub async fn Peer::new(scenario : Scenario, port~ : Int32 = 0) -> Peer {
-  let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:\{port}"))
-  { server, scenario, }
+  Peer::with_script(script_for_scenario(scenario), port~)
 }
 
+/// Bind a one-shot peer that runs a caller-defined protocol script.
+///
+/// The peer accepts one connection and follows exchanges in order. It binds
+/// only to loopback and is intended for local protocol testing.
+
 ///|
+pub async fn Peer::with_script(script : Script, port~ : Int32 = 0) -> Peer {
+  let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:\{port}"))
+  { server, script, }
+}
+
 /// The ephemeral TCP port selected by the operating system.
+
+///|
 pub fn Peer::port(self : Peer) -> Int32 {
   self.server.addr.port()
 }
 
+/// Accept one MQTT client connection and execute the configured script.
+
 ///|
-/// Accept one MQTT client connection and perform the selected behavior.
 pub async fn Peer::run(self : Peer) -> Unit {
   let (tcp, _) = self.server.accept()
-  match read_packet(tcp) {
-    @codec.ConnectPacket(_) => ()
-    _ => fail("fault peer expected CONNECT as the first packet")
-  }
-  match self.scenario {
-    RejectConnect =>
-      write_packet(
-        tcp,
-        @codec.ConnackPacket({
-          session_present: false,
-          return_code: @codec.NotAuthorized,
-        }),
-      )
-    TruncateConnack => {
-      let truncated : Bytes = [0x20, 0x02, 0x00]
-      tcp.write(truncated)
-    }
-    MismatchedPuback => {
-      accept_connection(tcp)
-      let message_id = match read_packet(tcp) {
-        @codec.PublishPacket(message) => {
-          if message.qos != @codec.QoS1 {
-            fail("fault peer expected a QoS 1 PUBLISH")
-          }
-          message.message_id.unwrap()
-        }
-        _ => fail("fault peer expected PUBLISH after CONNECT")
-      }
-      let wrong_id = if message_id == 65535 { 1 } else { message_id + 1 }
-      write_packet(tcp, @codec.PubackPacket({ message_id: wrong_id, }))
-    }
-    UnexpectedSubackResponse => {
-      accept_connection(tcp)
-      match read_packet(tcp) {
-        @codec.SubscribePacket(_) => ()
-        _ => fail("fault peer expected SUBSCRIBE after CONNECT")
-      }
-      write_packet(tcp, @codec.PingrespPacket)
-      match read_packet(tcp) {
-        @codec.DisconnectPacket => ()
-        _ => fail("fault peer expected DISCONNECT after unexpected response")
-      }
-    }
-    AcceptPublishQoS0 => {
-      accept_connection(tcp)
-      match read_packet(tcp) {
-        @codec.PublishPacket(message) if message.qos == @codec.QoS0 => ()
-        _ => fail("fault peer expected QoS 0 PUBLISH")
-      }
-    }
-    AcceptPublishQoS1 => {
-      accept_connection(tcp)
-      let message_id = match read_packet(tcp) {
-        @codec.PublishPacket(message) if message.qos == @codec.QoS1 =>
-          message.message_id.unwrap()
-        _ => fail("fault peer expected QoS 1 PUBLISH")
-      }
-      write_packet(tcp, @codec.PubackPacket({ message_id, }))
-    }
-  }
+  run_script(tcp, self.script)
   tcp.close()
   self.server.close()
 }
 
 ///|
-/// Complete an accepted MQTT 3.1.1 connection handshake.
-async fn accept_connection(tcp : @socket.Tcp) -> Unit {
-  write_packet(
-    tcp,
-    @codec.ConnackPacket({
-      session_present: false,
-      return_code: @codec.ConnectionAccepted,
-    }),
-  )
+async fn run_script(tcp : @socket.Tcp, script : Script) -> Unit {
+  if script.exchanges.length() == 0 {
+    fail("fault peer script must contain at least one exchange")
+  }
+  let mut closed = false
+  for exchange in script.exchanges {
+    if !closed {
+      let packet = read_packet(tcp)
+      if !(exchange.matches)(packet) {
+        fail("fault peer script mismatch at exchange: \{exchange.name}")
+      }
+      for action in (exchange.respond)(packet) {
+        if !closed {
+          match action {
+            SendPacket(response) => write_packet(tcp, response)
+            SendRaw(bytes) => tcp.write(bytes)
+            Close => closed = true
+          }
+        }
+      }
+    }
+  }
 }
 
 ///|
+fn script_for_scenario(scenario : Scenario) -> Script {
+  match scenario {
+    RejectConnect =>
+      Script::new([Exchange::new("CONNECT", is_connect, reject_connect)])
+    TruncateConnack =>
+      Script::new([Exchange::new("CONNECT", is_connect, truncate_connack)])
+    MismatchedPuback =>
+      Script::new([
+        Exchange::new("CONNECT", is_connect, accept_connect),
+        Exchange::new("QoS 1 PUBLISH", is_publish_qos1, mismatch_puback),
+        Exchange::new("DISCONNECT", is_disconnect, no_response),
+      ])
+    UnexpectedSubackResponse =>
+      Script::new([
+        Exchange::new("CONNECT", is_connect, accept_connect),
+        Exchange::new("SUBSCRIBE", is_subscribe, unexpected_suback_response),
+        Exchange::new("DISCONNECT", is_disconnect, no_response),
+      ])
+    AcceptPublishQoS0 =>
+      Script::new([
+        Exchange::new("CONNECT", is_connect, accept_connect),
+        Exchange::new("QoS 0 PUBLISH", is_publish_qos0, close_peer),
+      ])
+    AcceptPublishQoS1 =>
+      Script::new([
+        Exchange::new("CONNECT", is_connect, accept_connect),
+        Exchange::new("QoS 1 PUBLISH", is_publish_qos1, accept_publish_qos1),
+      ])
+  }
+}
+
+///|
+fn is_connect(packet : @codec.Packet) -> Bool {
+  match packet {
+    @codec.ConnectPacket(_) => true
+    _ => false
+  }
+}
+
+///|
+fn is_disconnect(packet : @codec.Packet) -> Bool {
+  match packet {
+    @codec.DisconnectPacket => true
+    _ => false
+  }
+}
+
+///|
+fn is_subscribe(packet : @codec.Packet) -> Bool {
+  match packet {
+    @codec.SubscribePacket(_) => true
+    _ => false
+  }
+}
+
+///|
+fn is_publish_qos0(packet : @codec.Packet) -> Bool {
+  match packet {
+    @codec.PublishPacket(message) if message.qos == @codec.QoS0 => true
+    _ => false
+  }
+}
+
+///|
+fn is_publish_qos1(packet : @codec.Packet) -> Bool {
+  match packet {
+    @codec.PublishPacket(message) if message.qos == @codec.QoS1 => true
+    _ => false
+  }
+}
+
+///|
+fn accept_connect(_packet : @codec.Packet) -> Array[Action] {
+  [
+    SendPacket(
+      @codec.ConnackPacket({
+        session_present: false,
+        return_code: @codec.ConnectionAccepted,
+      }),
+    ),
+  ]
+}
+
+///|
+fn reject_connect(_packet : @codec.Packet) -> Array[Action] {
+  [
+    SendPacket(
+      @codec.ConnackPacket({
+        session_present: false,
+        return_code: @codec.NotAuthorized,
+      }),
+    ),
+  ]
+}
+
+///|
+fn truncate_connack(_packet : @codec.Packet) -> Array[Action] {
+  let truncated : Bytes = [0x20, 0x02, 0x00]
+  [SendRaw(truncated), Close]
+}
+
+///|
+fn mismatch_puback(packet : @codec.Packet) -> Array[Action] {
+  match packet {
+    @codec.PublishPacket(message) =>
+      match message.message_id {
+        Some(message_id) => {
+          let wrong_id = if message_id == 65535 { 1 } else { message_id + 1 }
+          [SendPacket(@codec.PubackPacket({ message_id: wrong_id, }))]
+        }
+        None => [Close]
+      }
+    _ => []
+  }
+}
+
+///|
+fn unexpected_suback_response(_packet : @codec.Packet) -> Array[Action] {
+  [SendPacket(@codec.PingrespPacket)]
+}
+
+///|
+fn close_peer(_packet : @codec.Packet) -> Array[Action] {
+  [Close]
+}
+
+///|
+fn accept_publish_qos1(packet : @codec.Packet) -> Array[Action] {
+  match packet {
+    @codec.PublishPacket(message) =>
+      match message.message_id {
+        Some(message_id) =>
+          [SendPacket(@codec.PubackPacket({ message_id, })), Close]
+        None => [Close]
+      }
+    _ => []
+  }
+}
+
+///|
+fn no_response(_packet : @codec.Packet) -> Array[Action] {
+  []
+}
 
 ///|
 /// Read exactly one MQTT packet from the connected test client.
@@ -137,7 +299,7 @@ async fn read_packet(tcp : @socket.Tcp) -> @codec.Packet {
 }
 
 ///|
-/// Encode and send one MQTT packet to the connected test client.
+/// Encode and send one valid MQTT packet to the connected test client.
 async fn write_packet(tcp : @socket.Tcp, packet : @codec.Packet) -> Unit {
   let encoded = @codec.encode_packet(packet).unwrap()
   let bytes : Bytes = [ for byte in encoded => byte ]

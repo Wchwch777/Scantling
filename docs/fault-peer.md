@@ -33,6 +33,77 @@ and interoperability matrix, not a
 general-purpose broker, complete test suite, or MQTT 3.1.1 conformance
 certification.
 
+## Caller-defined scripts
+
+The public Script/Exchange API turns the peer into a composable test fixture.
+Each named Exchange consumes one decoded packet, calls a caller-provided
+matcher, then calls a responder with that packet. A responder can return
+multiple actions: SendPacket for any codec-supported MQTT packet, SendRaw for
+malformed or truncated bytes, and Close to end the connection at a chosen
+state. The six command-line scenarios above are convenience presets built on
+the same ordered script runner. The CLI currently exposes those presets;
+custom scripts are composed by MoonBit test code using the
+scantling_mqtt_client/mqtt/fault_peer package.
+
+The native integration suite exercises this extension path directly. A custom
+script copies the incoming SUBSCRIBE packet identifier into a SUBACK while
+granting QoS 2 to a QoS 0 request, and verifies that the client rejects the
+invalid grant. A second script drives an outbound QoS 2 exchange through a
+duplicate PUBREC and retransmitted PUBREL. A third sends a truncated CONNACK
+with SendRaw and closes the socket. An abbreviated custom script looks like:
+
+~~~moonbit
+let script = @fault_peer.Script::new([
+  @fault_peer.Exchange::new(
+    "CONNECT",
+    packet => match packet {
+      @codec.ConnectPacket(_) => true
+      _ => false
+    },
+    _packet => [
+      @fault_peer.Action::SendRaw([0x20, 0x02, 0x00]),
+      @fault_peer.Action::Close,
+    ],
+  ),
+])
+let peer = @fault_peer.Peer::with_script(script)
+~~~
+
+The example uses the @codec and @fault_peer aliases from the package imports.
+See the
+[custom scripted integration test](../mqtt/integration_test/client_test.mbt)
+and the [script API implementation](../mqtt/fault_peer/peer.mbt).
+
+Eclipse Paho describes a broader MQTT 3.1.1 testing project with a test broker,
+a basic test client, conformance statements, and a model-based testing
+component. Scantling follows the useful separation between broker-side test
+behavior and explicit client coverage evidence, but it does not yet provide
+an equivalent full conformance suite or model-based case generator. See the
+[Paho Testing Utilities overview](https://eclipse.dev/paho/components/testing/).
+
+## Protocol coverage map
+
+The broader client test suite exercises protocol paths beyond the six CLI
+presets. The table distinguishes local scripted-peer coverage from checks
+against an independent implementation:
+
+| Protocol path | Current automated coverage | Independent client/Broker check |
+| --- | --- | --- |
+| CONNECT/CONNACK | Clean Session validation, refusal, truncated frame, early EOF. | Mosquitto CLI refusal and truncated-CONNACK paths. |
+| SUBSCRIBE/SUBACK | Batched filters, response identifiers, result count and granted QoS; unexpected packet and over-grant fault scripts. | Not currently tested against an independent client as a fault case. |
+| UNSUBSCRIBE/UNSUBACK | Batched filter request and matching response identifier. | Not currently tested against an independent client as a fault case. |
+| PUBLISH QoS 0/1 | Successful sends, matching and mismatched PUBACK, inbound buffering during an acknowledgement. | Mosquitto CLI completes accepted QoS 0/1 publishes against the peer. |
+| PUBLISH QoS 2 | Four-packet publish handshake and duplicate PUBREC/PUBREL retransmission. | Client completes a QoS 2 round trip with Mosquitto. |
+| Inbound QoS 2 | PUBREC/PUBREL/PUBCOMP and duplicate-delivery suppression. | Client receives QoS 2 delivery from Mosquitto. |
+| Keep Alive and DISCONNECT | Ping response, missing-PINGRESP closure, idle event delivery and orderly disconnect. | Ten-second application example runs against Mosquitto. |
+
+This is a traceable regression matrix, not complete MQTT 3.1.1 conformance
+coverage. It does not cover every normative requirement, every state
+combination, or a broad set of independent clients. The detailed example
+evidence and non-goals are in the
+[scenario-by-scenario use-case record](use-cases.md); the corresponding tests
+are in the [native integration suite](../mqtt/integration_test/client_test.mbt).
+
 ## Run
 
 Start the peer in one terminal. The default scenario is `reject-connect` and
