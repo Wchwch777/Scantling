@@ -228,7 +228,9 @@ one-shot exchange. CI sets
 Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
-run those tests locally against an equivalently configured Broker. The latest verified public baseline before the scripted peer changes was commit [91997f1](https://github.com/Wchwch777/Scantling/commit/91997f1a485ce4976756b5fcbad5ce31f668600b). Its [GitHub Actions run 40078839985](https://github.com/Wchwch777/Scantling/actions/runs/40078839985) passed formatting, Wasm and Native type checks, 18 Wasm tests, 36 Native tests, the Mosquitto Broker paths, and the previous example and independent mosquitto_pub fault-peer checks. That run predates the custom Script/Exchange API described here and does not verify the new scripted tests.
+run those tests locally against an equivalently configured Broker. Commit
+[`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22)
+passed its [GitHub Actions run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859): formatting, Wasm and Native type checks, 18 Wasm tests, 38 Native tests, the authenticated and unauthenticated Mosquitto Broker paths, the ten-second client example, and all four independent `mosquitto_pub` fault-peer scenarios. This run includes the custom Script/Exchange API and its new integration tests.
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).
