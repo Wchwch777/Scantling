@@ -73,3 +73,19 @@ the full test suite (18 Wasm, 38 Native) and runnable example locally in WSL,
 verified remote CI run [40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
 on commit [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22),
 and recorded sign-off in [`docs/owner-review.md`](docs/owner-review.md).
+
+## October 30–31 text-script runner and protocol-scenario expansion — pending review
+
+AI assisted with the text scenario parser, broker-to-client PUBLISH response,
+dynamic request-ID handling, QoS 2 and idle Keep Alive reference scripts,
+Native integration tests, independent Mosquitto CLI workflow paths, and
+synchronization of repository documentation. This local work has not yet been
+reviewed by the repository owner. The Windows host lacks MSVC build tools, so
+the checks ran in WSL using MoonBit `0.10.15+943464bfa` and Mosquitto CLI
+`2.0.22`: 49 Native tests passed, and the scripted QoS 2, subscription-delivery,
+and two-ping idle-event paths passed with independent CLI clients. The full CI
+workflow has not run on this revision, and broker integration tests requiring
+`SCANTLING_MOSQUITTO_HOST` were not part of that local test invocation. See
+the pending checklist in
+[`docs/owner-review.md`](docs/owner-review.md); no owner sign-off or new CI
+result is claimed.

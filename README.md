@@ -1,14 +1,14 @@
 # Scantling — Scriptable MQTT 3.1.1 Protocol Test Peer
 
-Scantling's primary reusable component is a native, one-connection,
-scriptable broker-side peer for testing MQTT 3.1.1 clients. The repository also
-contains a small asynchronous MoonBit client used as a deterministic test
-subject and in runnable interoperability examples. A caller can compose
-ordered packet matchers and response functions, send any encoded MQTT packet
-or raw wire bytes, and close the connection at a chosen point. The command-line
-example keeps common scenarios as ready-to-run presets. Selected wire behavior
-is checked with an independent Mosquitto client. This is a focused
-protocol-testing tool, not a full broker or MQTT conformance certification.
+Scantling's project focus is a native, one-connection, scriptable broker-side
+peer for repeatable MQTT 3.1.1 client behavior tests. A scenario can be run from
+a text file without editing or recompiling MoonBit code; it can match incoming
+packet types, send protocol responses or PUBLISH messages, emit raw bytes,
+wait, and close. The included asynchronous MoonBit client is also tested by the
+peer and shown in examples, but overlaps with existing MoonBit client work and
+is not the project's claimed differentiator. CI exercises selected scenarios
+with independent Mosquitto command-line clients. Scantling remains a focused
+test tool, not a full Broker or MQTT conformance certification.
 
 Scantling builds on the `zbhzs1/moonbit-mqtt` packet codec and the
 `moonbitlang/async` runtime. It implements the client-side TCP connection and
@@ -46,11 +46,17 @@ The included asynchronous client overlaps materially with the public
 project, which describes a native MQTT 3.1.1 client with QoS 0/1, transport,
 and session features for application connectivity. Scantling does not claim a
 unique or superior general client. Its additional tested component is a
-native, one-connection [fault-injection peer](docs/fault-peer.md) with a public
-script API for repeatable protocol-state and error checks. CI uses the
-independent Mosquitto CLI to verify both accepted QoS 0/1 PUBLISH exchanges and
-a Not Authorized CONNACK (code 5), checking the external client's observed
-response and exit status.
+native, one-connection [scriptable test peer](docs/fault-peer.md) with a public
+Script/Exchange API and a text-file runner for external MQTT clients. The
+existing CI verifies independent Mosquitto `mosquitto_pub` behavior for
+accepted QoS 0/1 PUBLISH exchanges, broker rejection, and a truncated CONNACK.
+Local workflow changes add external-client scenarios for a text-scripted QoS 2
+PUBREC/PUBREL/PUBCOMP exchange, a scripted subscription and message delivery,
+and two keep-alive ping exchanges before a later event. These three CLI paths
+and 49 Native tests passed locally on 2026-10-31 with MoonBit
+`0.10.15+943464bfa` and Mosquitto CLI `2.0.22`; they still need a successful run
+on a pushed revision before they count as CI evidence. The local Native suite
+did not enable tests requiring a separate Mosquitto Broker service.
 Truncated CONNACK, mismatched PUBACK, and unexpected SUBACK are tested against Scantling's own client; the peer has not been tested against moon-mqtt-client or a wider client set. Caller-defined script tests also reject an invalid SUBACK QoS grant, exercise duplicate PUBREC/PUBREL handling, and inject a truncated CONNACK from raw bytes. This focused matrix is not a general-purpose compatibility suite or an MQTT conformance certification.
 
 October code work added an independent Mosquitto interoperability path and
@@ -129,27 +135,29 @@ not part of Scantling or either MoonBit dependency.
 
 ## Position among MoonBit MQTT packages
 
-Scantling includes an MQTT client runtime that opens TCP connections and
-drives client-side request/response and delivery flows, plus a test peer that
-controls broker-side responses. The existing
+Scantling's included MQTT client runtime opens TCP connections and drives
+client-side request/response and delivery flows. This overlaps with the
+existing
 [`zbhzs1/moonbit-mqtt` package](https://mooncakes.io/docs/zbhzs1/moonbit-mqtt)
-provides MQTT 3.1.1 packet encoding and decoding, while its README places
+which provides MQTT 3.1.1 packet encoding and decoding; its README places
 network transport and client runtime outside its current scope. A separate
 [`ChaonanShen/moonbit-mqtt-broker` package](https://mooncakes.io/docs/ChaonanShen/moonbit-mqtt-broker%400.4.0)
-implements a Broker, which serves the opposite role in the client/Broker
-connection. These are adjacent ecosystem components, not evidence that
-Scantling is the only MQTT implementation or that user demand has been
-validated. This comparison describes scope only; package capabilities can
-change and should be rechecked against their linked sources.
+implements a Broker. Neither package is evidence that Scantling is the only
+MQTT implementation or that user demand has been validated. The peer's
+test-tool role is distinct from a client library: it acts as a scripted
+broker-side endpoint for checking an independently launched client. This
+comparison describes scope only; package capabilities can change and should
+be rechecked against their linked sources.
 
-Scantling does not claim to be the only MoonBit MQTT client. Its additional
-test peer has a different role: it controls broker-side responses so client
-implementations can be exercised against repeatable protocol states and
-failures. The public Script/Exchange API lets a test define its own packet
-matcher and response handler; the built-in CLI scenarios use the same script
-runner. The peer handles one TCP connection per run and is not a general
-broker, load tester, or complete protocol suite. Its API, presets, and
-coverage limits are listed in
+Scantling does not claim to be the only MoonBit MQTT client. The peer's public
+Script/Exchange API lets MoonBit tests define packet matchers and response
+handlers, while `SCANTLING_FAULT_SCRIPT` lets command-line users run a
+line-oriented scenario file with an independent client. Both entry points use
+the same ordered exchange runner. Text expectations can match packet type,
+PUBLISH QoS, packet identifier, exact PUBLISH/SUBSCRIBE topic, PUBLISH payload
+bytes, and retain/DUP flags. The peer handles one TCP connection per run
+and is not a general Broker, load tester, or complete protocol suite. Its
+script grammar, scenarios, and coverage limits are listed in
 [`docs/fault-peer.md`](docs/fault-peer.md).
 
 ## Run the fault-injection peer
@@ -174,6 +182,27 @@ The peer logs its selected scenario and exits after one publish exchange.
 Other scenarios can be selected with `SCANTLING_FAULT_SCENARIO`; see the
 [scenario table](docs/fault-peer.md). Bind only to loopback: this one-shot test
 server has no authentication or production hardening.
+
+To run an authored text scenario without changing MoonBit source, start the
+scripted CONNECT/SUBSCRIBE/PUBLISH/DISCONNECT flow:
+
+```powershell
+$env:SCANTLING_FAULT_SCRIPT = "examples/mqtt_fault_peer/scripts/subscriber-message.scantling"
+$env:SCANTLING_FAULT_PORT = "1886"
+moon run --target native examples/mqtt_fault_peer
+```
+
+In a second terminal, receive exactly one message with the independent
+Mosquitto client:
+
+```sh
+mosquitto_sub -V mqttv311 -h 127.0.0.1 -p 1886 \
+  -t scantling/scripted/notice -q 0 -C 1 -W 10 -v
+```
+
+The expected output is `scantling/scripted/notice scripted-message`. The
+script and CI workflow define this scenario; a passing CI result for the new
+workflow step remains pending until it runs on a pushed revision.
 
 ## Run the example
 
@@ -233,6 +262,12 @@ success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
 run those tests locally against an equivalently configured Broker. Commit
 [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22)
 passed its [GitHub Actions run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859): formatting, Wasm and Native type checks, 18 Wasm tests, 38 Native tests, the authenticated and unauthenticated Mosquitto Broker paths, the ten-second client example, and all four independent `mosquitto_pub` fault-peer scenarios. This run includes the custom Script/Exchange API and its new integration tests.
+The successful run on the current remote documentation baseline is
+[`40638010819`](https://github.com/Wchwch777/Scantling/actions/runs/40638010819)
+for [`28041bf`](https://github.com/Wchwch777/Scantling/commit/28041bf758600d3c56e65643d18a00432a3fe47b).
+Both remote runs predate the local 2026-10-30/31 text-script parser, independent
+QoS 2 and idle-event paths, and `mosquitto_sub` workflow additions; neither
+validates those new changes.
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).

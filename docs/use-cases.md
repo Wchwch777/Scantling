@@ -97,6 +97,33 @@ passed 18 Wasm and 36 Native tests. The current workflow adds the longer
 Mosquitto-backed example and independent truncated-CONNACK check; its result is
 linked from the current workflow runs above.
 
+## Scriptable peer checks added locally
+
+The native peer now has reference scripts for external-client behavior that is
+not represented by the old fixed scenario selector:
+
+- [`qos2-publish.scantling`](../examples/mqtt_fault_peer/scripts/qos2-publish.scantling)
+  matches a QoS 2 PUBLISH by topic, copies its live packet identifier into
+  PUBREC, completes PUBREL/PUBCOMP, and waits for DISCONNECT. A native
+  integration test runs this sequence with Scantling's own client; CI also
+  invokes Mosquitto `mosquitto_pub -q 2` against it.
+- [`idle-event.scantling`](../examples/mqtt_fault_peer/scripts/idle-event.scantling)
+  responds to two PINGREQ packets before delivering a later event. A native
+  integration test exercises `receive_with_keep_alive()`, and CI invokes
+  independent Mosquitto `mosquitto_sub -k 5` and checks both ping/pong logs and
+  the delivered message.
+- [`subscriber-message.scantling`](../examples/mqtt_fault_peer/scripts/subscriber-message.scantling)
+  accepts CONNECT/SUBSCRIBE, returns SUBACK and one scripted PUBLISH, and waits
+  for DISCONNECT; CI checks the received topic and payload with Mosquitto.
+
+These examples make the test peer reusable with a second client implementation
+and expose more than one broker response path. On 2026-10-31, the 49-test
+Native suite and these three CLI scenarios passed locally using MoonBit
+`0.10.15+943464bfa` and Mosquitto CLI `2.0.22`. They remain finite, scripted
+checks, not broad interoperability data, a general test framework equivalent
+to Paho, MQTT conformance certification, load testing, or evidence of user
+adoption. A successful Actions result on a pushed revision is still required.
+
 ## Shared scope
 
 Scantling is a sequential MQTT 3.1.1 TCP client. It handles single and batched

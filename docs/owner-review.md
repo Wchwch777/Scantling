@@ -1,6 +1,7 @@
 # Owner review status
 
-**Review status: reviewed by repository owner.** The repository owner
+**Review status: historical scopes reviewed; 2026-10-30/31 local script-runner
+and protocol-scenario expansion awaits owner review and a post-push CI run.** The repository owner
 (`Wchwch777`) has personally reviewed and approved the initial baseline
 (2026-10-17), the QoS 2 and protocol extension update (2026-10-19), the
 fault-injection peer, coordinated Keep Alive receive, and extended end-to-end
@@ -154,3 +155,26 @@ for later commits.
 - [x] Run `examples/mqtt_client` locally and confirm 10s idle and all 3 scenario outputs.
 - [x] Verify remote GitHub Actions run 40636347859 on commit 2b55d44.
 - [x] Update owner review documentation, AI disclosure, and project application records.
+
+## 2026-10-30 text-script runner expansion — pending owner review
+
+AI-assisted local changes add a text-file scenario runner for the native peer,
+scripted broker-to-client PUBLISH packets, dynamic packet-ID matching for
+filtered QoS exchanges, QoS 2 and idle Keep Alive scenarios, parser validation
+for duplicate options and unreachable steps, and independent Mosquitto CLI
+paths. The repository owner has not yet
+reviewed or signed off on this update. The Windows host lacks the MSVC C++ build
+tools required for Native tests. In WSL, using MoonBit `0.10.15+943464bfa` and
+Mosquitto CLI `2.0.22`, `moon test --target native` passed 49/49; the scripted
+subscriber delivery, QoS 2 publish handshake, and two-ping idle-event scenarios
+also passed manually against independent Mosquitto CLI clients. The full CI
+workflow has not run on this revision, and tests requiring the separate
+`SCANTLING_MOSQUITTO_HOST` Broker service were not part of the local test run.
+A successful post-push GitHub Actions run is still required to validate the
+complete workflow on this exact revision.
+
+- [ ] Personally inspect the script parser, dynamic packet-ID matching, response construction, and reference scenarios.
+- [ ] Personally review the local Native result (49/49) and the independent Mosquitto subscriber, QoS 2, and idle Keep Alive runs recorded above.
+- [ ] Run the complete GitHub Actions workflow on the pushed revision, including broker-backed tests.
+- [ ] Review the resulting CI run and confirm the limits in the README and fault-peer guide.
+- [ ] Sign off with the actual review date and tested commit.
