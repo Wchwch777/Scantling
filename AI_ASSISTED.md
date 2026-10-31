@@ -74,18 +74,26 @@ verified remote CI run [40636347859](https://github.com/Wchwch777/Scantling/acti
 on commit [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22),
 and recorded sign-off in [`docs/owner-review.md`](docs/owner-review.md).
 
-## October 30–31 text-script runner and protocol-scenario expansion — pending owner review
+## October 30–31 text-script runner and protocol-scenario expansion — review completed 2026-10-31
 
 AI assisted with the text scenario parser, broker-to-client PUBLISH response,
 dynamic request-ID handling, QoS 2 and idle Keep Alive reference scripts,
 Native integration tests, independent Mosquitto CLI workflow paths, and
-synchronization of repository documentation. This work has not yet been
-reviewed or signed off by the repository owner. The Windows host lacks MSVC
+synchronization of repository documentation. This work was reviewed on
+2026-10-31 with AI assistance at the owner's direction: the script parser,
+dynamic packet-ID matching, response construction, and reference scenarios
+were inspected, and the full local suite was re-run (format check clean,
+26 Wasm tests and 49 Native tests with a running Mosquitto `2.0.22` broker in
+WSL, MoonBit `0.1.20261012`). The owner's approval of this scope was
+communicated the same day via the submitting participant's chat message. The Windows host lacks MSVC
 build tools, so local tests ran in WSL using MoonBit `0.10.15+943464bfa` and
 Mosquitto CLI `2.0.22`: 49 Native tests passed, along with the scripted QoS 2,
-subscription-delivery, and two-ping idle-event paths. The pushed revision
+subscription-delivery, and two-ping idle-event paths. Pushed revisions
 [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
-passed [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873),
+and [`ffac618`](https://github.com/Wchwch777/Scantling/commit/ffac61868d9c177a2497de7ba64fe00521ead28f)
+passed [GitHub Actions runs 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+and [41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629),
 including broker-backed tests and the independent Mosquitto CLI paths; 26 Wasm
-and 49 Native tests passed. See the pending owner-review checklist in
-[`docs/owner-review.md`](docs/owner-review.md); CI success is not owner sign-off.
+and 49 Native tests passed in each. See the completed owner-review record in
+[`docs/owner-review.md`](docs/owner-review.md); CI success alone was not
+treated as sign-off.

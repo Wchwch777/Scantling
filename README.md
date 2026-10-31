@@ -262,17 +262,19 @@ one-shot exchange. CI sets
 Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
-run those tests locally against an equivalently configured Broker. The latest
-pushed revision [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
-passed [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873):
+run those tests locally against an equivalently configured Broker. Pushed
+revisions [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
+and [`ffac618`](https://github.com/Wchwch777/Scantling/commit/ffac61868d9c177a2497de7ba64fe00521ead28f)
+passed [GitHub Actions runs 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+and [41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629):
 formatting, Wasm and Native type checks, 26 Wasm tests, 49 Native tests,
 authenticated and unauthenticated Mosquitto Broker paths, the ten-second
 client example, and independent Mosquitto CLI checks for QoS 0/1, rejection,
 truncated CONNACK, scripted QoS 2, subscription/message delivery, and idle
 Keep Alive. Earlier runs [40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
 and [40638010819](https://github.com/Wchwch777/Scantling/actions/runs/40638010819)
-are historical baselines; run 41185493873 is the evidence for the text-script
-scenarios on the current code revision.
+are historical baselines; runs 41185493873 and 41185987629 are the evidence
+for the text-script scenarios on the current code revision.
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).

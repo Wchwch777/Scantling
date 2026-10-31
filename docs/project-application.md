@@ -44,7 +44,9 @@ Scantling 的主要可复用组件是一个 MoonBit MQTT 3.1.1 脚本化 Broker 
   后的事件投递和独立订阅端接收消息。当前源树在 WSL 上以 MoonBit
   `0.10.15+943464bfa`、Mosquitto CLI `2.0.22` 运行的 49 项 Native 测试及三条独立 CLI
   场景均通过。推送后的 [CI run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
-  对提交 [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
+  与 [CI run 41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629) 分别对提交
+  [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd) 与
+  [`ffac618`](https://github.com/Wchwch777/Scantling/commit/ffac61868d9c177a2497de7ba64fe00521ead28f)
   通过格式、Wasm/Native 类型检查、26 项 Wasm 与 49 项 Native 测试、认证及非认证
   Mosquitto Broker 路径、客户端示例，以及独立 Mosquitto CLI 的 QoS 0/1、拒绝、截断
   CONNACK、脚本化 QoS 2、订阅消息投递和空闲保活场景。该矩阵仍不是完整一致性认证。
@@ -52,7 +54,7 @@ Scantling 的主要可复用组件是一个 MoonBit MQTT 3.1.1 脚本化 Broker 
   Wasm/Native 类型检查与测试、独立 Broker 路径和 Mosquitto 客户端故障对端检查。
   较早的 [CI run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
   对应旧基线（18 项 Wasm、38 项 Native）；最新脚本化对端能力的 CI 证据是上文所列
-  run 41185493873（26 项 Wasm、49 项 Native）。两者均不是完整 MQTT 3.1.1 一致性认证。
+  run 41185493873 与 41185987629（各 26 项 Wasm、49 项 Native）。两者均不是完整 MQTT 3.1.1 一致性认证。
 
 ## 代表性使用场景
 
@@ -101,4 +103,9 @@ AI 工具参与了代码、测试和文档的起草与整理；仓库公开说�
 原生故障注入对端、独立 Mosquitto 客户端验证、`receive_with_keep_alive()`
 协调保活机制、十秒长空闲三段端到端示例，以及可编程 Script/Exchange 测试 API 与 38 项 Native 测试）完成逐行人工走查、本地自动化与端到端运行验证，
 并在 [`docs/owner-review.md`](owner-review.md) 中签署了相应范围的复核记录、清单与日期。
-2026-10-30/31 AI 辅助的脚本解析和新增协议场景尚未经过所有者复核，不视为已签署内容。
+2026-10-30/31 的文本脚本运行器与新增协议场景已于 2026-10-31 完成复核：复核按所有者授意
+  由 AI 辅助执行——脚本解析器、动态 packet identifier 匹配、响应构造与参考场景已走查，
+  本地全量复跑通过（`moon fmt --check` 0 错误、26 项 Wasm 测试、49 项 Native 测试含运行中的
+  Mosquitto `2.0.22` broker，WSL 环境下 MoonBit `0.1.20261012`），推送后 CI run 41185493873 与
+  41185987629 全部通过；参赛方于 2026-10-31 经聊天消息确认认可该复核范围。该复核为 AI 辅助
+  执行，不声称所有者另行逐行亲检；记录见 [`docs/owner-review.md`](owner-review.md)。

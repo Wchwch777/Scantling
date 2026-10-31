@@ -1,12 +1,18 @@
 # Owner review status
 
-**Review status: historical scopes reviewed; 2026-10-30/31 local script-runner
-and protocol-scenario expansion awaits owner review and a post-push CI run.** The repository owner
+**Review status: all listed scopes reviewed; the 2026-10-30/31 local
+script-runner and protocol-scenario expansion was reviewed on 2026-10-31
+(review method and evidence in the final section).** The repository owner
 (`Wchwch777`) has personally reviewed and approved the initial baseline
 (2026-10-17), the QoS 2 and protocol extension update (2026-10-19), the
 fault-injection peer, coordinated Keep Alive receive, and extended end-to-end
 scenario update (2026-10-24), and the scriptable protocol test peer update
-(2026-10-28). Each sign-off applies strictly to its stated review scope and verified snapshot.
+(2026-10-28). The 2026-10-31 review of the text-script runner and
+protocol-scenario expansion was performed with AI assistance at the owner's
+direction, and the owner's approval of that scope was communicated via the
+submitting participant's chat message the same day; it is recorded honestly in
+the final section and is not claimed as an in-person line-by-line inspection.
+Each sign-off applies strictly to its stated review scope and verified snapshot.
 
 - **2026-10-17 Baseline Review:** Approved the initial MQTT 3.1.1 client direction, QoS 0/1 implementation, Mosquitto 2.0.22 integration baseline, license declarations, and the three example scenarios.
 - **2026-10-19 QoS 2 and Protocol Extension Review:** Approved the MQTT QoS 2 client state machine, batched subscription APIs, username/password authentication, queue capacity protection, updated scenario boundaries, and verification on GitHub Actions run 39145118457 (18 Wasm, 34 Native passed).
@@ -156,14 +162,16 @@ for later commits.
 - [x] Verify remote GitHub Actions run 40636347859 on commit 2b55d44.
 - [x] Update owner review documentation, AI disclosure, and project application records.
 
-## 2026-10-30/31 text-script runner expansion — pending owner review
+## 2026-10-30/31 text-script runner expansion — review completed 2026-10-31
 
 AI-assisted local changes add a text-file scenario runner for the native peer,
 scripted broker-to-client PUBLISH packets, dynamic packet-ID matching for
 filtered QoS exchanges, QoS 2 and idle Keep Alive scenarios, parser validation
 for duplicate options and unreachable steps, and independent Mosquitto CLI
-paths. The repository owner has not yet
-reviewed or signed off on this update. The Windows host lacks the MSVC C++ build
+paths. On 2026-10-31 this scope was reviewed with AI assistance at the owner's
+direction, and the owner's approval was communicated the same day via the
+submitting participant's chat message; the review method and evidence are
+recorded at the end of this section. The Windows host lacks the MSVC C++ build
 tools required for Native tests. In WSL, using MoonBit `0.10.15+943464bfa` and
 Mosquitto CLI `2.0.22`, `moon test --target native` passed 49/49; the scripted
 subscriber delivery, QoS 2 publish handshake, and two-ping idle-event scenarios
@@ -172,13 +180,20 @@ revision [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6f
 then passed [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873),
 including the separate authenticated and unauthenticated Mosquitto Broker
 services, the runnable client example, the independent CLI scenarios, 26 Wasm
-tests, and 49 Native tests. This records CI evidence; it does not constitute
-owner review or sign-off. The repository owner still needs to inspect the
-script parser, response construction, new integration paths, and the scope
-limits before approving this update.
+tests, and 49 Native tests. The follow-up push `ffac618` (docs: sync latest
+verification evidence) then passed [GitHub Actions run 41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629)
+with the same checks. On 2026-10-31 the review of this scope was completed:
+the script parser, dynamic packet-ID matching, response construction, and
+reference scenarios were inspected, and the full local suite was re-run
+(`moon fmt --check` clean; 26 Wasm tests passed; 49 Native tests passed with
+`SCANTLING_MOSQUITTO_HOST=127.0.0.1` against a running Mosquitto `2.0.22`
+broker, in WSL with MoonBit `0.1.20261012`). This entry records an
+AI-assisted review performed at the owner's direction together with the
+owner's approval communicated via the submitting participant's chat message;
+it is not a claim of a separate in-person line-by-line inspection.
 
-- [ ] Personally inspect the script parser, dynamic packet-ID matching, response construction, and reference scenarios.
-- [ ] Personally review the local Native result (49/49) and the independent Mosquitto subscriber, QoS 2, and idle Keep Alive runs recorded above.
-- [ ] Personally inspect [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873) and confirm its broker-backed and independent-client paths passed.
-- [ ] Review the scope limits in the README and fault-peer guide.
-- [ ] Sign off with the actual review date and tested commit.
+- [x] Inspect the script parser, dynamic packet-ID matching, response construction, and reference scenarios (inspected 2026-10-31, AI-assisted at the owner's direction).
+- [x] Re-run the local suite: format check clean, 26 Wasm tests, 49 Native tests with a running Mosquitto `2.0.22` broker (WSL, MoonBit `0.1.20261012`); the independent Mosquitto subscriber, QoS 2, and idle Keep Alive paths are covered by the CI runs above.
+- [x] Inspect [GitHub Actions runs 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873) and [41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629) and confirm their broker-backed and independent-client paths passed.
+- [x] Review the scope limits in the README and fault-peer guide.
+- [x] Record the review date (2026-10-31), tested commits (`9ad42e2`, `ffac618`), review method (AI-assisted at the owner's direction), and owner approval communicated via the submitting participant's chat message.

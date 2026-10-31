@@ -89,9 +89,11 @@ truncated CONNACK bodies in
 [truncated CONNACK body](../mqtt/integration_test/client_test.mbt#L743). The
 frame-reader unit tests cover truncated Remaining Length and the configured
 1 MiB packet-body cap in [`client_test.mbt`](../mqtt/client_test.mbt#L2).
-These checks are included in the native suite. The latest pushed code snapshot
+These checks are included in the native suite. Pushed code snapshots
 [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
-passed [CI run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873),
+and [`ffac618`](https://github.com/Wchwch777/Scantling/commit/ffac61868d9c177a2497de7ba64fe00521ead28f)
+passed [CI runs 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+and [41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629),
 including the Broker-backed test service, the full Mosquitto client example,
 and independent-client fault paths. Earlier runs remain linked in the owner
 review record as historical verification for their respective snapshots.
