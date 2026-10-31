@@ -1,4 +1,6 @@
 import {
+  "moonbitlang/async",
   "moonbitlang/async/socket",
+  "moonbitlang/core/string",
   "zbhzs1/moonbit-mqtt" @codec,
 }

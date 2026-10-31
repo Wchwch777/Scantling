@@ -1,0 +1,3 @@
+# MQTT 3.1.1: tell a connecting client that the broker is unavailable.
+expect CONNECT
+send CONNACK code=3 session_present=false

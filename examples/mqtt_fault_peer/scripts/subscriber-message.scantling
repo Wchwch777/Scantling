@@ -1,0 +1,8 @@
+# Complete one-shot MQTT 3.1.1 subscription and message-delivery exchange.
+expect CONNECT
+send CONNACK code=0 session_present=false
+expect SUBSCRIBE topic=scantling/scripted/notice
+send SUBACK id=request codes=0
+send PUBLISH topic=scantling/scripted/notice qos=0 payload_hex=73,63,72,69,70,74,65,64,2d,6d,65,73,73,61,67,65
+expect DISCONNECT
+close

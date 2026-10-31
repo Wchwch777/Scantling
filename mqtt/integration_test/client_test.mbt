@@ -780,6 +780,79 @@ async test "fault peer executes a caller-defined SUBACK fault script" {
 
 ///|
 #cfg(target="native")
+async test "text-scripted peer fragments and delays a CONNACK response" {
+  @async.with_task_group <| root => {
+    let script = match
+      @fault_peer.Script::parse(
+        "expect CONNECT\nraw 20\nwait 5\nraw 02 00 00\nexpect SUBSCRIBE\nsend SUBACK id=request codes=0\nexpect DISCONNECT\n",
+      ) {
+      Ok(script) => script
+      Err(error) => fail("scenario parser rejected integration case: \{error}")
+    }
+    let peer = @fault_peer.Peer::with_script(script)
+    root.spawn_bg(no_wait=true, () => peer.run())
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=peer.port(),
+      client_id="scantling-text-scripted-peer",
+    )
+    client.subscribe(topic="demo/scripted", qos=@codec.QoS0)
+    client.disconnect()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "text-scripted peer completes QoS 2 with filtered packet identifiers" {
+  @async.with_task_group <| root => {
+    let script = match
+      @fault_peer.Script::parse(
+        "expect CONNECT\nsend CONNACK code=0\nexpect PUBLISH qos=2 topic=demo/scripted/qos2\nsend PUBREC id=request\nexpect PUBREL\nsend PUBCOMP id=request\nexpect DISCONNECT\nclose\n",
+      ) {
+      Ok(script) => script
+      Err(error) => fail("QoS 2 scenario parser rejected script: \{error}")
+    }
+    let peer = @fault_peer.Peer::with_script(script)
+    root.spawn_bg(no_wait=true, () => peer.run())
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=peer.port(),
+      client_id="scantling-scripted-qos2",
+    )
+    client.publish_qos2(topic="demo/scripted/qos2", payload=b"qos2-message")
+    client.disconnect()
+  }
+}
+
+///|
+#cfg(target="native")
+async test "text-scripted peer answers keep-alive before a later event" {
+  @async.with_task_group <| root => {
+    let script = match
+      @fault_peer.Script::parse(
+        "expect CONNECT\nsend CONNACK code=0\nexpect SUBSCRIBE topic=demo/idle/event\nsend SUBACK id=request codes=0\nexpect PINGREQ\nsend PINGRESP\nexpect PINGREQ\nsend PINGRESP\nsend PUBLISH topic=demo/idle/event qos=0 payload_hex=61,66,74,65,72,2d,69,64,6c,65\nexpect DISCONNECT\nclose\n",
+      ) {
+      Ok(script) => script
+      Err(error) => fail("idle-event scenario parser rejected script: \{error}")
+    }
+    let peer = @fault_peer.Peer::with_script(script)
+    root.spawn_bg(no_wait=true, () => peer.run())
+    let client = @client.Client::connect(
+      "127.0.0.1",
+      port=peer.port(),
+      client_id="scantling-scripted-idle-event",
+      keep_alive=4,
+    )
+    client.subscribe(topic="demo/idle/event", qos=@codec.QoS0)
+    let message = client.receive_with_keep_alive()
+    assert_eq(message.topic, "demo/idle/event")
+    assert_eq(message.payload, b"after-idle")
+    client.disconnect()
+  }
+}
+
+///|
+#cfg(target="native")
 async test "fault peer scripts a QoS 2 exchange with duplicate PUBREC" {
   @async.with_task_group <| root => {
     let script = @fault_peer.Script::new([

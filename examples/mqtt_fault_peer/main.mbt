@@ -1,7 +1,11 @@
 ///|
 async fn main {
-  let (scenario_name, scenario) = match
-    @env.get_env_var("SCANTLING_FAULT_SCENARIO") {
+  let script_path = @env.get_env_var("SCANTLING_FAULT_SCRIPT")
+  let scenario_value = match script_path {
+    Some(_) => None
+    None => @env.get_env_var("SCANTLING_FAULT_SCENARIO")
+  }
+  let (scenario_name, scenario) = match scenario_value {
     None => ("reject-connect", @peer.Scenario::RejectConnect)
     Some("reject-connect") => ("reject-connect", @peer.Scenario::RejectConnect)
     Some("truncate-connack") =>
@@ -26,10 +30,23 @@ async fn main {
   if port < 0 || port > 65535 {
     fail("SCANTLING_FAULT_PORT must be between 0 and 65535")
   }
-  let server = @peer.Peer::new(scenario, port~)
+  let server = match script_path {
+    Some(path) => {
+      let source = @fs.read_file(path).text()
+      let script = match @peer.Script::parse(source) {
+        Ok(script) => script
+        Err(error) => fail("invalid MQTT scenario script: \{error}")
+      }
+      @stdio.stdout.write("Scenario script: \{path}\n")
+      @peer.Peer::with_script(script, port~)
+    }
+    None => @peer.Peer::new(scenario, port~)
+  }
   @stdio.stdout.write(
-    "Scantling MQTT fault peer listening on 127.0.0.1:\{server.port()}\n",
+    "Scantling MQTT test peer listening on 127.0.0.1:\{server.port()}\n",
   )
-  @stdio.stdout.write("Scenario: \{scenario_name}\n")
+  if script_path is None {
+    @stdio.stdout.write("Scenario: \{scenario_name}\n")
+  }
   server.run()
 }

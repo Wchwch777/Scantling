@@ -1,0 +1,9 @@
+# Complete the MQTT 3.1.1 client-to-broker QoS 2 handshake.
+expect CONNECT
+send CONNACK code=0 session_present=false
+expect PUBLISH qos=2 topic=scantling/ci/qos2
+send PUBREC id=request
+expect PUBREL
+send PUBCOMP id=request
+expect DISCONNECT
+close

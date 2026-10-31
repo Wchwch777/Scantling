@@ -1,0 +1,12 @@
+# Keep a subscriber active through two keep-alive pings before delivering an event.
+expect CONNECT
+send CONNACK code=0 session_present=false
+expect SUBSCRIBE topic=scantling/idle/event
+send SUBACK id=request codes=0
+expect PINGREQ
+send PINGRESP
+expect PINGREQ
+send PINGRESP
+send PUBLISH topic=scantling/idle/event qos=0 payload_hex=61,66,74,65,72,2d,69,64,6c,65
+expect DISCONNECT
+close

@@ -179,6 +179,141 @@ jobs:
           run_peer_case accept-publish-qos1 1 1886 publish
           run_peer_case reject-connect 0 1887 reject-connect
           run_peer_case truncate-connack 0 1888 truncate-connack
+          start_script_peer() {
+            local script="$1"
+            local port="$2"
+            local name="$3"
+            peer_log="$RUNNER_TEMP/scantling-${name}.log"
+            timeout --signal=TERM --kill-after=2s 30s \
+              env SCANTLING_FAULT_SCRIPT="$script" \
+              SCANTLING_FAULT_PORT="$port" \
+              moon run --target native examples/mqtt_fault_peer >"$peer_log" 2>&1 &
+            peer_pid=$!
+            for attempt in $(seq 1 30); do
+              if grep -q 'listening on 127.0.0.1:' "$peer_log"; then
+                return 0
+              fi
+              if ! kill -0 "$peer_pid" 2>/dev/null; then
+                cat "$peer_log"
+                peer_pid=""
+                return 1
+              fi
+              sleep 1
+            done
+            cat "$peer_log"
+            kill "$peer_pid" 2>/dev/null || true
+            wait "$peer_pid" 2>/dev/null || true
+            peer_pid=""
+            return 1
+          }
+          run_custom_script_case() {
+            local port="$1"
+            local script="examples/mqtt_fault_peer/scripts/server-unavailable.scantling"
+            local client_log="$RUNNER_TEMP/scantling-custom-script-mosquitto.log"
+            start_script_peer "$script" "$port" custom-script
+            local client_status=0
+            if timeout --signal=TERM --kill-after=2s 15s \
+              mosquitto_pub -V mqttv311 -d -h 127.0.0.1 -p "$port" \
+              -t scantling/ci/custom-script -m unavailable >"$client_log" 2>&1; then
+              cat "$client_log"
+              echo "mosquitto_pub unexpectedly accepted a custom CONNACK rejection"
+              return 1
+            else
+              client_status="$?"
+            fi
+            cat "$client_log"
+            test "$client_status" -eq 3
+            grep -Fq 'received CONNACK (3)' "$client_log"
+            if ! wait "$peer_pid"; then
+              cat "$peer_log"
+              peer_pid=""
+              return 1
+            fi
+            peer_pid=""
+          }
+          run_custom_script_case 1889
+          run_scripted_subscription_case() {
+            local port="$1"
+            local script="examples/mqtt_fault_peer/scripts/subscriber-message.scantling"
+            local client_log="$RUNNER_TEMP/scantling-scripted-subscription-mosquitto.log"
+            start_script_peer "$script" "$port" scripted-subscription
+            if ! timeout --signal=TERM --kill-after=2s 15s \
+              mosquitto_sub -V mqttv311 -h 127.0.0.1 -p "$port" \
+              -t scantling/scripted/notice -q 0 -C 1 -W 10 -v \
+              >"$client_log" 2>&1; then
+              cat "$peer_log"
+              cat "$client_log"
+              kill "$peer_pid" 2>/dev/null || true
+              wait "$peer_pid" 2>/dev/null || true
+              peer_pid=""
+              return 1
+            fi
+            cat "$client_log"
+            grep -Fxq 'scantling/scripted/notice scripted-message' "$client_log"
+            if ! wait "$peer_pid"; then
+              cat "$peer_log"
+              peer_pid=""
+              return 1
+            fi
+            peer_pid=""
+          }
+          run_scripted_subscription_case 1890
+          run_scripted_qos2_case() {
+            local port="$1"
+            local script="examples/mqtt_fault_peer/scripts/qos2-publish.scantling"
+            local client_log="$RUNNER_TEMP/scantling-scripted-qos2-mosquitto.log"
+            start_script_peer "$script" "$port" scripted-qos2
+            if ! timeout --signal=TERM --kill-after=2s 15s \
+              mosquitto_pub -V mqttv311 -d -h 127.0.0.1 -p "$port" \
+              -t scantling/ci/qos2 -m qos2-message -q 2 >"$client_log" 2>&1; then
+              cat "$peer_log"
+              cat "$client_log"
+              kill "$peer_pid" 2>/dev/null || true
+              wait "$peer_pid" 2>/dev/null || true
+              peer_pid=""
+              return 1
+            fi
+            cat "$client_log"
+            if ! wait "$peer_pid"; then
+              cat "$peer_log"
+              peer_pid=""
+              return 1
+            fi
+            peer_pid=""
+          }
+          run_scripted_qos2_case 1891
+          run_scripted_idle_event_case() {
+            local port="$1"
+            local script="examples/mqtt_fault_peer/scripts/idle-event.scantling"
+            local client_log="$RUNNER_TEMP/scantling-idle-event-mosquitto.log"
+            start_script_peer "$script" "$port" idle-event
+            if ! timeout --signal=TERM --kill-after=2s 20s \
+              mosquitto_sub -V mqttv311 -d -h 127.0.0.1 -p "$port" \
+              -k 5 -t scantling/idle/event -q 0 -C 1 -W 15 -v \
+              >"$client_log" 2>&1; then
+              cat "$peer_log"
+              cat "$client_log"
+              kill "$peer_pid" 2>/dev/null || true
+              wait "$peer_pid" 2>/dev/null || true
+              peer_pid=""
+              return 1
+            fi
+            cat "$client_log"
+            grep -Fxq 'scantling/idle/event after-idle' "$client_log"
+            local pingreq_count
+            local pingresp_count
+            pingreq_count="$(grep -Fc 'PINGREQ' "$client_log" || true)"
+            pingresp_count="$(grep -Fc 'PINGRESP' "$client_log" || true)"
+            test "$pingreq_count" -ge 2
+            test "$pingresp_count" -ge 2
+            if ! wait "$peer_pid"; then
+              cat "$peer_log"
+              peer_pid=""
+              return 1
+            fi
+            peer_pid=""
+          }
+          run_scripted_idle_event_case 1892
       - name: Stop Mosquitto broker
         if: always()
         run: |
