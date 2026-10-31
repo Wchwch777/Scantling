@@ -48,15 +48,18 @@ and session features for application connectivity. Scantling does not claim a
 unique or superior general client. Its additional tested component is a
 native, one-connection [scriptable test peer](docs/fault-peer.md) with a public
 Script/Exchange API and a text-file runner for external MQTT clients. The
-existing CI verifies independent Mosquitto `mosquitto_pub` behavior for
-accepted QoS 0/1 PUBLISH exchanges, broker rejection, and a truncated CONNACK.
-Local workflow changes add external-client scenarios for a text-scripted QoS 2
-PUBREC/PUBREL/PUBCOMP exchange, a scripted subscription and message delivery,
-and two keep-alive ping exchanges before a later event. These three CLI paths
-and 49 Native tests passed locally on 2026-10-31 with MoonBit
-`0.10.15+943464bfa` and Mosquitto CLI `2.0.22`; they still need a successful run
-on a pushed revision before they count as CI evidence. The local Native suite
-did not enable tests requiring a separate Mosquitto Broker service.
+CI verifies independent Mosquitto `mosquitto_pub` behavior for accepted QoS
+0/1 PUBLISH exchanges, broker rejection, and a truncated CONNACK. It also runs
+the text-scripted QoS 2 PUBREC/PUBREL/PUBCOMP exchange, scripted subscription
+and message delivery, and two keep-alive ping exchanges before a later event.
+All three CLI paths passed in GitHub Actions run
+[`41185493873`](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+on commit [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd),
+along with formatting, Wasm/Native type checks, 26 Wasm tests, 49 Native tests,
+the authenticated and unauthenticated Mosquitto Broker paths, and the runnable
+client example. The CI run uses MoonBit `0.10.15+943464bfa` and Mosquitto
+`2.0.22`. This is a finite regression matrix, not broad interoperability data
+or MQTT conformance certification.
 Truncated CONNACK, mismatched PUBACK, and unexpected SUBACK are tested against Scantling's own client; the peer has not been tested against moon-mqtt-client or a wider client set. Caller-defined script tests also reject an invalid SUBACK QoS grant, exercise duplicate PUBREC/PUBREL handling, and inject a truncated CONNACK from raw bytes. This focused matrix is not a general-purpose compatibility suite or an MQTT conformance certification.
 
 October code work added an independent Mosquitto interoperability path and
@@ -200,9 +203,9 @@ mosquitto_sub -V mqttv311 -h 127.0.0.1 -p 1886 \
   -t scantling/scripted/notice -q 0 -C 1 -W 10 -v
 ```
 
-The expected output is `scantling/scripted/notice scripted-message`. The
-script and CI workflow define this scenario; a passing CI result for the new
-workflow step remains pending until it runs on a pushed revision.
+The expected output is `scantling/scripted/notice scripted-message`. This
+scenario and the QoS 2 and idle-event scripts passed with independent
+Mosquitto clients in [CI run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873).
 
 ## Run the example
 
@@ -259,15 +262,17 @@ one-shot exchange. CI sets
 Mosquitto `2.0.22`, and runs both test targets. CI also starts a separate
 username/password-protected Broker on port `1884` and runs authentication
 success and rejection tests; set `SCANTLING_MOSQUITTO_AUTH_HOST=127.0.0.1` to
-run those tests locally against an equivalently configured Broker. Commit
-[`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22)
-passed its [GitHub Actions run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859): formatting, Wasm and Native type checks, 18 Wasm tests, 38 Native tests, the authenticated and unauthenticated Mosquitto Broker paths, the ten-second client example, and all four independent `mosquitto_pub` fault-peer scenarios. This run includes the custom Script/Exchange API and its new integration tests.
-The successful run on the current remote documentation baseline is
-[`40638010819`](https://github.com/Wchwch777/Scantling/actions/runs/40638010819)
-for [`28041bf`](https://github.com/Wchwch777/Scantling/commit/28041bf758600d3c56e65643d18a00432a3fe47b).
-Both remote runs predate the local 2026-10-30/31 text-script parser, independent
-QoS 2 and idle-event paths, and `mosquitto_sub` workflow additions; neither
-validates those new changes.
+run those tests locally against an equivalently configured Broker. The latest
+pushed revision [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
+passed [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873):
+formatting, Wasm and Native type checks, 26 Wasm tests, 49 Native tests,
+authenticated and unauthenticated Mosquitto Broker paths, the ten-second
+client example, and independent Mosquitto CLI checks for QoS 0/1, rejection,
+truncated CONNACK, scripted QoS 2, subscription/message delivery, and idle
+Keep Alive. Earlier runs [40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
+and [40638010819](https://github.com/Wchwch777/Scantling/actions/runs/40638010819)
+are historical baselines; run 41185493873 is the evidence for the text-script
+scenarios on the current code revision.
 Without that environment variable, the real-Broker test is skipped. The
 protocol checks are not a full MQTT conformance suite. Review and verification
 records are in [`docs/owner-review.md`](docs/owner-review.md).

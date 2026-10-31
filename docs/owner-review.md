@@ -156,7 +156,7 @@ for later commits.
 - [x] Verify remote GitHub Actions run 40636347859 on commit 2b55d44.
 - [x] Update owner review documentation, AI disclosure, and project application records.
 
-## 2026-10-30 text-script runner expansion — pending owner review
+## 2026-10-30/31 text-script runner expansion — pending owner review
 
 AI-assisted local changes add a text-file scenario runner for the native peer,
 scripted broker-to-client PUBLISH packets, dynamic packet-ID matching for
@@ -167,14 +167,18 @@ reviewed or signed off on this update. The Windows host lacks the MSVC C++ build
 tools required for Native tests. In WSL, using MoonBit `0.10.15+943464bfa` and
 Mosquitto CLI `2.0.22`, `moon test --target native` passed 49/49; the scripted
 subscriber delivery, QoS 2 publish handshake, and two-ping idle-event scenarios
-also passed manually against independent Mosquitto CLI clients. The full CI
-workflow has not run on this revision, and tests requiring the separate
-`SCANTLING_MOSQUITTO_HOST` Broker service were not part of the local test run.
-A successful post-push GitHub Actions run is still required to validate the
-complete workflow on this exact revision.
+also passed manually against independent Mosquitto CLI clients. The pushed
+revision [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
+then passed [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873),
+including the separate authenticated and unauthenticated Mosquitto Broker
+services, the runnable client example, the independent CLI scenarios, 26 Wasm
+tests, and 49 Native tests. This records CI evidence; it does not constitute
+owner review or sign-off. The repository owner still needs to inspect the
+script parser, response construction, new integration paths, and the scope
+limits before approving this update.
 
 - [ ] Personally inspect the script parser, dynamic packet-ID matching, response construction, and reference scenarios.
 - [ ] Personally review the local Native result (49/49) and the independent Mosquitto subscriber, QoS 2, and idle Keep Alive runs recorded above.
-- [ ] Run the complete GitHub Actions workflow on the pushed revision, including broker-backed tests.
-- [ ] Review the resulting CI run and confirm the limits in the README and fault-peer guide.
+- [ ] Personally inspect [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873) and confirm its broker-backed and independent-client paths passed.
+- [ ] Review the scope limits in the README and fault-peer guide.
 - [ ] Sign off with the actual review date and tested commit.

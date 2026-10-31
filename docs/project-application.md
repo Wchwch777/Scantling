@@ -42,23 +42,23 @@ Scantling 的主要可复用组件是一个 MoonBit MQTT 3.1.1 脚本化 Broker 
   还可用 MoonBit 回调组合响应。集成测试覆盖无效 SUBACK、QoS 2 重复 PUBREC/PUBREL
   和截断 CONNACK。文本脚本场景另覆盖 QoS 2 的完整响应往返、两次 PINGREQ/PINGRESP
   后的事件投递和独立订阅端接收消息。当前源树在 WSL 上以 MoonBit
-  `0.10.15+943464bfa`、Mosquitto CLI `2.0.22` 运行 49 项 Native 测试及三条独立 CLI
-  场景均通过；完整 GitHub Actions 和需要独立 Broker 服务的条件测试仍须推送后核验。
+  `0.10.15+943464bfa`、Mosquitto CLI `2.0.22` 运行的 49 项 Native 测试及三条独立 CLI
+  场景均通过。推送后的 [CI run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+  对提交 [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
+  通过格式、Wasm/Native 类型检查、26 项 Wasm 与 49 项 Native 测试、认证及非认证
+  Mosquitto Broker 路径、客户端示例，以及独立 Mosquitto CLI 的 QoS 0/1、拒绝、截断
+  CONNACK、脚本化 QoS 2、订阅消息投递和空闲保活场景。该矩阵仍不是完整一致性认证。
 - CI 固定运行 MoonBit `0.10.15+943464bfa` 与 Mosquitto `2.0.22`，执行格式检查、
   Wasm/Native 类型检查与测试、独立 Broker 路径和 Mosquitto 客户端故障对端检查。
-  代码提交 [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22)
-  的 [CI run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
-  通过格式检查、Wasm/Native 类型检查、18 项 Wasm 与 38 项 Native 测试、
-  认证和非认证 Mosquitto Broker 路径、十秒客户端示例及四条独立 Mosquitto CLI
-  对端预设路径。该历史结果不包含本地尚未推送的文本脚本运行器和 Mosquitto
-  `mosquitto_sub`、脚本化 QoS 2 与空闲保活场景；不能把它当作这些新增代码的 CI 证据。它也不是完整
-  MQTT 3.1.1 一致性认证。
+  较早的 [CI run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
+  对应旧基线（18 项 Wasm、38 项 Native）；最新脚本化对端能力的 CI 证据是上文所列
+  run 41185493873（26 项 Wasm、49 项 Native）。两者均不是完整 MQTT 3.1.1 一致性认证。
 
 ## 代表性使用场景
 
 仓库展示三种客户端 API 消息流：遥测接收、应用发布命令并接收设备状态回报、空闲保活后
-接收事件；还提供一个文本脚本驱动的外部订阅端投递场景。前面三种是协议层示例，不是已部署
-客户案例；外部订阅场景的本地 Native/CI 结果仍待验证。代码、测试与未覆盖边界见
+接收事件；还提供文本脚本驱动的外部订阅端投递、QoS 2 发布及空闲保活场景。前面三种是协议层
+示例，不是已部署客户案例；新增独立客户端路径已有上述 CI 结果。代码、测试与未覆盖边界见
 [`docs/use-cases.md`](use-cases.md) 和 [`docs/fault-peer.md`](fault-peer.md)。
 客户端演示位于 [`examples/mqtt_client`](../examples/mqtt_client/main.mbt)。
 

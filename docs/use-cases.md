@@ -89,15 +89,14 @@ truncated CONNACK bodies in
 [truncated CONNACK body](../mqtt/integration_test/client_test.mbt#L743). The
 frame-reader unit tests cover truncated Remaining Length and the configured
 1 MiB packet-body cap in [`client_test.mbt`](../mqtt/client_test.mbt#L2).
-The earlier [CI run for code commit `ecbda25`](https://github.com/Wchwch777/Scantling/actions/runs/39027210274)
-passed with its Mosquitto service enabled. The preceding CI run for commit
-[`25e430f`](https://github.com/Wchwch777/Scantling/commit/25e430f6d5acfca62945e1f418f7f7d8e566b6b5)
-([run 40058539939](https://github.com/Wchwch777/Scantling/actions/runs/40058539939))
-passed 18 Wasm and 36 Native tests. The current workflow adds the longer
-Mosquitto-backed example and independent truncated-CONNACK check; its result is
-linked from the current workflow runs above.
+These checks are included in the native suite. The latest pushed code snapshot
+[`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
+passed [CI run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873),
+including the Broker-backed test service, the full Mosquitto client example,
+and independent-client fault paths. Earlier runs remain linked in the owner
+review record as historical verification for their respective snapshots.
 
-## Scriptable peer checks added locally
+## Scriptable peer checks
 
 The native peer now has reference scripts for external-client behavior that is
 not represented by the old fixed scenario selector:
@@ -116,13 +115,14 @@ not represented by the old fixed scenario selector:
   accepts CONNECT/SUBSCRIBE, returns SUBACK and one scripted PUBLISH, and waits
   for DISCONNECT; CI checks the received topic and payload with Mosquitto.
 
-These examples make the test peer reusable with a second client implementation
-and expose more than one broker response path. On 2026-10-31, the 49-test
-Native suite and these three CLI scenarios passed locally using MoonBit
-`0.10.15+943464bfa` and Mosquitto CLI `2.0.22`. They remain finite, scripted
-checks, not broad interoperability data, a general test framework equivalent
-to Paho, MQTT conformance certification, load testing, or evidence of user
-adoption. A successful Actions result on a pushed revision is still required.
+These examples make the test peer reusable with independent client
+implementations and exercise multiple broker response paths. The three CLI
+scenarios passed in [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+on commit [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd);
+the same run passed all 49 Native and 26 Wasm tests. They remain finite,
+scripted checks, not broad interoperability data, a general test framework
+equivalent to Paho, MQTT conformance certification, load testing, or evidence
+of user adoption.
 
 ## Shared scope
 

@@ -85,9 +85,9 @@ mosquitto_sub -V mqttv311 -h 127.0.0.1 -p 1885 \
   -t scantling/scripted/notice -q 0 -C 1 -W 10 -v
 ```
 
-Expected output is `scantling/scripted/notice scripted-message`. The workflow
-contains this external subscriber path; its result for these unpushed local
-changes is pending and is not yet CI evidence.
+Expected output is `scantling/scripted/notice scripted-message`. The external
+subscriber path passed in [GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+on commit [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd).
 
 Two further reference scripts exercise distinct protocol states with
 independent Mosquitto CLI clients:
@@ -99,11 +99,13 @@ independent Mosquitto CLI clients:
 
 The corresponding native integration paths use the same script language with
 Scantling's client: one completes the filtered QoS 2 handshake, and one calls
-`receive_with_keep_alive()` until a later event arrives. These local workflow
-and test additions passed locally in WSL on 2026-10-31 with MoonBit
-`0.10.15+943464bfa` and Mosquitto CLI `2.0.22`; the Native suite passed 49/49
-and the three independent-client scenarios completed. They are not remote CI
-evidence until they pass on a pushed revision.
+`receive_with_keep_alive()` until a later event arrives. These paths passed in
+[GitHub Actions run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
+on commit [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd),
+using MoonBit `0.10.15+943464bfa` and Mosquitto `2.0.22`. The run passed all
+26 Wasm and 49 Native tests and exercised the independent subscriber, QoS 2,
+and idle-event scenarios. These are finite scripted checks, not broad
+interoperability data or complete MQTT conformance coverage.
 
 The native integration suite exercises this extension path directly. A custom
 script copies the incoming SUBSCRIBE packet identifier into a SUBACK while
@@ -153,12 +155,12 @@ against an independent implementation:
 | Protocol path | Current automated coverage | Independent client/Broker check |
 | --- | --- | --- |
 | CONNECT/CONNACK | Clean Session validation, refusal, truncated frame, early EOF. | Mosquitto CLI refusal and truncated-CONNACK paths. |
-| SUBSCRIBE/SUBACK | Batched filters, response identifiers, result count and granted QoS; unexpected packet and over-grant fault scripts. | Scripted success path: Mosquitto CLI connects, subscribes, receives a broker-scripted PUBLISH, and disconnects. A new CI run is still required to establish this for the current changes. |
+| SUBSCRIBE/SUBACK | Batched filters, response identifiers, result count and granted QoS; unexpected packet and over-grant fault scripts. | In CI, Mosquitto CLI connects, subscribes, receives a broker-scripted PUBLISH, and disconnects ([run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)). |
 | UNSUBSCRIBE/UNSUBACK | Batched filter request and matching response identifier. | Not currently tested against an independent client as a fault case. |
 | PUBLISH QoS 0/1 | Successful sends, matching and mismatched PUBACK, inbound buffering during an acknowledgement. | Mosquitto CLI completes accepted QoS 0/1 publishes against the peer. |
-| PUBLISH QoS 2 | Four-packet publish handshake and duplicate PUBREC/PUBREL retransmission. | A new text-scripted peer path has Mosquitto `mosquitto_pub` complete QoS 2 PUBREC/PUBREL/PUBCOMP; this addition needs a passing CI run. |
+| PUBLISH QoS 2 | Four-packet publish handshake and duplicate PUBREC/PUBREL retransmission. | Mosquitto `mosquitto_pub` completes the scripted QoS 2 PUBREC/PUBREL/PUBCOMP path in CI ([run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)). |
 | Inbound QoS 2 | PUBREC/PUBREL/PUBCOMP and duplicate-delivery suppression. | Client receives QoS 2 delivery from Mosquitto. |
-| Keep Alive and DISCONNECT | Ping response, missing-PINGRESP closure, idle event delivery and orderly disconnect. | The ten-second application example runs against Mosquitto. A new scripted peer path also requires two client ping exchanges before delivering an event; its CI result is pending. |
+| Keep Alive and DISCONNECT | Ping response, missing-PINGRESP closure, idle event delivery and orderly disconnect. | The ten-second application example runs against Mosquitto; independent `mosquitto_sub` completes two ping exchanges before the scripted event in CI ([run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)). |
 
 This is a traceable regression matrix, not complete MQTT 3.1.1 conformance
 coverage. It does not cover every normative requirement, every state
