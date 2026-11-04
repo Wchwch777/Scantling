@@ -1,0 +1,4 @@
+import {
+  "zbhzs1/moonbit-mqtt" @codec,
+  "moonbitlang/core/string",
+}

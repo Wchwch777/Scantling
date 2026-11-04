@@ -4,7 +4,7 @@ import {
   "moonbitlang/async/stdio",
   "moonbitlang/core/env",
   "moonbitlang/core/string",
-  "scantling_mqtt_client/mqtt/fault_peer" @peer,
+  "Wchwch777/scantling/mqtt/fault_peer" @peer,
 }
 
 pkgtype(kind: "executable")

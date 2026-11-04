@@ -1,8 +1,10 @@
-name = "scantling_mqtt_client"
+name = "Wchwch777/scantling"
 
 version = "0.1.0"
 
 readme = "README.md"
+
+repository = "https://github.com/Wchwch777/Scantling"
 
 license = "Apache-2.0"
 
@@ -16,7 +18,7 @@ keywords = [
   "moonbit",
 ]
 
-description = "MoonBit MQTT 3.1.1 scriptable protocol test peer and client interoperability suite"
+description = "Stateful MQTT 3.1.1 trace validation and scriptable protocol test peer"
 
 import {
   "moonbitlang/async@0.21.3",

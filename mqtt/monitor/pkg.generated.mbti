@@ -1,0 +1,53 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Wchwch777/scantling/mqtt/monitor"
+
+import {
+  "zbhzs1/moonbit-mqtt",
+}
+
+// Values
+pub fn check_trace(String) -> Result[Report, String]
+
+// Errors
+
+// Types and methods
+pub(all) struct Diagnostic {
+  event : Int
+  rule : String
+  detail : String
+} derive(ToJson)
+pub fn Diagnostic::to_json(Self) -> Json
+
+pub struct Monitor {
+  // private fields
+}
+pub fn Monitor::advance(Self, Int64) -> Bool
+pub fn Monitor::close(Self, Int64) -> Bool
+pub fn Monitor::new(max_inflight? : Int) -> Self
+pub fn Monitor::observe(Self, Side, @moonbit-mqtt.Packet, Int64) -> Bool
+pub fn Monitor::observe_frame(Self, Side, Array[Byte], Int64) -> Bool
+pub fn Monitor::report(Self) -> Report
+
+pub(all) struct Report {
+  valid_prefix : Bool
+  complete : Bool
+  events : Int
+  connections : Int
+  completed_publications : Int
+  retransmissions : Int
+  pending : Int
+  abandoned : Int
+  diagnostics : Array[Diagnostic]
+} derive(ToJson)
+pub fn Report::to_json(Self) -> Json
+
+pub(all) enum Side {
+  Client
+  Server
+} derive(Eq)
+pub fn Side::equal(Self, Self) -> Bool
+pub fn Side::not_equal(Self, Self) -> Bool
+
+// Type aliases
+
+// Traits
