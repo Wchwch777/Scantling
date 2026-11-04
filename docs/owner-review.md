@@ -197,3 +197,13 @@ it is not a claim of a separate in-person line-by-line inspection.
 - [x] Inspect [GitHub Actions runs 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873) and [41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629) and confirm their broker-backed and independent-client paths passed.
 - [x] Review the scope limits in the README and fault-peer guide.
 - [x] Record the review date (2026-10-31), tested commits (`9ad42e2`, `ffac618`), review method (AI-assisted at the owner's direction), and owner approval communicated via the submitting participant's chat message.
+
+## November local work — 2026-11-03
+
+AI-assisted local implementation and verification were performed at the user's
+request. This is **not** an owner signature or a declaration that the owner has
+personally inspected each line. New code, proposal drafts and evidence are
+listed in [november-review.md](november-review.md). The owner must personally
+understand and rewrite the submission text. The November release was organized
+at the owner's direction. This record reflects the local verification before
+release and excludes a November owner sign-off.

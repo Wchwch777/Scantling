@@ -7,6 +7,17 @@ for reviewing, maintaining, and releasing the project.
 
 ## Current project direction
 
+November 2026 adds the independent `mqtt/monitor` stateful trace validator,
+offline trace CLI, monitored peer adapter, tests and documentation. This work
+was prepared with AI assistance from baseline `1e63972`. The owner set the
+contest scope, release stages, push schedule, and account constraint. AI
+assisted with implementation, checks, and documentation. Owner code review is
+pending confirmation. The proposal is technical draft
+material for the participant to personally rewrite and verify, as required by
+the charter. Historical review records below apply only to their stated scope.
+The current README and `docs/monitor.md` describe the November architecture;
+the next paragraph describes the earlier October direction.
+
 The maintained project's primary reusable component is the MoonBit MQTT 3.1.1
 scriptable native protocol test peer described in the [README](README.md). The
 repository also includes an asynchronous client used as a test subject and in

@@ -48,5 +48,13 @@ async fn main {
   if script_path is None {
     @stdio.stdout.write("Scenario: \{scenario_name}\n")
   }
-  server.run()
+  if @env.get_env_var("SCANTLING_MONITOR") == Some("1") {
+    let report = server.run_monitored(timeout_ms=15000)
+    @stdio.stdout.write(report.to_json().stringify() + "\n")
+    if !report.complete {
+      fail("monitored scenario did not complete validly")
+    }
+  } else {
+    server.run()
+  }
 }

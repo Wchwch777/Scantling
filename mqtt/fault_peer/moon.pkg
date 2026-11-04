@@ -3,4 +3,5 @@ import {
   "moonbitlang/async/socket",
   "moonbitlang/core/string",
   "zbhzs1/moonbit-mqtt" @codec,
+  "Wchwch777/scantling/mqtt/monitor",
 }

@@ -57,3 +57,5 @@ MQTT compliance or exactly-once application delivery.
 
 Run the executable examples and state-machine tests with
 `moon test mqtt/monitor --target wasm --deny-warn`.
+See [rule coverage and limitations](../../docs/monitor.md) and run the native
+trace CLI with `moon run --target native examples/check_trace`.

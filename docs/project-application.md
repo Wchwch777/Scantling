@@ -1,111 +1,23 @@
-# Scantling：MoonBit MQTT 3.1.1 脚本化协议测试对端
+# Scantling Trace：MQTT 有状态协议轨迹校验器（十一月申报技术草稿）
 
-**项目方向：** MoonBit MQTT 协议测试与互操作工具
+> AI 辅助整理，供韦昌豪人工改写；不是可直接冒充人工撰写的定稿。章程要求一页 Markdown、人工撰写。
 
-**仓库：** <https://github.com/Wchwch777/Scantling>
+**参赛者：** 韦昌豪 / Wchwch777　**拟报方向：** 新生态项目建设（新组件范围以赛事组认定为准）
+**仓库：** https://github.com/Wchwch777/Scantling　**类型：** 原创工具，非移植　**许可证：** Apache-2.0
 
-**许可证：** Apache-2.0
+## 问题与定位
+十月申报未通过初审，评审指出脚本对端主要是逐包匹配与线性收发，独立协议语义不足。本次建设可脱离旧客户端和脚本运行器使用的双向轨迹校验库：能解码的 ACK 也可能不符合当前 QoS 阶段；双方可同时使用相同 id，单方却不能在未完成时复用它。仅有编解码或客户端库不能替第三方通信判定这些历史关系。
 
-## 项目简介
+## 本次新增与实现路径
+以十月末 `1e63972` 为历史基线，不重复申报旧客户端、编解码或线性脚本。十一月新增 `mqtt/monitor`，按 `(发送端, packet identifier)` 保存在途事务，驱动 QoS 1/2、订退阅应答和重传迁移；同一连接允许多事务交错。报告给出事件位置、规则与原因，并区分错误、未完成前缀和完成；补充 Clean Session 清理、已知持久会话恢复及逻辑时钟检查。编解码复用 `zbhzs1/moonbit-mqtt`，网络复用 `moonbitlang/async`，状态关联和诊断是本次实现。
 
-Scantling 的主要可复用组件是一个 MoonBit MQTT 3.1.1 脚本化 Broker 对端。
-调用者可用 MoonBit `Script`/`Exchange` API，或用命令行加载文本脚本，
-按顺序匹配客户端报文并发送 MQTT 响应、PUBLISH、原始字节、延迟或断开连接；
-仓库同时包含一个小型异步客户端，作为协议测试对象和可运行示例的客户端。
-项目不据此声称填补了通用客户端空白，也不声称等同 Eclipse Paho 的完整测试工具集。
-客户端复用 [`zbhzs1/moonbit-mqtt`](https://github.com/zbhzs1/moonbit-mqtt)
-的报文编解码。项目不声称唯一性、已验证用户需求或真实部署。
+## 三个完整使用场景
+1. 客户端库回归：输入双向同 id 的 QoS 2 与交错 QoS 1，分别完成各自握手；把 PUBREC 改成 PUBACK 后，在对应事件失败。
+2. 故障定位：将同一份原始帧轨迹交给 CLI，输出 JSON，错误或缺少终态均非零退出，可接 CI；在线模式同时检查脚本输出，避免把测试对端的错归给客户端。
+3. 断线与时间边界：重放已知持久会话在 PUBREL 后断线、恢复后继续完成，核对没有重复计数；推进逻辑时间复现 Keep Alive 期限，无须长时间睡眠。
 
-## 已实现功能与可核查证据
+## 交付与验收方法
+本地已实现纯计算库、轨迹 CLI、五类参考轨迹、在线观察、可执行文档及正反例测试。以 `moon check/test/build` 的 Wasm 与 Native 结果、真实 TCP 集成及独立 Mosquitto 客户端为证据。本地核验明细见 `docs/november-review.md`，远程 CI 以本期提交对应的 GitHub Actions 记录为准。
 
-- MQTT 3.1.1 TCP CONNECT/CONNACK 握手，以及顺序调用的连接 API：
-  [`mqtt/client.mbt`](../mqtt/client.mbt)。
-- 可选用户名/密码认证；密码必须与用户名一起提供。当前仅为明文 TCP，
-  未实现 TLS，因此不应在不可信网络上传送凭据。
-- 单主题与批量主题过滤器订阅/取消订阅，并等待对应应答；SUBACK 的数量、
-  消息标识和每个主题授予的 QoS 均逐项核对；支持 QoS 0 发布、QoS 1 发布及
-  PUBACK、QoS 2 发布握手及 QoS 0/1/2 接收；QoS 2 仅在 PUBREL 后交付，
-  并对重复 PUBLISH/PUBREL 按协议应答而不重复交付。
-- PINGREQ/PINGRESP；入站报文体限制为 1 MiB；等待应答期间最多缓冲 64 条入站消息，
-  超限关闭连接并返回明确错误；拒绝无效发布主题及空订阅过滤器。
-- 可选 `receive_with_keep_alive()` 在等待下一条消息时按 Keep Alive 周期发送
-  PINGREQ 并校验 PINGRESP；缺少 PINGRESP 会关闭连接并返回超时错误。该保活只在
-  此方法等待期间运行，不是后台任务；普通 `receive()` 仍可能无限等待且不发送 ping。
-- 原生 loopback 测试覆盖客户端与协议对端的请求/应答流程；独立 Mosquitto
-  测试使用两个客户端验证 QoS 1 与 QoS 2 订阅、投递和发布应答：
-  [`mqtt/integration_test/client_test.mbt`](../mqtt/integration_test/client_test.mbt)。
-- 可执行故障对端提供六个命令行预设，也可通过
-  `SCANTLING_FAULT_SCRIPT` 加载文本脚本。脚本支持按类型、QoS、packet identifier、
-  主题、PUBLISH payload 与 retain/DUP 标志匹配有序报文，并可发送 CONNACK、
-  SUBACK、QoS 应答、PINGRESP、 broker-to-client PUBLISH、原始字节、延迟与关闭；
-  字段错误、重复选项、关闭后的不可达步骤会被拒绝。公开 `Script`/`Exchange` API
-  还可用 MoonBit 回调组合响应。集成测试覆盖无效 SUBACK、QoS 2 重复 PUBREC/PUBREL
-  和截断 CONNACK。文本脚本场景另覆盖 QoS 2 的完整响应往返、两次 PINGREQ/PINGRESP
-  后的事件投递和独立订阅端接收消息。当前源树在 WSL 上以 MoonBit
-  `0.10.15+943464bfa`、Mosquitto CLI `2.0.22` 运行的 49 项 Native 测试及三条独立 CLI
-  场景均通过。推送后的 [CI run 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
-  与 [CI run 41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629) 分别对提交
-  [`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd) 与
-  [`ffac618`](https://github.com/Wchwch777/Scantling/commit/ffac61868d9c177a2497de7ba64fe00521ead28f)
-  通过格式、Wasm/Native 类型检查、26 项 Wasm 与 49 项 Native 测试、认证及非认证
-  Mosquitto Broker 路径、客户端示例，以及独立 Mosquitto CLI 的 QoS 0/1、拒绝、截断
-  CONNACK、脚本化 QoS 2、订阅消息投递和空闲保活场景。该矩阵仍不是完整一致性认证。
-- CI 固定运行 MoonBit `0.10.15+943464bfa` 与 Mosquitto `2.0.22`，执行格式检查、
-  Wasm/Native 类型检查与测试、独立 Broker 路径和 Mosquitto 客户端故障对端检查。
-  较早的 [CI run 40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
-  对应旧基线（18 项 Wasm、38 项 Native）；最新脚本化对端能力的 CI 证据是上文所列
-  run 41185493873 与 41185987629（各 26 项 Wasm、49 项 Native）。两者均不是完整 MQTT 3.1.1 一致性认证。
-
-## 代表性使用场景
-
-仓库展示三种客户端 API 消息流：遥测接收、应用发布命令并接收设备状态回报、空闲保活后
-接收事件；还提供文本脚本驱动的外部订阅端投递、QoS 2 发布及空闲保活场景。前面三种是协议层
-示例，不是已部署客户案例；新增独立客户端路径已有上述 CI 结果。代码、测试与未覆盖边界见
-[`docs/use-cases.md`](use-cases.md) 和 [`docs/fault-peer.md`](fault-peer.md)。
-客户端演示位于 [`examples/mqtt_client`](../examples/mqtt_client/main.mbt)。
-
-## 运行方式
-
-先启动 MQTT 3.1.1 Broker（README 提供 Mosquitto 示例），再运行客户端演示：
-
-```sh
-moon run --target native examples/mqtt_client
-```
-
-运行文本脚本对端的步骤见 [`docs/fault-peer.md`](fault-peer.md#caller-defined-scripts)。
-
-CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#development-and-verification)。
-
-## 能力边界
-
-客户端是单连接、顺序调用的 MQTT 3.1.1 原生 TCP 实现。它不提供 TLS、
-自动重连、后台 Keep Alive 任务、操作超时、持久会话、MQTT 5.0
-或 WebSocket。QoS 2 状态只保存在当前 Clean Session 连接的内存中，不支持断线恢复。
-协议对端一次只服务一个连接，脚本是线性的；没有分支执行、并发客户端编排、负载测试、
-系统性模糊测试或完整协议覆盖。项目也没有真实设备接入、客户部署、性能基准或市场调研证据。
-无期限等待时，应用需
-使用 `receive_with_keep_alive()` 或自行安排 PINGREQ，且不得并发操作同一个客户端连接。项目不声称生产级完整性或
-协议认证。
-
-## 赛事与申报材料
-
-本项目面向 MoonBit 开源生态中的 MQTT 协议测试与互操作工具方向。
-适用范围和验收要求
-应以当届官方材料为准：[比赛章程](https://bxup9uklfcb.feishu.cn/wiki/Dx4Bwd6D1i3GfHkajQCcF7SznEd)、
-[比赛官网](https://moonbitlang.github.io/Hackathon2026/#process)。官网/章程的方向匹配
-只说明选题背景，不替代对实际需求、用户采用或项目完成度的证明。
-
-## AI 辅助与人工复核状态
-
-AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
-[`AI_ASSISTED.md`](../AI_ASSISTED.md)。我（韦昌豪，GitHub: `Wchwch777`）
-已对截至 2026-10-28 的全部十月新增工作（包含初始基线、QoS 2 实现与协议扩展、
-原生故障注入对端、独立 Mosquitto 客户端验证、`receive_with_keep_alive()`
-协调保活机制、十秒长空闲三段端到端示例，以及可编程 Script/Exchange 测试 API 与 38 项 Native 测试）完成逐行人工走查、本地自动化与端到端运行验证，
-并在 [`docs/owner-review.md`](owner-review.md) 中签署了相应范围的复核记录、清单与日期。
-2026-10-30/31 的文本脚本运行器与新增协议场景已于 2026-10-31 完成复核：复核按所有者授意
-  由 AI 辅助执行——脚本解析器、动态 packet identifier 匹配、响应构造与参考场景已走查，
-  本地全量复跑通过（`moon fmt --check` 0 错误、26 项 Wasm 测试、49 项 Native 测试含运行中的
-  Mosquitto `2.0.22` broker，WSL 环境下 MoonBit `0.1.20261012`），推送后 CI run 41185493873 与
-  41185987629 全部通过；参赛方于 2026-10-31 经聊天消息确认认可该复核范围。该复核为 AI 辅助
-  执行，不声称所有者另行逐行亲检；记录见 [`docs/owner-review.md`](owner-review.md)。
+## 生态对比与范围
+已检索的 `moonbit-mqtt` 是编解码，`moon-mqtt-client`、`Duckweed/moon-mqtt` 是客户端，`moonbit-mqtt-broker` 是 Broker。本次区别在于第三方双向历史的独立观察判定，不以“唯一 MQTT 库”或“补齐客户端空白”申报。未声称用户部署或市场调研。只覆盖已实现规则；不做完整 Broker、应用恰好一次证明、TLS、MQTT 5、pcap 重组或认证套件。未知/丢失会话明确报观察边界，不猜历史。

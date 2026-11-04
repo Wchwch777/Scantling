@@ -896,35 +896,85 @@ pub fn Peer::port(self : Peer) -> Int32 {
 
 ///|
 pub async fn Peer::run(self : Peer) -> Unit {
+  defer self.server.close()
   let (tcp, _) = self.server.accept()
+  defer tcp.close()
   run_script(tcp, self.script)
-  tcp.close()
-  self.server.close()
 }
 
 ///|
-async fn run_script(tcp : @socket.Tcp, script : Script) -> Unit {
+/// Run a protocol-valid script with a stateful observer and a total timeout.
+/// Both client and peer traffic are checked. Deliberate invalid responses will
+/// produce an invalid report attributed to the peer, not a client failure.
+/// I/O, mismatch and timeout errors still raise; no successful report is invented.
+pub async fn Peer::run_monitored(
+  self : Peer,
+  timeout_ms~ : Int32 = 5000,
+) -> @monitor.Report {
+  defer self.server.close()
+  let monitor = @monitor.Monitor::new()
+  @async.with_timeout(timeout_ms, () => {
+    let (tcp, _) = self.server.accept()
+    defer tcp.close()
+    run_script(tcp, self.script, monitor~)
+  })
+  monitor.report()
+}
+
+///|
+async fn run_script(
+  tcp : @socket.Tcp,
+  script : Script,
+  monitor? : @monitor.Monitor,
+) -> Unit {
   if script.exchanges.length() == 0 {
     fail("fault peer script must contain at least one exchange")
   }
   let mut closed = false
+  let started = @async.now()
   for exchange in script.exchanges {
     if !closed {
-      let packet = read_packet(tcp)
+      let frame = read_frame(tcp)
+      if monitor is Some(m) &&
+        !m.observe_frame(@monitor.Client, frame, @async.now() - started) {
+        return
+      }
+      let packet = @codec.decode_packet(frame).unwrap()
       if !(exchange.matches)(packet) {
         fail("fault peer script mismatch at exchange: \{exchange.name}")
       }
       for action in (exchange.respond)(packet) {
         if !closed {
           match action {
-            SendPacket(response) => write_packet(tcp, response)
-            SendRaw(bytes) => tcp.write(bytes)
+            SendPacket(response) => {
+              if monitor is Some(m) &&
+                !m.observe(@monitor.Server, response, @async.now() - started) {
+                return
+              }
+              write_packet(tcp, response)
+            }
+            SendRaw(bytes) => {
+              if monitor is Some(m) &&
+                !m.observe_frame(
+                  @monitor.Server,
+                  [
+                    for byte in bytes => byte
+                  ],
+                  @async.now() - started,
+                ) {
+                return
+              }
+              tcp.write(bytes)
+            }
             Delay(milliseconds) => @async.sleep(milliseconds)
             Close => closed = true
           }
         }
       }
     }
+  }
+  if monitor is Some(m) {
+    ignore(m.close(@async.now() - started))
   }
 }
 
@@ -1075,7 +1125,7 @@ fn no_response(_packet : @codec.Packet) -> Array[Action] {
 
 ///|
 /// Read exactly one MQTT packet from the connected test client.
-async fn read_packet(tcp : @socket.Tcp) -> @codec.Packet {
+async fn read_frame(tcp : @socket.Tcp) -> Array[Byte] {
   let first = tcp.read_exactly(1)
   let frame : Array[Byte] = [first[0]]
   let mut complete = false
@@ -1088,11 +1138,14 @@ async fn read_packet(tcp : @socket.Tcp) -> @codec.Packet {
     }
   }
   let (body_length, _) = @codec.decode_remaining_length(frame, 1).unwrap()
+  if body_length > 1048576 {
+    fail("fault peer packet body exceeds 1 MiB")
+  }
   let body = tcp.read_exactly(body_length)
   for byte in body {
     frame.push(byte)
   }
-  @codec.decode_packet(frame).unwrap()
+  frame
 }
 
 ///|
