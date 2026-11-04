@@ -1,0 +1,4 @@
+# Keep Alive=2s. A still-open connection at 3001ms is overdue.
+0 C 100d00044d51545404020002000163
+1 S 20020000
+3001 TICK

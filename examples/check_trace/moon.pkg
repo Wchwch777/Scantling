@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/env",
+  "Wchwch777/scantling/mqtt/monitor",
+}
+
+pkgtype(kind: "executable")
+
+supported_targets = "+native"
