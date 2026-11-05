@@ -11,10 +11,13 @@ November 2026 adds the independent `mqtt/monitor` stateful trace validator,
 offline trace CLI, monitored peer adapter, tests and documentation. This work
 was prepared with AI assistance from baseline `1e63972`. The owner set the
 contest scope, release stages, push schedule, and account constraint. AI
-assisted with implementation, checks, and documentation. Owner code review is
-pending confirmation. The proposal is technical draft
-material for the participant to personally rewrite and verify, as required by
-the charter. Historical review records below apply only to their stated scope.
+assisted with implementation, checks, and documentation. On 2026-11-05, at the
+owner's direction, the November code and verification record were reviewed with
+AI assistance in the owner's place, and the owner endorsed the results via the
+submitting participant's task message; the owner's in-person line-by-line
+review remains unconfirmed. The application in
+`docs/project-application.md` was rewritten per the charter at the owner's
+direction with AI assistance and endorsed by the owner the same day. Historical review records below apply only to their stated scope.
 The current README and `docs/monitor.md` describe the November architecture;
 the next paragraph describes the earlier October direction.
 

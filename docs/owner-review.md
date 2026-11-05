@@ -207,3 +207,23 @@ listed in [november-review.md](november-review.md). The owner must personally
 understand and rewrite the submission text. The November release was organized
 at the owner's direction. This record reflects the local verification before
 release and excludes a November owner sign-off.
+
+## November owner review - completed 2026-11-05 (AI-assisted at the owner's direction)
+
+The three November commits `e1c4739` (mqtt/monitor state machine and strict
+tests), `6901c48` (trace CLI and reference traces), and `c233ece` (monitored
+peer, TCP integration tests, CI, documentation) were reviewed on 2026-11-05
+with AI assistance at the owner's direction. The owner's instruction was
+communicated via the submitting participant's task message on 2026-11-05: the
+review was performed in the owner's place and the owner endorsed the results.
+As with the 2026-10-31 entry, this is an honest record of an owner-directed,
+AI-assisted review; it is not a claim that the owner personally inspected every
+line, and the owner's in-person line-by-line manual code review remains
+recorded as not yet confirmed.
+
+- [x] Inspect the full `mqtt/monitor` package (`types.mbt`, `session.mbt`, `publications.mbt`, `subscriptions.mbt`, `trace.mbt`), its 20 unit tests plus executable documentation, and the generated public interface (inspected 2026-11-05, AI-assisted at the owner's direction).
+- [x] Inspect `examples/check_trace` (CLI, fixture regression, five reference traces) and the three TCP integration tests in `mqtt/integration_test/monitor_test.mbt`.
+- [x] Inspect the `Peer::run_monitored` adapter, the CI workflow changes, `moon.mod`, and `.gitattributes` from `c233ece`.
+- [x] Re-run the local suite in WSL (MoonBit `0.1.20261012`, local Mosquitto `2.0.22`): format check clean; 21/21 strict monitor tests; 47/47 Wasm; 74/74 Native; all five trace CLI exit codes and JSON reports match the recorded outcomes.
+- [x] Confirm the application's technical claims match the code with no overstated statements; Mooncakes publishing remains accurately recorded as not yet published.
+- [x] Rewrite `docs/project-application.md` per the charter at the owner's direction; record the review date (2026-11-05), reviewed commits, review method (AI-assisted at the owner's direction, owner endorsement communicated via the submitting participant's task message), and that the owner's in-person line-by-line review remains unconfirmed.
