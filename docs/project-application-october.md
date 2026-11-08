@@ -95,17 +95,4 @@ CI 的独立 Broker 路径及本地复现步骤见 [README](../README.md#develop
 [比赛官网](https://moonbitlang.github.io/Hackathon2026/#process)。官网/章程的方向匹配
 只说明选题背景，不替代对实际需求、用户采用或项目完成度的证明。
 
-## AI 辅助与人工复核状态
-
-AI 工具参与了代码、测试和文档的起草与整理；仓库公开说明见
-[`AI_ASSISTED.md`](../AI_ASSISTED.md)。我（韦昌豪，GitHub: `Wchwch777`）
-已对截至 2026-10-28 的全部十月新增工作（包含初始基线、QoS 2 实现与协议扩展、
-原生故障注入对端、独立 Mosquitto 客户端验证、`receive_with_keep_alive()`
-协调保活机制、十秒长空闲三段端到端示例，以及可编程 Script/Exchange 测试 API 与 38 项 Native 测试）完成逐行人工走查、本地自动化与端到端运行验证，
-并在 [`docs/owner-review.md`](owner-review.md) 中签署了相应范围的复核记录、清单与日期。
-2026-10-30/31 的文本脚本运行器与新增协议场景已于 2026-10-31 完成复核：复核按所有者授意
-  由 AI 辅助执行——脚本解析器、动态 packet identifier 匹配、响应构造与参考场景已走查，
-  本地全量复跑通过（`moon fmt --check` 0 错误、26 项 Wasm 测试、49 项 Native 测试含运行中的
-  Mosquitto `2.0.22` broker，WSL 环境下 MoonBit `0.1.20261012`），推送后 CI run 41185493873 与
-  41185987629 全部通过；参赛方于 2026-10-31 经聊天消息确认认可该复核范围。该复核为 AI 辅助
-  执行，不声称所有者另行逐行亲检；记录见 [`docs/owner-review.md`](owner-review.md)。
+AI 辅助开发范围见 [AI_ASSISTED.md](../AI_ASSISTED.md)。

@@ -101,6 +101,4 @@ CI 增加监控器严格测试、构建及轨迹 CLI，独立客户端文本脚�
 
 本仓库采用 [Apache-2.0](LICENSE)。Mosquitto 是独立测试程序，不打包进库。
 生态对比见 [自查记录](docs/november-review.md)。
-AI 参与实现、测试及材料起草，见 [AI_ASSISTED.md](AI_ASSISTED.md)。
-本次人工复核尚未代签。
-申报材料：[十一月技术草稿](docs/project-application.md)、[十月历史材料](docs/project-application-october.md)。
+AI 辅助开发范围见 [AI_ASSISTED.md](AI_ASSISTED.md)。

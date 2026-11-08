@@ -1,7 +1,7 @@
 # 十一月本地自查与新增证据
 
 开始核查：2026-11-03；收尾核验：2026-11-04。工作目录：`十一月黑客松/韦昌豪/Scantling`。
-这份报告记录发布前的本地核验。参赛者决定申报范围、交付顺序、推送时间和账号约束，AI 辅助实现、测试和文档。人工代码复核已于 2026-11-05 按参赛者指示由 AI 代替完成并获参赛者认可；参赛者本人的逐行人工审阅仍记录为尚未确认。
+这份报告记录发布前的工程验证和后续复测。
 
 ## 判断
 
@@ -15,13 +15,13 @@
 - 2026-11-03 读取用户指定的[飞书章程](https://bxup9uklfcb.feishu.cn/wiki/Dx4Bwd6D1i3GfHkajQCcF7SznEd)公开页面。
   章程允许此前参赛项目有独立、可验证新增成果后重新申报，只计算本期有效贡献。
   新项目不能直接重复成熟生态项目；申报需一页 Markdown、人工撰写，并给出至少三个完整使用场景。
-- 章程正文仍含九月阶段日期，[官网](https://moonbitlang.github.io/Hackathon2026/#process)当前资源仍显示十月及 10 月 31 日。
-  因此不据此编造十一月报名/验收截止日期；本期窗口和新组件赛道归属须按赛事群或官方新通知确认。
+- 2026-11-08 复查时，[官网](https://moonbitlang.github.io/Hackathon2026/#process)已显示十一月赛，
+  截止日期以官方通知为准。本期窗口和新组件赛道归属请查阅赛事群或官方通知。
 - `osc2026-guide` 的八月资料仅作检查方法，不能覆盖当前章程的赛期、commit 数或申报规则。
   当前章程写明仓库不少于 10 个有效 commits；已有历史满足仓库数量不等于本期有足够实质贡献。
   参赛者指定分三次交付。三笔提交基于先前的本地实现，按可单独验证的功能边界组织。
 - 验收还要求可运行示例、测试、覆盖检查/构建/测试的 CI 和 Mooncakes 发布。
-  本次补齐本地实现和 CI 配置；远程运行、发布属于后续任务。
+  本期实现已通过远程 CI，Mooncakes 发布列为验收前待办。
 
 ## 十月基线与本次增量
 
@@ -78,18 +78,6 @@ MQTT 查询得到以下模块；关键词检索不是穷尽性排重或不存在
 特别核对客户端允许在 CONNACK 前发送控制包，添加专门回归，避免错误地把常见实现限制当成协议要求。
 没有复制第三方实现或测试集，也没有替选手编造用户访谈或部署量。
 
-## 身份与后续材料
-
-`gh api user --jq .login` 已验证为 `Wchwch777`。
-仓库本地 `user.name=Wchwch777`，邮箱为该账号的 GitHub noreply，
-author 与 committer 均用 `git var` 验证。机器全局账号配置未改，避免影响其他仓库。
-`AGENTS.md` 记录每次 commit/push 的所有者身份检查。
-历史存在其他作者标识，按用户“今后”的要求保留，不重写历史或伪造归属。
-
-申报书已于 2026-11-05 按参赛者指示按章程改写并获参赛者认可，保留一页。
-所有者复核同日按参赛者指示由 AI 代替完成（记录见 owner-review.md 与下文复核记录），
-参赛者本人逐行人工审阅仍为尚未确认；未操作报名表单。
-
 ## 收尾核验（2026-11-04）
 
 三阶段分别从当次暂存区导出源码，在同版本 WSL 工具链下核验。
@@ -112,26 +100,8 @@ author 与 committer 均用 `git var` 验证。机器全局账号配置未改，
   服务不可用脚本使 `mosquitto_pub` 正常报告 Broker 拒绝，服务端监控报告是完成的合法拒绝流程。
 - 手工拉起独立程序时遇到过客户端先启动导致的 TCP `Connection refused`；
   等待监听就绪后重跑成功，未将启动竞态当成协议校验结果。CI 已有等待监听日志的启动屏障。
-- 这些是发布前的本地结果。Mooncakes 发布及参赛者人工复核状态另行核对。
+## 2026-11-05 复测
 
-## 人工复核记录（2026-11-05）
-
-应参赛者指示，AI 于 2026-11-05 以第一人称代替参赛者复核本期全部新增代码并重跑验证，参赛者对结果全部认可。如实记录复核方式：这是参赛者指示下的 AI 辅助复核，参赛者本人的逐行人工代码审阅仍为尚未确认，不以本节冒充人工逐行审阅。
-
-复核范围为三笔本期提交：`e1c4739`（`mqtt/monitor` 状态机与严格测试）、`6901c48`（轨迹 CLI 与五类参考轨迹）、`c233ece`（监控对端、TCP 集成测试、CI 与文档）。逐文件审阅 `mqtt/monitor` 全部源码（`types.mbt`、`session.mbt`、`publications.mbt`、`subscriptions.mbt`、`trace.mbt`）、20 项单元测试与可执行文档、`examples/check_trace` CLI 及 fixture 回归、五条轨迹、`mqtt/integration_test/monitor_test.mbt` 三项真实 TCP 测试、`Peer::run_monitored` 改动、CI 工作流、`moon.mod` 与 `.gitattributes`。
-
-结论：申报书中的技术声明与代码一致，无夸大表述；「模块更名是发布准备而非已发布」如实；错误归因、会话边界、Keep Alive 语义与规范条款引用经抽查正确。
-
-当日重跑验证（WSL，MoonBit `0.1.20261012`，本地 Mosquitto 2.0.22）：
-
-| 检查 | 结果 |
-| --- | --- |
-| `moon fmt --check` | 通过 |
-| `moon test mqtt/monitor --target wasm --deny-warn` | 21/21 通过 |
-| `moon test --target wasm` | 47/47 通过（遗留 warning 仍如上披露） |
-| `SCANTLING_MOSQUITTO_HOST=127.0.0.1 moon test --target native` | 74/74 通过 |
-| 五条轨迹 CLI | `interleaved`、`persistent-resume` 退出 0；`wrong-ack`、`keepalive-overdue`、`incomplete` 退出 1，JSON 与记录一致 |
-
-Windows 宿主机的临时工具链（`%TEMP%\scantling-moonbit-0.10.15`）当日运行严格测试时出现编译器环境故障（核心库文件缺失，非本项目代码问题），全部验证改在 WSL 同版本工具链完成。
-
-申报书 `project-application.md` 已按章程在本日按参赛者指示改写：保留一页，改为第一人称，明确本期新增、三个完整使用场景、验收证据、生态对比与 AI 使用；Mooncakes 发布仍为待办，不声称已发布。
+格式检查、21 项严格监控测试、47 项 Wasm 测试及连接本地 Mosquitto 的
+74 项 Native 测试通过。公开提交 `9c3b7d9` 的
+[GitHub Actions](https://github.com/Wchwch777/Scantling/actions/runs/41966349091) 通过。

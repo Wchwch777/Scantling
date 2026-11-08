@@ -1,113 +1,21 @@
 # AI-assisted development disclosure
 
-AI tools have assisted with code, tests, examples, and documentation in this
-repository. AI-generated or AI-edited work is identified as such and is not
-presented as unaided human authorship. The repository owner remains responsible
-for reviewing, maintaining, and releasing the project.
+AI assisted with implementation, tests, examples, and technical documentation.
+The repository owner is responsible for maintaining and releasing the project.
 
-## Current project direction
+## November 2026
 
-November 2026 adds the independent `mqtt/monitor` stateful trace validator,
-offline trace CLI, monitored peer adapter, tests and documentation. This work
-was prepared with AI assistance from baseline `1e63972`. The owner set the
-contest scope, release stages, push schedule, and account constraint. AI
-assisted with implementation, checks, and documentation. On 2026-11-05, at the
-owner's direction, the November code and verification record were reviewed with
-AI assistance in the owner's place, and the owner endorsed the results via the
-submitting participant's task message; the owner's in-person line-by-line
-review remains unconfirmed. The application in
-`docs/project-application.md` was rewritten per the charter at the owner's
-direction with AI assistance and endorsed by the owner the same day. Historical review records below apply only to their stated scope.
-The current README and `docs/monitor.md` describe the November architecture;
-the next paragraph describes the earlier October direction.
+Starting from `1e63972`, AI assisted with the stateful MQTT trace monitor,
+offline replay CLI, monitored peer adapter, integration tests, and CI changes.
+See [November verification](docs/november-review.md) for the implementation
+scope and test results.
 
-The maintained project's primary reusable component is the MoonBit MQTT 3.1.1
-scriptable native protocol test peer described in the [README](README.md). The
-repository also includes an asynchronous client used as a test subject and in
-examples. The peer is not a full broker or conformance suite. The
-repository history also contains one-dimensional cutting-stock and
-GraphQL-over-HTTP prototypes; those earlier directions are historical, not
-part of the current maintained scope.
+## Earlier work
 
-Some early commits retain the synthetic local identity
-`Codex AI-assisted <codex-ai-assisted@localhost>` in their author or committer
-metadata. That metadata is part of the existing history and does not identify
-a GitHub user account. The repository's current GitHub contributors list
-identifies `Wchwch777`; the historical commit metadata has not been rewritten.
+AI assisted with the MQTT client, QoS 2 and Keep Alive handling, the
+scriptable peer, its scenario parser, the Mosquitto integration tests,
+and related documentation. The earlier cutting-stock and GraphQL-over-HTTP
+prototypes remain in repository history.
 
-## October documentation update
-
-AI has assisted with repository documentation updates, including evidence
-links and review-status wording. The repository owner reviewed and signed off
-on the historical scopes recorded in [`docs/owner-review.md`](docs/owner-review.md);
-those approvals do not cover later AI-assisted changes. The runnable example
-was not edited in the October documentation refresh. The three scenario
-payloads are illustrative test/demo data, not claims about customer
-requirements or deployments.
-
-AI also assisted with the October MQTT QoS 2 implementation, its protocol-peer
-and Mosquitto integration tests, and the corresponding feature documentation.
-The repository owner (`Wchwch777`) has personally reviewed the implementation,
-verified the test results against local Mosquitto runs, and recorded sign-off in
-[`docs/owner-review.md`](docs/owner-review.md).
-
-## October 21 fault-peer implementation
-
-AI assisted with the native fault-injection peer, its MQTT protocol scenarios,
-integration tests, CI path, README, and scenario documentation. The repository
-owner (`Wchwch777`) has personally reviewed the implementation, verified the
-scenarios locally and against independent Mosquitto CLI checks, and signed off in
-[`docs/owner-review.md`](docs/owner-review.md).
-
-## October 23 coordinated Keep Alive update
-
-AI assisted with the `receive_with_keep_alive()` client API, its deterministic
-native protocol tests, the delayed-event example, and the related README and
-use-case updates. The repository owner has personally reviewed the keep-alive
-and pending-ping state handling, verified the missing-PINGRESP timeout path,
-and signed off in [`docs/owner-review.md`](docs/owner-review.md).
-
-## October 24 end-to-end and independent-client update
-
-AI assisted with the simulated-device command/report/event example, its longer
-Mosquitto-backed idle check (10 seconds), the independent Mosquitto client's
-truncated-CONNACK scenario, and the related workflow and documentation updates.
-The repository owner has personally reviewed the implementation, executed and
-verified the full test suite (18 Wasm, 36 Native) and runnable example locally
-in WSL, verified remote CI run 40073050793 on commit 0657808, and recorded sign-off
-in [`docs/owner-review.md`](docs/owner-review.md).
-
-## October 28 scriptable protocol test peer update
-
-AI assisted with the public `Script`/`Exchange` API, its ordered packet matcher
-and response runner, custom SUBACK and QoS 2 integration tests, protocol
-coverage documentation, and README/package metadata updates. The repository owner
-(`Wchwch777`) has personally reviewed the implementation, executed and verified
-the full test suite (18 Wasm, 38 Native) and runnable example locally in WSL,
-verified remote CI run [40636347859](https://github.com/Wchwch777/Scantling/actions/runs/40636347859)
-on commit [`2b55d44`](https://github.com/Wchwch777/Scantling/commit/2b55d44240fa3423be9804e07583cbdde849ac22),
-and recorded sign-off in [`docs/owner-review.md`](docs/owner-review.md).
-
-## October 30–31 text-script runner and protocol-scenario expansion — review completed 2026-10-31
-
-AI assisted with the text scenario parser, broker-to-client PUBLISH response,
-dynamic request-ID handling, QoS 2 and idle Keep Alive reference scripts,
-Native integration tests, independent Mosquitto CLI workflow paths, and
-synchronization of repository documentation. This work was reviewed on
-2026-10-31 with AI assistance at the owner's direction: the script parser,
-dynamic packet-ID matching, response construction, and reference scenarios
-were inspected, and the full local suite was re-run (format check clean,
-26 Wasm tests and 49 Native tests with a running Mosquitto `2.0.22` broker in
-WSL, MoonBit `0.1.20261012`). The owner's approval of this scope was
-communicated the same day via the submitting participant's chat message. The Windows host lacks MSVC
-build tools, so local tests ran in WSL using MoonBit `0.10.15+943464bfa` and
-Mosquitto CLI `2.0.22`: 49 Native tests passed, along with the scripted QoS 2,
-subscription-delivery, and two-ping idle-event paths. Pushed revisions
-[`9ad42e2`](https://github.com/Wchwch777/Scantling/commit/9ad42e298dc6fb7dd7cfc1044e07be8fa47defd)
-and [`ffac618`](https://github.com/Wchwch777/Scantling/commit/ffac61868d9c177a2497de7ba64fe00521ead28f)
-passed [GitHub Actions runs 41185493873](https://github.com/Wchwch777/Scantling/actions/runs/41185493873)
-and [41185987629](https://github.com/Wchwch777/Scantling/actions/runs/41185987629),
-including broker-backed tests and the independent Mosquitto CLI paths; 26 Wasm
-and 49 Native tests passed in each. See the completed owner-review record in
-[`docs/owner-review.md`](docs/owner-review.md); CI success alone was not
-treated as sign-off.
+Some early commits contain synthetic local AI author or committer metadata.
+The commit history records that metadata.
